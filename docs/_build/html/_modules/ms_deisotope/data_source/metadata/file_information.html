@@ -305,7 +305,7 @@
 
 
 <span class="k">class</span> <span class="nc">MultipleIDFormats</span><span class="p">(</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">IDParserBase</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Represent an ambiguous group of multiple nativeID formats.</span>
+    <span class="sd">&quot;&quot;&quot;Represent an ambiguous group of multiple nativeID formats.</span>
 
 <span class="sd">    Implements the :class:`~collections.abc.Mapping` interface.</span>
 
@@ -313,7 +313,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    id_formats : OrderedDict</span>
 <span class="sd">        A mapping of format name to :class:`IDFormat` instances</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_formats</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_formats</span> <span class="o">=</span> <span class="n">id_formats</span>
@@ -926,7 +926,7 @@
 
 
 <span class="k">def</span> <span class="nf">id_format</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`IDFormat`</span>
+    <span class="sd">&quot;&quot;&quot;Translate a given name or identifier into a :class:`IDFormat`</span>
 <span class="sd">    instance.</span>
 
 <span class="sd">    If no match is found in the database of known :class:`IDFormat`</span>
@@ -936,7 +936,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    IDFormat</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">id_formats</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -946,7 +946,7 @@
 
 
 <span class="k">def</span> <span class="nf">file_format</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`FileFormat`</span>
+    <span class="sd">&quot;&quot;&quot;Translate a given name or identifier into a :class:`FileFormat`</span>
 <span class="sd">    instance.</span>
 
 <span class="sd">    If no match is found in the database of known :class:`FileFormat`</span>
@@ -956,7 +956,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    FileFormat</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">file_formats</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -966,7 +966,7 @@
 
 
 <span class="k">def</span> <span class="nf">content_key</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`FileContent`</span>
+    <span class="sd">&quot;&quot;&quot;Translate a given name or identifier into a :class:`FileContent`</span>
 <span class="sd">    instance.</span>
 
 <span class="sd">    If no match is found in the database of known :class:`FileContent`</span>
@@ -976,7 +976,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    FileContent</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">content_keys</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
@@ -1070,7 +1070,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileInformation.get_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.get_content">[docs]</a>    <span class="k">def</span> <span class="nf">get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Retrieve the value of ``key`` from :attr:`contents`.</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the value of ``key`` from :attr:`contents`.</span>
 
 <span class="sd">        This method is aliased to :meth:`__getitem__`</span>
 
@@ -1081,11 +1081,11 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        object</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="FileInformation.has_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.has_content">[docs]</a>    <span class="k">def</span> <span class="nf">has_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Check if ``key`` is found in :attr:`content`</span>
+        <span class="sd">&quot;&quot;&quot;Check if ``key`` is found in :attr:`content`</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1094,7 +1094,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span></div>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
@@ -1120,12 +1120,12 @@
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FileInformation.copy"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Create a deep copy of this object</span>
+        <span class="sd">&quot;&quot;&quot;Create a deep copy of this object</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        FileInformation</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span><span class="p">])</span></div>
 
@@ -1216,7 +1216,7 @@
 
 <div class="viewcode-block" id="SourceFile.from_path"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile.from_path">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_path</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Construct a new :class:`SourceFile` from a path to a real file on the local</span>
+        <span class="sd">&quot;&quot;&quot;Construct a new :class:`SourceFile` from a path to a real file on the local</span>
 <span class="sd">        file system.</span>
 
 <span class="sd">        Parameters</span>
@@ -1227,7 +1227,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SourceFile</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">location</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>

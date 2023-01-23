@@ -32,7 +32,7 @@
         
         
   <h1>Source code for ms_deisotope.data_source.thermo_raw_net</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;Thermo RAW file reading implementation using the pure .NET</span>
+<span></span><span class="sd">&quot;&quot;&quot;Thermo RAW file reading implementation using the pure .NET</span>
 <span class="sd">RawFileReader library released in 2017.</span>
 
 <span class="sd">This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`</span>
@@ -49,7 +49,7 @@
 <span class="sd">    This interface was largely based upon the APIs that ProteoWizard used, both</span>
 <span class="sd">    in order to understand how the Thermo libraries really worked, and to maintain</span>
 <span class="sd">    parity with it.</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -122,7 +122,7 @@
 
 
 <span class="k">def</span> <span class="nf">is_thermo_raw_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Detect whether or not the file referenced by ``path``</span>
+    <span class="sd">&quot;&quot;&quot;Detect whether or not the file referenced by ``path``</span>
 <span class="sd">    is a Thermo RAW file.</span>
 
 <span class="sd">    Parameters</span>
@@ -134,7 +134,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    :class:`bool`:</span>
 <span class="sd">        Whether or not the file is a Thermo RAW file.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_test_dll_loaded</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">register_dll</span><span class="p">()</span>
@@ -154,7 +154,7 @@
 
 
 <span class="k">def</span> <span class="nf">infer_reader</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;If the file referenced by ``path`` is a Thermo RAW</span>
+    <span class="sd">&quot;&quot;&quot;If the file referenced by ``path`` is a Thermo RAW</span>
 <span class="sd">    file, return the callable (:class:`ThermoRawLoader`) to</span>
 <span class="sd">    open it, otherwise raise an exception.</span>
 
@@ -172,21 +172,21 @@
 <span class="sd">    ------</span>
 <span class="sd">    :class:`ValueError`:</span>
 <span class="sd">        If the file is not a Thermo RAW file</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">is_thermo_raw_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">ThermoRawLoader</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not Thermo Raw File&quot;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">determine_if_available</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39;Checks whether or not the .NET-based Thermo</span>
+    <span class="sd">&quot;&quot;&quot;Checks whether or not the .NET-based Thermo</span>
 <span class="sd">    RAW file reading feature is available.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    :class:`bool`:</span>
 <span class="sd">        Whether or not the feature is enabled.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_register_dll</span><span class="p">([</span><span class="n">_DEFAULT_DLL_PATH</span><span class="p">])</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
@@ -194,7 +194,7 @@
 
 
 <span class="k">def</span> <span class="nf">_register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Start the Common Language Runtime interop service by importing</span>
+    <span class="sd">&quot;&quot;&quot;Start the Common Language Runtime interop service by importing</span>
 <span class="sd">    the :mod:`clr` module from Pythonnet, and then populate the global</span>
 <span class="sd">    names referring to .NET entities, and finally attempt to locate the</span>
 <span class="sd">    ThermoRawFileReader DLLs by searching alogn ``search_paths``.</span>
@@ -208,7 +208,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    :class:`bool`:</span>
 <span class="sd">        Whether or not the .NET library successfully loaded</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">ms_deisotope.config</span> <span class="kn">import</span> <span class="n">get_config</span>
     <span class="k">if</span> <span class="n">search_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">search_paths</span> <span class="o">=</span> <span class="p">[]</span>
@@ -245,7 +245,7 @@
 
 
 <span class="k">def</span> <span class="nf">register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Register the location of the Thermo RawFileReader DLL bundle with</span>
+    <span class="sd">&quot;&quot;&quot;Register the location of the Thermo RawFileReader DLL bundle with</span>
 <span class="sd">    the Common Language Runtime interop system and load the .NET symbols</span>
 <span class="sd">    used by this feature.</span>
 
@@ -254,12 +254,12 @@
 <span class="sd">    search_paths: list</span>
 <span class="sd">        The paths to check along for the ThermoRawFileReader DLL bundle.</span>
 
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">search_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">search_paths</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">loaded</span> <span class="o">=</span> <span class="n">_register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">loaded</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;The ThermoFisher.CommonCore libraries could not be located and loaded.&#39;&#39;&#39;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;The ThermoFisher.CommonCore libraries could not be located and loaded.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
 
@@ -268,14 +268,14 @@
 
 
 <span class="k">def</span> <span class="nf">_copy_double_array</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;A quick and dirty implementation of the fourth technique shown in</span>
+    <span class="sd">&quot;&quot;&quot;A quick and dirty implementation of the fourth technique shown in</span>
 <span class="sd">    https://mail.python.org/pipermail/pythondotnet/2014-May/001525.html for</span>
 <span class="sd">    copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw</span>
 <span class="sd">    memory copy.</span>
 
 <span class="sd">    ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2</span>
 <span class="sd">    this is :class:`long`, and on Python 3 it is :class:`int`.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># When the input .NET array pointer is None, return an empty array. On Py2</span>
     <span class="c1"># this would happen automatically, but not on Py3, and perhaps not safely on</span>
     <span class="c1"># all Py2 because it relies on pythonnet and the .NET runtime properly checking</span>
@@ -291,9 +291,9 @@
 
 
 <span class="k">class</span> <span class="nc">RawReaderInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;:class:`~.ScanDataSource` implementation for Thermo&#39;s RawFileReader API.</span>
+    <span class="sd">&quot;&quot;&quot;:class:`~.ScanDataSource` implementation for Thermo&#39;s RawFileReader API.</span>
 <span class="sd">    Not intended for direct instantiation.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span>
@@ -554,9 +554,9 @@
 
 
 <div class="viewcode-block" id="ThermoRawLoader"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader">[docs]</a><span class="k">class</span> <span class="nc">ThermoRawLoader</span><span class="p">(</span><span class="n">RawReaderInterface</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">_RawFileMetadataLoader</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Reads scans from Thermo Fisher RAW files directly. Provides both iterative and</span>
+    <span class="sd">&quot;&quot;&quot;Reads scans from Thermo Fisher RAW files directly. Provides both iterative and</span>
 <span class="sd">    random access.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">_load_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_test_dll_loaded</span><span class="p">():</span>
@@ -650,13 +650,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Accesses the scan index</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the scan index</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`collections.OrderedDict`</span>
 <span class="sd">            Maps scan ID to index</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -671,8 +671,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="ThermoRawLoader.close"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Close the underlying file reader.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Close the underlying file reader.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_close_handle</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span></div>
 
@@ -816,7 +816,7 @@
             <span class="k">return</span> <span class="n">scan</span></div>
 
 <div class="viewcode-block" id="ThermoRawLoader.start_from_scan"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require_ms1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
+        <span class="sd">&quot;&quot;&quot;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
 <span class="sd">        ``rt``, or ``index``. Only one may be provided.</span>
 
 <span class="sd">        After invoking this method, the iterator this object wraps will be changed to begin</span>
@@ -835,7 +835,7 @@
 <span class="sd">            Whether the iterator must start from an MS1 scan. True by default.</span>
 <span class="sd">        grouped: bool, optional</span>
 <span class="sd">            whether the iterator should yield scan bunches or single scans. True by default.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scan_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">_id_template</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">elif</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>

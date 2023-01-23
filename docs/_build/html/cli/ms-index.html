@@ -91,6 +91,12 @@ transformations along the way.</p>
 <dd><p>Whether or not to add the conversion program’s metadata to the mzML file.</p>
 </dd></dl>
 
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-X">
+<span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--option</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;tuple&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzml-X" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass an arbitrary key-value pair through to configure the writer (May specify more than once)</p>
+</dd></dl>
+
 <p class="rubric">Arguments</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-ms-index-mzml-arg-SOURCE">
@@ -206,6 +212,12 @@ transformations along the way.</p>
 </div>
 </dd></dl>
 
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-X">
+<span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--option</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;tuple&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-X" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass an arbitrary key-value pair through to configure the writer (May specify more than once)</p>
+</dd></dl>
+
 <p class="rubric">Arguments</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-arg-SOURCE">
@@ -228,9 +240,8 @@ transformations along the way.</p>
 <h2>Indexing<a class="headerlink" href="#indexing" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="ms-index-byte-index">
 <h3>ms-index byte-index<a class="headerlink" href="#ms-index-byte-index" title="Permalink to this headline">¶</a></h3>
-<p>Build an external byte offset index for a mass spectrometry data file, saving time when
-opening the file with indexing enabled.</p>
-<p>Supported Formats: mzML, mzXML</p>
+<p>Build an external byte offset index for a MS data file, saving time when opening the file with indexing enabled.</p>
+<p>Supported Formats: mzML, mzXML, MGF</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index byte-index <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
 </pre></div>
 </div>
@@ -245,7 +256,7 @@ opening the file with indexing enabled.</p>
 </div>
 <div class="section" id="ms-index-metadata-index">
 <h3>ms-index metadata-index<a class="headerlink" href="#ms-index-metadata-index" title="Permalink to this headline">¶</a></h3>
-<p>Build an external scan metadata index for a mass spectrometry data file</p>
+<p>Build an external scan metadata index for a mass spectrometry data file.</p>
 <p>This extended index is saved in a separate JSON file that can be loaded with
 <code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedScanIndex</span></code>. It includes the scan time of all scans, the precursor
 mass of MSn scans, as well as the relationships between precursor and product ion
@@ -277,8 +288,8 @@ scans, as well as other details. See <code class="xref py py-class docutils lite
 </div>
 <div class="section" id="ms-index-msms-intervals">
 <h3>ms-index msms-intervals<a class="headerlink" href="#ms-index-msms-intervals" title="Permalink to this headline">¶</a></h3>
-<p>Construct an interval tree spanning time and m/z domains where MSn spectra were acquired
-in the LC-MS map. The interval tree is serialized to JSON.</p>
+<p>Construct an interval tree spanning time and m/z domains where MSn spectra were acquired in the LC-MS map.</p>
+<p>The interval tree is serialized to JSON.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index msms-intervals <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
 </pre></div>
 </div>

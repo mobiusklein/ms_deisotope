@@ -33,7 +33,7 @@
         
   <h1>Source code for ms_deisotope.deconvolution.averagine_based</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&#39;&#39;&#39;Implementations of averagine-based deconvoluters.</span>
+<span class="sd">&quot;&quot;&quot;Implementations of averagine-based deconvoluters.</span>
 
 <span class="sd">Averagine-based deconvoluters use an &quot;average monomer&quot; isotopic model</span>
 <span class="sd">to interpolate the isotopic patterns for any peak in the experimental</span>
@@ -46,7 +46,7 @@
 <span class="sd">    masses and ion populations for large biomolecules from resolved isotopic distributions.</span>
 <span class="sd">    Journal of the American Society for Mass Spectrometry, 6(4), 229–233.</span>
 <span class="sd">    http://doi.org/10.1016/1044-0305(95)00017-8</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span><span class="p">,</span> <span class="n">glycopeptide</span><span class="p">,</span> <span class="n">glycan</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="kn">import</span> <span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">SCALE_METHOD</span>

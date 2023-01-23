@@ -32,46 +32,79 @@
         
         
   <h1>Source code for ms_deisotope.plot</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;A collection of tools for drawing and annotating mass spectra</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span></span><span class="sd">&quot;&quot;&quot;A collection of tools for drawing and annotating mass spectra</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="c1"># pragma: no cover</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">NamedTuple</span><span class="p">,</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span><span class="p">,</span> <span class="n">gridspec</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="n">patches</span> <span class="k">as</span> <span class="n">mpatch</span><span class="p">,</span>
+        <span class="n">transforms</span> <span class="k">as</span> <span class="n">mtransform</span><span class="p">,</span>
+        <span class="n">text</span> <span class="k">as</span> <span class="n">mtext</span><span class="p">,</span>
+        <span class="n">axes</span> <span class="k">as</span> <span class="n">maxes</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="kn">from</span> <span class="nn">ms_peak_picker.plot</span> <span class="kn">import</span> <span class="n">draw_peaklist</span><span class="p">,</span> <span class="n">draw_raw</span>
+
     <span class="n">has_plot</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">warnings</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Could not import matplotlib, plotting tools will not work</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="p">))</span>
+
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;Could not import matplotlib, plotting tools will not work</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">err</span><span class="p">,)</span>
+    <span class="p">)</span>
     <span class="n">pyplot</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">gridspec</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">has_plot</span> <span class="o">=</span> <span class="kc">False</span>
 
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">path</span> <span class="k">as</span> <span class="n">mpath</span>
+    <span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope.spectrum_graph</span> <span class="kn">import</span> <span class="n">Path</span> <span class="k">as</span> <span class="n">PeakPath</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan</span> <span class="kn">import</span> <span class="n">ScanBase</span>
+
 
 <span class="k">def</span> <span class="nf">_default_color_cycle</span><span class="p">():</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.prop_cycle&quot;</span><span class="p">]</span>
     <span class="n">colors</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">by_key</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">colors</span><span class="p">:</span>
         <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#ff7f0e&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#2ca02c&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#d62728&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#9467bd&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#8c564b&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#e377c2&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#7f7f7f&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#bcbd22&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;#17becf&#39;</span>
+            <span class="s2">&quot;#1f77b4&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#ff7f0e&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#2ca02c&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#d62728&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#9467bd&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#8c564b&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#e377c2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#7f7f7f&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#bcbd22&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;#17becf&quot;</span><span class="p">,</span>
         <span class="p">]</span>
     <span class="k">return</span> <span class="n">colors</span>
 
 
-<div class="viewcode-block" id="annotate_scan"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_scan">[docs]</a><span class="k">def</span> <span class="nf">annotate_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">products</span><span class="p">,</span> <span class="n">nperrow</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of</span>
+<div class="viewcode-block" id="annotate_scan"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_scan">[docs]</a><span class="k">def</span> <span class="nf">annotate_scan</span><span class="p">(</span>
+    <span class="n">scan</span><span class="p">:</span> <span class="s2">&quot;ScanBase&quot;</span><span class="p">,</span>
+    <span class="n">products</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="s2">&quot;ScanBase&quot;</span><span class="p">],</span>
+    <span class="n">nperrow</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Axes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Axes&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of</span>
 <span class="sd">    :class:`~.ScanBase` product scans, draw the MS1 spectrum in full profile,</span>
 <span class="sd">    and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum</span>
 <span class="sd">    surrounding the area around each precursor ion that gave rise to the scans in</span>
@@ -116,7 +149,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    :class:`matplotlib._axes.Axes`:</span>
 <span class="sd">        The axes of the full MS1 profile plot</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">figure</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
@@ -156,19 +189,28 @@
             <span class="c1"># obtain the interval around the precursor</span>
             <span class="n">pinfo</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">precursor_information</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">is_empty</span><span class="p">():</span>
-                <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span>
-                                <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">lower</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="mi">4</span>
                 <span class="n">upper</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="mi">4</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                    <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">),</span>
+                    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="n">local_intensity</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                                   <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                        <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                            <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
+                                <span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span>
+                            <span class="p">),</span>
+                            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span>
+                        <span class="p">)</span>
                         <span class="n">local_intensity</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span>
                     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                         <span class="n">local_intensity</span> <span class="o">=</span> <span class="mf">1e3</span>
@@ -186,31 +228,51 @@
             <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
                 <span class="n">draw_peaklist</span><span class="p">(</span>
                     <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
-                        <span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+                        <span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">),</span>
+                    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">label</span><span class="p">:</span>
-                <span class="n">label_peaks</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
-                            <span class="n">is_deconvoluted</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">))</span>
+                <span class="n">label_peaks</span><span class="p">(</span>
+                    <span class="n">scan</span><span class="p">,</span>
+                    <span class="n">lower</span><span class="p">,</span>
+                    <span class="n">upper</span><span class="p">,</span>
+                    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                    <span class="n">is_deconvoluted</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">),</span>
+                <span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">local_intensity</span> <span class="o">*</span> <span class="mf">1.25</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
             <span class="n">upper_intensity</span> <span class="o">=</span> <span class="n">local_intensity</span>
 
             <span class="c1"># draw the precursor isolation annotations</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">target_mz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span>
-                      <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
+                <span class="n">target_mz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-                          <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
+                    <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-                          <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
+                    <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;sci&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">extracted_charge</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="s2">&quot;ChargeNotProvided&quot;</span><span class="p">:</span>
-                    <span class="n">charge</span> <span class="o">=</span> <span class="s1">&#39;?&#39;</span>
+                    <span class="n">charge</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">charge</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -223,8 +285,14 @@
     <span class="k">return</span> <span class="n">ax</span></div>
 
 
-<div class="viewcode-block" id="annotate_scan_single"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_scan_single">[docs]</a><span class="k">def</span> <span class="nf">annotate_scan_single</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">standalone</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the</span>
+<div class="viewcode-block" id="annotate_scan_single"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_scan_single">[docs]</a><span class="k">def</span> <span class="nf">annotate_scan_single</span><span class="p">(</span>
+    <span class="n">scan</span><span class="p">:</span> <span class="s2">&quot;ScanBase&quot;</span><span class="p">,</span>
+    <span class="n">product_scan</span><span class="p">:</span> <span class="s2">&quot;ScanBase&quot;</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Axes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">standalone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Axes&quot;</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the</span>
 <span class="sd">    area around each precursor ion that gave rise to ``product_scan``</span>
 <span class="sd">    with monoisotopic peaks and isolation windows marked.</span>
 
@@ -262,7 +330,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    :class:`matplotlib._axes.Axes`</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
@@ -276,21 +344,29 @@
 
     <span class="n">pinfo</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">precursor_information</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">is_empty</span><span class="p">():</span>
-        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span>
-                        <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">lower</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="mi">4</span>
         <span class="n">upper</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="mi">4</span>
 
     <span class="n">peak_set</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span>
+        <span class="p">)</span>
         <span class="n">local_intensity</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                           <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                <span class="n">peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                    <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
+                        <span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">),</span>
+                    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="n">local_intensity</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="n">local_intensity</span> <span class="o">=</span> <span class="mf">1e3</span>
@@ -307,33 +383,45 @@
     <span class="n">draw_peaklist</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
         <span class="n">draw_peaklist</span><span class="p">(</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
-                <span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+            <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span> <span class="o">-</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">upper</span> <span class="o">+</span> <span class="mf">1.2</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">label</span><span class="p">:</span>
-        <span class="n">label_peaks</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
-                    <span class="n">is_deconvoluted</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">))</span>
+        <span class="n">label_peaks</span><span class="p">(</span>
+            <span class="n">scan</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">is_deconvoluted</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">local_intensity</span> <span class="o">*</span> <span class="mf">1.25</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
     <span class="n">upper_intensity</span> <span class="o">=</span> <span class="n">local_intensity</span>
 
     <span class="c1"># draw the precursor isolation annotations</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">target_mz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span>
-              <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">target_mz</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-                  <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
+            <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span>
+            <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-                  <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;sci&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
+            <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">upper_intensity</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span>
+            <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">ticklabel_format</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;sci&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">scilimits</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">extracted_charge</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="s2">&quot;ChargeNotProvided&quot;</span><span class="p">:</span>
-            <span class="n">charge</span> <span class="o">=</span> <span class="s1">&#39;?&#39;</span>
+            <span class="n">charge</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">charge</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -343,8 +431,14 @@
     <span class="k">return</span> <span class="n">ax</span></div>
 
 
-<div class="viewcode-block" id="annotate_isotopic_peaks"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_isotopic_peaks">[docs]</a><span class="k">def</span> <span class="nf">annotate_isotopic_peaks</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color_cycle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`</span>
+<div class="viewcode-block" id="annotate_isotopic_peaks"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.annotate_isotopic_peaks">[docs]</a><span class="k">def</span> <span class="nf">annotate_isotopic_peaks</span><span class="p">(</span>
+    <span class="n">scan</span><span class="p">:</span> <span class="s2">&quot;ScanBase&quot;</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Axes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">color_cycle</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mz_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`</span>
 <span class="sd">    in ``scan``.</span>
 
 <span class="sd">    .. plot::</span>
@@ -373,17 +467,20 @@
 <span class="sd">    ----------</span>
 <span class="sd">    scan: ScanBase</span>
 <span class="sd">        The scan to annotate</span>
-<span class="sd">    color_cycle: :class:`~.Iterable`</span>
-<span class="sd">        An iterable to draw isotopic cluster colors from</span>
 <span class="sd">    ax: :class:`matplotlib._axes.Axes`</span>
 <span class="sd">        An :class:`~.Axes` object to draw the plot on</span>
+<span class="sd">    color_cycle: :class:`~.Iterable`</span>
+<span class="sd">        An iterable to draw isotopic cluster colors from</span>
+<span class="sd">    mz_range: (float, float), optional</span>
+<span class="sd">        The m/z range to annotate peaks within. Defaults to</span>
+<span class="sd">        the full range if not specified.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    :class:`matplotlib._axes.Axes`</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">from</span> <span class="nn">.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeakSet</span>
-
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeakSet</span><span class="p">,</span> <span class="n">DeconvolutedPeak</span>
+    <span class="kn">from</span> <span class="nn">.peak_dependency_network.intervals</span> <span class="kn">import</span> <span class="n">Interval</span>
     <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">color_cycle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -394,14 +491,28 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="s2">&quot;deconvoluted_peak_set&quot;</span><span class="p">,</span> <span class="p">[])</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">mz_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mz_range</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">))</span>
+    <span class="n">mz_iv</span> <span class="o">=</span> <span class="n">Interval</span><span class="p">(</span><span class="o">*</span><span class="n">mz_range</span><span class="p">)</span>
+    <span class="n">peaks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DeconvolutedPeak</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mz_iv</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">):</span>
+            <span class="k">continue</span>
         <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">color_cycle</span><span class="p">)</span>
         <span class="n">draw_peaklist</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ax</span></div>
 
 
-<div class="viewcode-block" id="label_peaks"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.label_peaks">[docs]</a><span class="k">def</span> <span class="nf">label_peaks</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">min_mz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_mz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_deconvoluted</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="label_peaks"><a class="viewcode-back" href="../../visualization.html#ms_deisotope.plot.label_peaks">[docs]</a><span class="k">def</span> <span class="nf">label_peaks</span><span class="p">(</span>
+    <span class="n">scan</span><span class="p">:</span> <span class="s2">&quot;ScanBase&quot;</span><span class="p">,</span>
+    <span class="n">min_mz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_mz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Axes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">is_deconvoluted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Label a region of the peak list, marking centroids with their m/z or mass. If the peaks</span>
 <span class="sd">    of `scan` have been deconvoluted, the most abundant peak will be annotated with</span>
 <span class="sd">    &quot;&lt;neutral mass&gt; (&lt;charge&gt;)&quot;, otherwise just &quot;&lt;m/z&gt;&quot;.</span>
@@ -449,21 +560,18 @@
     <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># select the peak sub range</span>
     <span class="k">if</span> <span class="n">is_deconvoluted</span><span class="p">:</span>
-        <span class="n">subset</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
-            <span class="n">min_mz</span><span class="p">,</span> <span class="n">max_mz</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">subset</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">min_mz</span><span class="p">,</span> <span class="n">max_mz</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">subset</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
-            <span class="n">min_mz</span><span class="p">,</span> <span class="n">max_mz</span><span class="p">)</span>
+        <span class="n">subset</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">min_mz</span><span class="p">,</span> <span class="n">max_mz</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">subset</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="c1"># guess the threshold</span>
     <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="n">is_deconvoluted</span><span class="p">:</span>
-            <span class="n">threshold_list</span> <span class="o">=</span> <span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">envelope</span><span class="p">)</span>
-                               <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">])</span>
+            <span class="n">threshold_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">envelope</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">threshold_list</span> <span class="o">=</span> <span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">])</span>
+            <span class="n">threshold_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">threshold_list</span><span class="p">:</span>
             <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">threshold_list</span><span class="p">)</span>
         <span class="n">threshold_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">threshold_list</span><span class="p">]</span>
@@ -475,7 +583,7 @@
     <span class="k">if</span> <span class="n">is_deconvoluted</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
-                <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> (</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%0.2f</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
                 <span class="c1"># set the y-position to the highest peak in the isotopic</span>
                 <span class="c1"># pattern</span>
                 <span class="n">pt</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
@@ -484,21 +592,28 @@
                 <span class="c1"># isotopic pattern</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">],</span>
-                    <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">])</span>
-                <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                    <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
-                <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%0.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="p">)</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%0.2f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,)</span>
                 <span class="n">y</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="mf">1.05</span>
                 <span class="n">x</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span>
-                <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">annotations</span><span class="p">,</span> <span class="n">ax</span></div>
 
 
-<span class="k">def</span> <span class="nf">draw_spectrum_paths</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">peak_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">draw_spectrum_paths</span><span class="p">(</span>
+    <span class="n">graph</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+    <span class="n">peak_color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Draw all the paths given by `graph` over a rendered peak list.</span>
 
 <span class="sd">    This function will draw all peaks which an edge connects in `peak_color`, and</span>
@@ -540,23 +655,45 @@
             <span class="k">for</span> <span class="n">p1</span> <span class="ow">in</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">p2</span> <span class="ow">in</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
                     <span class="n">_draw_peak_pair</span><span class="p">(</span>
-                        <span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">),</span> <span class="n">edge_color</span><span class="p">,</span> <span class="n">peak_color</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">fontsize</span><span class="p">,</span>
-                        <span class="n">label</span><span class="o">=</span><span class="n">edge</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                        <span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">),</span>
+                        <span class="n">edge_color</span><span class="p">,</span>
+                        <span class="n">peak_color</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="p">,</span>
+                        <span class="n">fontsize</span><span class="p">,</span>
+                        <span class="n">label</span><span class="o">=</span><span class="n">edge</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span>
+                        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span>
+                    <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_draw_peak_pair</span><span class="p">(</span><span class="n">pair</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">peak_color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
-                    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_draw_peak_pair</span><span class="p">(</span>
+    <span class="n">pair</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+    <span class="n">peak_color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
     <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">pair</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">mz</span><span class="p">),</span> <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span><span class="p">),</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">edge_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">mz</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span><span class="p">),</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">edge_color</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
     <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;clip_on&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-    <span class="n">clip_on</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;clip_on&#39;</span><span class="p">]</span>
+    <span class="n">clip_on</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;clip_on&quot;</span><span class="p">]</span>
     <span class="n">draw_peaklist</span><span class="p">(</span><span class="n">pair</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">peak_color</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">label</span><span class="p">:</span>
         <span class="n">midx</span> <span class="o">=</span> <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="n">p2</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="c1"># interpolate the midpoint&#39;s height</span>
-        <span class="n">midy</span> <span class="o">=</span> <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">midx</span><span class="p">)</span> <span class="o">+</span>
-                <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="p">(</span><span class="n">midx</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+        <span class="n">midy</span> <span class="o">=</span> <span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">midx</span><span class="p">)</span> <span class="o">+</span> <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="p">(</span><span class="n">midx</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">p2</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">p1</span><span class="o">.</span><span class="n">mz</span>
+        <span class="p">)</span>
 
         <span class="c1"># find the angle of the line connecting the two peaks</span>
         <span class="n">xlo</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
@@ -565,15 +702,167 @@
         <span class="n">ylo</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
         <span class="n">yhi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">p2</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
         <span class="n">opp</span> <span class="o">=</span> <span class="n">yhi</span> <span class="o">-</span> <span class="n">ylo</span>
-        <span class="n">hypot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">adj</span><span class="p">,</span> <span class="n">opp</span><span class="p">)</span> <span class="c1"># pylint: disable=assignment-from-no-return</span>
+        <span class="n">hypot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">adj</span><span class="p">,</span> <span class="n">opp</span><span class="p">)</span>  <span class="c1"># pylint: disable=assignment-from-no-return</span>
         <span class="n">rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">adj</span> <span class="o">/</span> <span class="n">hypot</span><span class="p">)</span>  <span class="c1"># pylint: disable=assignment-from-no-return</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-            <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">midx</span><span class="p">,</span> <span class="n">midy</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
-                <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="n">rotation</span><span class="p">,</span> <span class="n">clip_on</span><span class="o">=</span><span class="n">clip_on</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="n">midx</span><span class="p">,</span>
+            <span class="n">midy</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+            <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="n">va</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">,</span>
+            <span class="n">rotation</span><span class="o">=</span><span class="n">rotation</span><span class="p">,</span>
+            <span class="n">clip_on</span><span class="o">=</span><span class="n">clip_on</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BoundingBox</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">xmin</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">ymin</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">xmax</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">ymax</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="k">def</span> <span class="nf">bbox_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="s2">&quot;mpath.Path&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBox</span><span class="p">:</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">vertices</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BoundingBox</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">shift</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="s2">&quot;mpath.Path&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;mpath.Path&quot;</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">transformed</span><span class="p">(</span><span class="n">mtransform</span><span class="o">.</span><span class="n">Affine2D</span><span class="p">()</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">draw_peak_path</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="s2">&quot;maxes.Axes&quot;</span><span class="p">,</span>
+    <span class="n">peak_path</span><span class="p">:</span> <span class="s2">&quot;PeakPath&quot;</span><span class="p">,</span>
+    <span class="n">scan</span><span class="p">:</span> <span class="s1">&#39;ScanBase&#39;</span><span class="p">,</span>
+    <span class="n">peak_line_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seq_line_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">text_prop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;mtext.FontProperties&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vertical_shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">peak_line_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">peak_line_options</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">seq_line_options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seq_line_options</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">peak_line_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;linewidth&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">peak_line_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
+    <span class="n">seq_line_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;linewidth&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">seq_line_options</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compute the maximum height of peaks in the region to be annotated</span>
+    <span class="c1"># so that there is no overlap with existing peaks</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">max</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">intensity</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
+                    <span class="n">peak_path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="o">*</span> <span class="mf">1.2</span>
+    <span class="p">)</span> <span class="o">+</span> <span class="n">vertical_shift</span>
+
+    <span class="c1"># Compute the x-axis dimension aspect</span>
+    <span class="n">xlim</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">),</span>
+        <span class="nb">max</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># Compute the y-axis dimension aspect</span>
+    <span class="n">ylim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scan</span><span class="o">.</span><span class="n">base_peak</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">()</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+
+    <span class="c1"># Create an baseline scaling transformation for the text</span>
+    <span class="n">base_trans</span> <span class="o">=</span> <span class="n">mtransform</span><span class="o">.</span><span class="n">Affine2D</span><span class="p">()</span>
+    <span class="n">base_trans</span><span class="o">.</span><span class="n">scale</span><span class="p">((</span><span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">75</span><span class="p">,</span> <span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">25</span><span class="p">)</span>
+
+    <span class="c1"># Don&#39;t try to annotate a ladder that changes charge state that</span>
+    <span class="c1"># would involve back-tracking on the x-axis</span>
+    <span class="n">start_charge</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peak_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">start_charge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start_charge</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">charge</span>
+
+        <span class="c1"># We&#39;ll write the annotation glyph in the middle of the gap</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Create the glyph(s) for the peak pair annotation at unit-scale</span>
+        <span class="c1"># and then scale it up using the base transformation, then center it</span>
+        <span class="c1"># at 0 again.</span>
+        <span class="n">tpath</span> <span class="o">=</span> <span class="n">mtext</span><span class="o">.</span><span class="n">TextPath</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">edge</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">prop</span><span class="o">=</span><span class="n">text_prop</span><span class="p">)</span>
+        <span class="n">tpath</span> <span class="o">=</span> <span class="n">tpath</span><span class="o">.</span><span class="n">transformed</span><span class="p">(</span><span class="n">base_trans</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">!=</span> <span class="n">start_charge</span>
+            <span class="ow">or</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">!=</span> <span class="n">start_charge</span>
+        <span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Move the annotation glyph(s) to the midpoint between the two peaks</span>
+        <span class="c1"># at the sequence line.</span>
+        <span class="n">tpath</span> <span class="o">=</span> <span class="n">shift</span><span class="p">(</span><span class="n">tpath</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">upper</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">)</span>
+
+        <span class="c1"># Check whether our annotation glyph(s) is too wide for the gap between</span>
+        <span class="c1"># the two peaks. If it is too large, draw it above the main line to avoid</span>
+        <span class="c1"># over-plotting.</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">bbox_path</span><span class="p">(</span><span class="n">tpath</span><span class="p">)</span>
+        <span class="n">shift_up</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.3</span>
+        <span class="k">if</span> <span class="n">shift_up</span><span class="p">:</span>
+            <span class="n">tpath</span> <span class="o">=</span> <span class="n">shift</span><span class="p">(</span><span class="n">tpath</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">mpatch</span><span class="o">.</span><span class="n">PathPatch</span><span class="p">(</span><span class="n">tpath</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">))</span>
+
+        <span class="c1"># If this is the first peak pair, draw the starting point vertical</span>
+        <span class="c1"># peak line.</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">upper</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">],</span>
+                <span class="o">**</span><span class="n">peak_line_options</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Draw the next vertical peak line</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">upper</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">peak_line_options</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Draw the horizontal line between the two peaks. If the annotation</span>
+        <span class="c1"># was shifted up, draw a single horizontal line connecting the two</span>
+        <span class="c1"># peaks.</span>
+        <span class="k">if</span> <span class="n">shift_up</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">upper</span><span class="p">,</span> <span class="n">upper</span><span class="p">],</span>
+                <span class="o">**</span><span class="n">seq_line_options</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Otherwise, draw a line from the starting peak to the annotation glyph</span>
+            <span class="c1"># with some padding.</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">xmin</span> <span class="o">-</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)],</span>
+                <span class="p">[</span><span class="n">upper</span><span class="p">,</span> <span class="n">upper</span><span class="p">],</span>
+                <span class="o">**</span><span class="n">seq_line_options</span>
+            <span class="p">)</span>
+            <span class="c1"># And then draw another line from the other side of the glyph with some</span>
+            <span class="c1"># padding to the second peak.</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">xmax</span> <span class="o">+</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">),</span> <span class="n">edge</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">upper</span><span class="p">,</span> <span class="n">upper</span><span class="p">],</span>
+                <span class="o">**</span><span class="n">seq_line_options</span>
+            <span class="p">)</span>
 </pre></div>
 
       </div>

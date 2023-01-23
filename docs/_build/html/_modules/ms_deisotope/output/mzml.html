@@ -32,7 +32,7 @@
         
         
   <h1>Source code for ms_deisotope.output.mzml</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Writing mzML</span>
 <span class="sd">------------</span>
 
@@ -68,17 +68,22 @@
 
 <span class="sd">        writer.close()</span>
 
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">array</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-
 <span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ContextManager</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">OrderedDict</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.instrument_components</span> <span class="kn">import</span> <span class="n">InstrumentInformation</span><span class="p">,</span> <span class="n">InstrumentModel</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.activation</span> <span class="kn">import</span> <span class="n">ActivationInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">IsolationWindow</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.file_information</span> <span class="kn">import</span> <span class="n">FileContent</span><span class="p">,</span> <span class="n">FileInformation</span><span class="p">,</span> <span class="n">SourceFile</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.base</span> <span class="kn">import</span> <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ScanBase</span><span class="p">,</span> <span class="n">ScanBunch</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.loader</span> <span class="kn">import</span> <span class="n">ScanFileMetadataBase</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
@@ -106,12 +111,12 @@
     <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span>
     <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Software</span><span class="p">,</span> <span class="n">software_name</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Software</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mzml</span> <span class="kn">import</span> <span class="n">MzMLLoader</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">Generic3DIonMobilityFrameSource</span><span class="p">,</span> <span class="n">RawDataArrays3D</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">FrameBase</span><span class="p">,</span> <span class="n">Generic3DIonMobilityFrameSource</span><span class="p">,</span> <span class="n">RawDataArrays3D</span><span class="p">,</span> <span class="n">ProcessedIonMobilityFrame</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.feature_map</span> <span class="kn">import</span> <span class="n">ExtendedScanIndex</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_fit</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeature</span><span class="p">,</span> <span class="n">DeconvolutedLCMSFeatureTreeNode</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_fit</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeature</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_map</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeatureMap</span><span class="p">,</span> <span class="n">LCMSFeature</span><span class="p">,</span> <span class="n">LCMSFeatureMap</span>
 
 
@@ -120,8 +125,7 @@
 
 
 <span class="k">def</span> <span class="nf">_param</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Term</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&#39;&#39;&#39;Try to coerce a name into something we can convert into a controlled</span>
-<span class="sd">    vocabulary parameter in :mod:`psims`.</span>
+    <span class="sd">&quot;&quot;&quot;Try to coerce a name into something we can convert into a controlled vocabulary parameter in :mod:`psims`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -132,7 +136,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    identifier : :class:`str`</span>
 <span class="sd">        The converted identifier</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">accession</span>
@@ -145,9 +149,10 @@
 
 
 <span class="k">class</span> <span class="nc">SpectrumDescription</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;A helper class to calculate properties of a spectrum derived from</span>
-<span class="sd">    their peak data or raw signal</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;A helper class to calculate properties of a spectrum derived from their peak data or raw signal.&quot;&quot;&quot;</span>
+
+    <span class="n">descriptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">Sequence</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">attribs</span> <span class="ow">or</span> <span class="p">[])</span>
@@ -164,8 +169,8 @@
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add the descriptor `desc` to the collection</span>
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desc</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add the descriptor `desc` to the collection.</span>
 
 <span class="sd">        Adds a descriptor which conforms to any of :mod:`psims`&#39;s</span>
 <span class="sd">        cvParam specification patterns.</span>
@@ -189,8 +194,7 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_peak_set</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">peak_list</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculate the spectrum&#39;s descriptors from a :class:`Sequence` of :class:`~.PeakLike`</span>
-<span class="sd">        objects.</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the spectrum&#39;s descriptors from a :class:`Sequence` of :class:`~.PeakLike` objects.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -218,6 +222,7 @@
         <span class="n">descriptors</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;total ion current&quot;</span><span class="p">,</span>
             <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak_list</span><span class="p">),</span>
+            <span class="s2">&quot;unit_name&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="o">.</span><span class="n">DEFAULT_INTENSITY_UNIT</span>
         <span class="p">})</span>
         <span class="n">peaks_mz_order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peak_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -235,8 +240,7 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_arrays</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">arrays</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculate the spectrum&#39;s descriptors from a :class:`RawDataArrays`</span>
-<span class="sd">        instance.</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the spectrum&#39;s descriptors from a :class:`RawDataArrays` instance.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -265,6 +269,7 @@
         <span class="n">descriptors</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;total ion current&quot;</span><span class="p">,</span>
             <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">arrays</span><span class="o">.</span><span class="n">intensity</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+            <span class="s2">&quot;unit_name&quot;</span><span class="p">:</span> <span class="n">writer</span><span class="o">.</span><span class="n">DEFAULT_INTENSITY_UNIT</span>
         <span class="p">})</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">descriptors</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
@@ -348,6 +353,35 @@
 
     <span class="n">_format_conversion_term</span> <span class="o">=</span> <span class="s2">&quot;Conversion to mzML&quot;</span>
 
+    <span class="n">handle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">io</span><span class="o">.</span><span class="n">IOBase</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+    <span class="n">n_spectra</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">data_encoding</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">]]</span>
+    <span class="n">writer</span><span class="p">:</span> <span class="s2">&quot;writer.MzMLWriter&quot;</span>
+    <span class="n">deconvoluted</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">sample_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">indexer</span><span class="p">:</span> <span class="n">ExtendedScanIndex</span>
+    <span class="n">sample_run</span><span class="p">:</span> <span class="n">SampleRun</span>
+
+    <span class="n">file_contents_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FileContent</span><span class="p">]</span>
+    <span class="n">software_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Software</span><span class="p">]</span>
+    <span class="n">source_file_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SourceFile</span><span class="p">]</span>
+    <span class="n">data_processing_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">data_transformation</span><span class="o">.</span><span class="n">DataProcessingInformation</span><span class="p">]</span>
+    <span class="n">instrument_configuration_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">InstrumentInformation</span><span class="p">]</span>
+    <span class="n">sample_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SampleRun</span><span class="p">]</span>
+    <span class="n">processing_parameters</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">data_transformation</span><span class="o">.</span><span class="n">ProcessingMethod</span><span class="p">]</span>
+
+    <span class="n">_run_tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContextManager</span><span class="p">]</span>
+    <span class="n">_spectrum_list_tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContextManager</span><span class="p">]</span>
+    <span class="n">_chromatogram_list_tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ContextManager</span><span class="p">]</span>
+
+    <span class="n">_this_software</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Software</span><span class="p">]</span>
+
+    <span class="n">_include_software_entry</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">_has_started_writing_spectra</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">_should_close</span><span class="p">:</span> <span class="nb">bool</span>
+
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">n_spectra</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e5</span><span class="p">),</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">build_extra_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">data_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_software_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -411,8 +445,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">processing_parameters</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="MzMLSerializer.add_instrument_configuration"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">add_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">:</span> <span class="n">InstrumentInformation</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add an :class:`~.InstrumentInformation` object to</span>
-<span class="sd">        the output document.</span>
+        <span class="sd">&quot;&quot;&quot;Add an :class:`~.InstrumentInformation` object to the output document.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -445,14 +478,19 @@
                 <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;instrument serial number&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">instrument_serial</span>
             <span class="p">})</span>
+
+        <span class="n">conf_software</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">software</span>
+        <span class="k">if</span> <span class="n">conf_software</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conf_software</span><span class="p">,</span> <span class="n">Software</span><span class="p">):</span>
+                <span class="n">conf_software</span> <span class="o">=</span> <span class="n">conf_software</span><span class="o">.</span><span class="n">id</span>
         <span class="n">config_element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">InstrumentConfiguration</span><span class="p">(</span>
             <span class="n">configuration</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">component_list</span><span class="p">,</span>
             <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
-            <span class="n">software_reference</span><span class="o">=</span><span class="n">configuration</span><span class="o">.</span><span class="n">software</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">configuration</span><span class="o">.</span><span class="n">software</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">software_reference</span><span class="o">=</span><span class="n">conf_software</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_element</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.add_software"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_software">[docs]</a>    <span class="k">def</span> <span class="nf">add_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">software_description</span><span class="p">):</span>
+<div class="viewcode-block" id="MzMLSerializer.add_software"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_software">[docs]</a>    <span class="k">def</span> <span class="nf">add_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">software_description</span><span class="p">:</span> <span class="n">Software</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a :class:`~.Software` object to the output document.</span>
 
 <span class="sd">        Parameters</span>
@@ -462,15 +500,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">software_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">software_description</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.add_file_information"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_file_information">[docs]</a>    <span class="k">def</span> <span class="nf">add_file_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_information</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Add the information of a :class:`~.FileInformation` to the</span>
-<span class="sd">        output document.</span>
+<div class="viewcode-block" id="MzMLSerializer.add_file_information"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_file_information">[docs]</a>    <span class="k">def</span> <span class="nf">add_file_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_information</span><span class="p">:</span> <span class="n">FileInformation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add the information of a :class:`~.FileInformation` to the output document.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        file_information: :class:`~.FileInformation`</span>
 <span class="sd">            The information to add.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">file_information</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
@@ -478,9 +515,8 @@
         <span class="k">for</span> <span class="n">source_file</span> <span class="ow">in</span> <span class="n">file_information</span><span class="o">.</span><span class="n">source_files</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_source_file</span><span class="p">(</span><span class="n">source_file</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.add_file_contents"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_file_contents">[docs]</a>    <span class="k">def</span> <span class="nf">add_file_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_contents</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a key to the resulting :obj:`&lt;fileDescription&gt;`</span>
-<span class="sd">        of the output document.</span>
+<div class="viewcode-block" id="MzMLSerializer.add_file_contents"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_file_contents">[docs]</a>    <span class="k">def</span> <span class="nf">add_file_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_contents</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">FileContent</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Add a key to the resulting :obj:`&lt;fileDescription&gt;` of the output document.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -489,9 +525,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_contents_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_contents</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">remove_file_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Remove a key to the resulting :obj:`&lt;fileDescription&gt;`</span>
-<span class="sd">        of the output document.</span>
+    <span class="k">def</span> <span class="nf">remove_file_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">FileContent</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a key to the resulting :obj:`&lt;fileDescription&gt;` of the output document.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -520,8 +555,8 @@
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_contents_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MzMLSerializer.add_source_file"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_source_file">[docs]</a>    <span class="k">def</span> <span class="nf">add_source_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add the :class:`~.SourceFile` to the output document</span>
+<div class="viewcode-block" id="MzMLSerializer.add_source_file"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_source_file">[docs]</a>    <span class="k">def</span> <span class="nf">add_source_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">:</span> <span class="n">SourceFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add the :class:`~.SourceFile` to the output document.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -547,11 +582,12 @@
             <span class="n">unwrapped</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source_file</span><span class="o">.</span><span class="n">file_format</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.add_data_processing"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_data_processing">[docs]</a>    <span class="k">def</span> <span class="nf">add_data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_processing_description</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`</span>
-<span class="sd">        to the output document as a new :obj:`&lt;dataProcessing&gt;` entry describing one or</span>
-<span class="sd">        more :obj:`&lt;processingMethod&gt;`s for a single referenced :class:`~.Software`</span>
-<span class="sd">        instance.</span>
+<div class="viewcode-block" id="MzMLSerializer.add_data_processing"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_data_processing">[docs]</a>    <span class="k">def</span> <span class="nf">add_data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_processing_description</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">data_transformation</span><span class="o">.</span><span class="n">DataProcessingInformation</span><span class="p">,</span>
+                                                                     <span class="n">data_transformation</span><span class="o">.</span><span class="n">ProcessingMethod</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`.</span>
+
+<span class="sd">        Creates a new :obj:`&lt;dataProcessing&gt;` entry describing one or more :obj:`&lt;processingMethod&gt;`s</span>
+<span class="sd">        for a single referenced :class:`~.Software` instance.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -595,9 +631,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_processing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_processing_description</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.add_processing_parameter"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter">[docs]</a>    <span class="k">def</span> <span class="nf">add_processing_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Add a new processing method to the writer&#39;s own</span>
-<span class="sd">        :obj:`&lt;dataProcessing&gt;` element.</span>
+<div class="viewcode-block" id="MzMLSerializer.add_processing_parameter"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter">[docs]</a>    <span class="k">def</span> <span class="nf">add_processing_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a new processing method to the writer&#39;s own :obj:`&lt;dataProcessing&gt;` element.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -608,12 +643,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processing_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span></div>
 
-    <span class="k">def</span> <span class="nf">add_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">SampleRun</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">copy_metadata_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`</span>
-<span class="sd">        into the metadata of the file to be written</span>
+    <span class="k">def</span> <span class="nf">copy_metadata_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">ScanFileMetadataBase</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase` into the metadata.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -751,7 +785,7 @@
     <span class="k">def</span> <span class="nf">has_started_writing_spectra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_started_writing_spectra</span>
 
-    <span class="k">def</span> <span class="nf">_pack_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activation_information</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pack_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activation_information</span><span class="p">:</span> <span class="n">ActivationInformation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Pack :class:`~.ActivationInformation` into a :class:`dict` structure</span>
 <span class="sd">        which that :class:`~psims.mzml.writer.MzMLWriter` expects.</span>
 
@@ -811,8 +845,9 @@
             <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">params</span>
 
-    <span class="k">def</span> <span class="nf">_pack_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_information</span><span class="p">,</span> <span class="n">activation_information</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                    <span class="n">isolation_window</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pack_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_information</span><span class="p">:</span> <span class="n">PrecursorInformation</span><span class="p">,</span>
+                                    <span class="n">activation_information</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActivationInformation</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">isolation_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IsolationWindow</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Repackage the :class:`~.PrecursorInformation`, :class:`~.ActivationInformation`,</span>
 <span class="sd">        and :class:~.IsolationWindow` into the nested :class:`dict` structure that</span>
 <span class="sd">        :class:`~psims.mzml.writer.MzMLWriter` expects.</span>
@@ -855,9 +890,15 @@
             <span class="c1"># This implicitly captures ion mobility which is stored as an annotation key-value pair.</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">_param</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-                <span class="n">package</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-                    <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
-                <span class="p">})</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="n">package</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                            <span class="n">key</span><span class="p">:</span> <span class="n">v</span>
+                        <span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">package</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+                    <span class="p">})</span>
             <span class="k">if</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">coisolation</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">coisolation</span><span class="p">:</span>
                     <span class="n">package</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
@@ -880,7 +921,7 @@
             <span class="p">}</span>
         <span class="k">return</span> <span class="n">package</span>
 
-    <span class="k">def</span> <span class="nf">_prepare_extra_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_prepare_extra_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
         <span class="n">extra_arrays</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
@@ -899,7 +940,7 @@
                 <span class="n">extra_arrays</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">data_arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
         <span class="k">return</span> <span class="n">extra_arrays</span>
 
-    <span class="k">def</span> <span class="nf">_get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
         <span class="n">skip</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filter string&#39;</span><span class="p">,</span> <span class="s1">&#39;base peak intensity&#39;</span><span class="p">,</span> <span class="s1">&#39;base peak m/z&#39;</span><span class="p">,</span> <span class="s1">&#39;lowest observed m/z&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;highest observed m/z&#39;</span><span class="p">,</span> <span class="s1">&#39;total ion current&#39;</span><span class="p">,</span> <span class="p">}</span>
         <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
@@ -911,7 +952,7 @@
             <span class="p">})</span>
         <span class="k">return</span> <span class="n">annotations</span>
 
-    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">):</span>
         <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
             <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
@@ -941,9 +982,8 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">centroided</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
                 <span class="n">charge_array</span><span class="p">,</span> <span class="n">other_arrays</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MzMLSerializer.save_scan"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.save_scan">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write a :class:`~.Scan` to the output document</span>
-<span class="sd">        as a collection of related :obj:`&lt;spectrum&gt;` tags.</span>
+<div class="viewcode-block" id="MzMLSerializer.save_scan"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.save_scan">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a :class:`~.Scan` to the output document as a collection of related :obj:`&lt;spectrum&gt;` tags.</span>
 
 <span class="sd">        .. note::</span>
 
@@ -1018,9 +1058,8 @@
         <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_include_in_index&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">add_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MzMLSerializer.save_scan_bunch"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Write a :class:`~.ScanBunch` to the output document</span>
-<span class="sd">        as a collection of related :obj:`&lt;spectrum&gt;` tags.</span>
+<div class="viewcode-block" id="MzMLSerializer.save_scan_bunch"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">:</span> <span class="n">ScanBunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a :class:`~.ScanBunch` to the output document as a collection of related :obj:`&lt;spectrum&gt;` tags.</span>
 
 <span class="sd">        .. note::</span>
 
@@ -1043,9 +1082,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">add_scan_bunch</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">extract_scan_event_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Package :class:`~.ScanAcquisitionInformation` into a pair of</span>
-<span class="sd">        :class:`list`s that :class:`~psims.mzml.writer.MzMLWriter` expects.</span>
+    <span class="k">def</span> <span class="nf">extract_scan_event_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Package :class:`~.ScanAcquisitionInformation` into a pair of :class:`list`s that :class:`~psims.mzml.writer.MzMLWriter` expects.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1078,7 +1116,7 @@
             <span class="n">scan_window_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">scan_event</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scan_parameters</span><span class="p">,</span> <span class="n">scan_window_list</span>
 
-    <span class="k">def</span> <span class="nf">save_chromatogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chromatogram_dict</span><span class="p">,</span> <span class="n">chromatogram_type</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">save_chromatogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chromatogram_dict</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">chromatogram_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">time_array</span><span class="p">,</span> <span class="n">intensity_array</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">chromatogram_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write_chromatogram</span><span class="p">(</span>
             <span class="n">time_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">),</span>
@@ -1141,8 +1179,7 @@
             <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This method is no longer needed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;A method that is no longer needed.&quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
 <div class="viewcode-block" id="MzMLSerializer.close"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1291,9 +1328,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parse_peaks</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decode_binary</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns information about the precursor ion,</span>
-<span class="sd">        if any, that this scan was derived form.</span>
+    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrecursorInformation</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Returns information about the precursor ion, if any, that this scan was derived form.</span>
 
 <span class="sd">        Returns `None` if this scan has no precursor ion</span>
 
@@ -1321,7 +1357,10 @@
             <span class="n">coisolation_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">coisolation_params</span><span class="p">]</span>
         <span class="n">coisolation</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">coisolation_params</span><span class="p">:</span>
-            <span class="n">mass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">coisolation</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">CoIsolation</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">mass</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">intensity</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">charge</span><span class="p">)))</span>
         <span class="n">precursor</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation</span>
@@ -1392,7 +1431,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">get_scan_header_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_scan_header_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanBase</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id. If the</span>
 <span class="sd">        scan object is still bound and in memory somewhere, a reference</span>
 <span class="sd">        to that same object will be returned. Otherwise, a new object will</span>
@@ -1417,8 +1456,7 @@
 
 
 <div class="viewcode-block" id="ProcessedMzMLLoader"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.ProcessedMzMLLoader">[docs]</a><span class="k">class</span> <span class="nc">ProcessedMzMLLoader</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="n">MzMLLoader</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">LCMSMSQueryInterfaceMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Extends :class:`.MzMLLoader` to support deserializing preprocessed data</span>
-<span class="sd">    and to take advantage of additional indexing information.</span>
+    <span class="sd">&quot;&quot;&quot;Extends :class:`.MzMLLoader` to support deserializing preprocessed data and to provide indexing information.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -1485,7 +1523,23 @@
     <span class="n">has_c</span> <span class="o">=</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">extracted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">extracted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">:</span> <span class="n">LCMSFeatureMap</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert a :class:`~.LCMSFeatureMap` into a set of parallel arrays.</span>
+
+<span class="sd">    The output arrays are ordered first m/z and ion mobility.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    features : LCMSFeatureMap</span>
+<span class="sd">        The ion mobility features to decompose.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mz_array : np.ndarray</span>
+<span class="sd">    intensity_array : np.ndarray</span>
+<span class="sd">    ion_mobility_array : np.ndarray</span>
+<span class="sd">    feature_id_array : np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
     <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
@@ -1506,7 +1560,22 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">mz_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">ion_mobility_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">feature_id_array</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
 
 
-<span class="k">def</span> <span class="nf">deserialize_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">,</span> <span class="n">ion_mobility_array_name</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">deserialize_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+                         <span class="n">ion_mobility_array_name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LCMSFeatureMap</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Convert a dictionary of arrays into a :class:`~.LCMSFeatureMap.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scan_dict : Dict[str, np.ndarray]</span>
+<span class="sd">        The arrays defining the feature map.</span>
+<span class="sd">    ion_mobility_array_name : str</span>
+<span class="sd">        The array to read for the ion mobility dimension.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    LCMSFeatureMap</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
     <span class="n">drift_time_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="n">ion_mobility_array_name</span><span class="p">]</span>
@@ -1529,7 +1598,26 @@
     <span class="k">return</span> <span class="n">feature_map</span>
 
 
-<span class="k">def</span> <span class="nf">deconvoluted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">deconvoluted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">:</span> <span class="n">DeconvolutedLCMSFeatureMap</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Convert a :class:`~.DeconvolutedLCMSFeatureMap` into a set of parallel arrays.</span>
+
+<span class="sd">    The output arrays are ordered first m/z and ion mobility.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    features : DeconvolutedLCMSFeatureMap</span>
+<span class="sd">        The ion mobility features to decompose.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mz_array : np.ndarray</span>
+<span class="sd">    intensity_array : np.ndarray</span>
+<span class="sd">    charge_array : np.ndarray</span>
+<span class="sd">    score_array : np.ndarray</span>
+<span class="sd">    ion_mobility_array : np.ndarray</span>
+<span class="sd">    envelope_array : np.ndarray</span>
+<span class="sd">    feature_id_array : np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
     <span class="n">charge_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
@@ -1570,7 +1658,22 @@
             <span class="n">feature_id_array</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
 
 
-<span class="k">def</span> <span class="nf">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">,</span> <span class="n">ion_mobility_array_name</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+                                      <span class="n">ion_mobility_array_name</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeconvolutedLCMSFeatureMap</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Convert a dictionary of arrays into a :class:`~.DeconvolutedLCMSFeatureMap.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scan_dict : Dict[str, np.ndarray]</span>
+<span class="sd">        The arrays defining the feature map.</span>
+<span class="sd">    ion_mobility_array_name : str</span>
+<span class="sd">        The array to read for the ion mobility dimension.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DeconvolutedLCMSFeatureMap</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">envelopes</span> <span class="o">=</span> <span class="n">decode_envelopes</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">[</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">])</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
@@ -1600,7 +1703,7 @@
 
 
 <span class="k">class</span> <span class="nc">_IonMobility3DSerializerBase</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">FrameBase</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
         <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
             <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1648,6 +1751,12 @@
 
 
 <span class="k">class</span> <span class="nc">IonMobilityAware3DMzMLSerializer</span><span class="p">(</span><span class="n">_IonMobility3DSerializerBase</span><span class="p">,</span> <span class="n">MzMLSerializer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An mzML writer that knows how to serialize 3D ion mobility spectra.</span>
+
+<span class="sd">    Instead of writing :class:`~.ScanBase` objects, this type writes :class:`~.FrameBase`</span>
+<span class="sd">    objects. It is otherwise identical to :class:`MzMLSerializer`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">default_data_encoding</span> <span class="o">=</span> <span class="n">MzMLSerializer</span><span class="o">.</span><span class="n">default_data_encoding</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">default_data_encoding</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
         <span class="s2">&quot;feature id array&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
@@ -1655,8 +1764,13 @@
 
 
 <span class="k">class</span> <span class="nc">ProcessedGeneric3DIonMobilityFrameSource</span><span class="p">(</span><span class="n">Generic3DIonMobilityFrameSource</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">_make_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">frame</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedGeneric3DIonMobilityFrameSource</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_frame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;A wrapper around a processed mzML file reader that properly reads deconvoluted IM-MS frames.</span>
+
+<span class="sd">    Reads :class:`~.ProcessedIonMobilityFrame` objects from the underlying scan source.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_make_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessedIonMobilityFrame</span><span class="p">:</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_make_frame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">if</span> <span class="s1">&#39;feature id array&#39;</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;charge array&#39;</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
                 <span class="n">frame</span><span class="o">.</span><span class="n">deconvoluted_features</span> <span class="o">=</span> <span class="n">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>

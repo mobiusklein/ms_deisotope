@@ -143,6 +143,10 @@ will also be reflected by <a class="reference internal" href="#ms_deisotope.scor
 </div></blockquote>
 <div class="section" id="minimizing-fitters">
 <h3>Minimizing Fitters<a class="headerlink" href="#minimizing-fitters" title="Permalink to this headline">¶</a></h3>
+<p>Minimizing envelope scoring methods aim to minimize some “fit error” criterion, and discard solutions which don’t fit well.
+They tend to be quite sensitive and can be independent of the magnitude of the signal. This also means they do not handle
+detector noise or interference well. These methods can work well when targeting a list of compositions instead of exhaustively
+deconvolving an entire spectrum.</p>
 <blockquote>
 <div><dl class="py class">
 <dt class="sig sig-object py" id="ms_deisotope.scoring.GTestFitter">
@@ -180,12 +184,34 @@ is the ith theoretical peak intensity</p>
 </div>
 <div class="section" id="maximizing-fitters">
 <h3>Maximizing Fitters<a class="headerlink" href="#maximizing-fitters" title="Permalink to this headline">¶</a></h3>
+<p>Maximizing envelope scoring methods aim to maximize some “goodness-of-fit” criterion, and discards solutions that don’t score
+highly enough. While not universally true, many of the maximizing scoring functions here are a function of the magnitude of
+the signal, which means that the threshold selected is signal magnitude dependent. This has the advantage of making the score
+threshold also a detector noise filter, but the threshold would now be instrument type-dependent.</p>
+<p>A maximizing fitter with a well-chosen threshold is good at exhaustively deconvoluting a spectrum because it can more easily
+eliminate bad fits, but as isotopic pattern becomes more homogenous around the base peak of the isotopic pattern, they can more
+easily make mistakes identifying the monoisotopic peak. This is where <a class="reference internal" href="#ms_deisotope.scoring.MSDeconVFitter" title="ms_deisotope.scoring.MSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">MSDeconVFitter</span></code></a> is less accurate than <a class="reference internal" href="#ms_deisotope.scoring.PenalizedMSDeconVFitter" title="ms_deisotope.scoring.PenalizedMSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">PenalizedMSDeconVFitter</span></code></a>,
+albeit neither is perfect.</p>
 <blockquote>
 <div><dl class="py class">
 <dt class="sig sig-object py" id="ms_deisotope.scoring.MSDeconVFitter">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">MSDeconVFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass_error_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.MSDeconVFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of the scoring function used in <cite>MSDeconV</cite></p>
-<p class="rubric">References</p>
+<div class="math notranslate nohighlight">
+\begin{split}
+    s_{mz}(e, t) &amp;= \begin{cases}
+        1 - \frac{\|mz(e) - mz(t)\|}{d} &amp; \text{if } \|mz(e) - mz(t)\| &lt; d,\\
+        0 &amp; \text{otherwise}
+    \end{cases}\\
+
+    s_{int}(e, t) &amp;= \begin{cases}
+        1 - \frac{int(t) - int(e)}{int(e)} &amp; \text{if } int(e) &lt; int(t) \text{ and } \frac{int(t) - int(e)}{int(e)} \le 1, \\
+        \sqrt{1 - \frac{int(e) - int(t)}{int(t)}} &amp; \text{if } int(e) \ge int(t) \text{ and } \frac{int(e) - int(t)}{int(t)} \le 1,\\
+        0 &amp; \text{otherwise}
+    \end{cases}\\
+
+    \text{S}(e, t) &amp;= \sqrt{int(t)}\times s_{mz}(e,t) \times s_{int}(e, t)
+\end{split}</div><p class="rubric">References</p>
 <p>Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …
 Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
 mass spectra of intact proteins: a combinatorial approach. Molecular &amp; Cellular
@@ -201,6 +227,24 @@ weighted by 1 - <code class="xref py py-attr docutils literal notranslate"><span
 \[S(e, t) = M(e, t) * (1 - G(e, t))\]</div>
 <p>where <span class="math notranslate nohighlight">\(e\)</span> is the experimental peak list and <span class="math notranslate nohighlight">\(t\)</span> is the theoretical
 peak list</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="other-fitters">
+<h3>Other Fitters<a class="headerlink" href="#other-fitters" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.scoring.FunctionScorer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">FunctionScorer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selector_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MaximizeFitSelector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.FunctionScorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a user-provided Python function or callable object to evaluate an isotopic
+envelope fit.</p>
+<p>The provided function should take two arguments, a list of experimental fitted peaks
+and a list of theoretical peaks, and return a single number as an output.</p>
+<p>Make sure to pass the right thresholds and selector types when creating an instance
+of this class that match the semantics of the provided function.</p>
+<p>While this type is available for convenience, there is considerable overhead in using
+it compared to one of the C accelerated fitters.</p>
 </dd></dl>
 
 </div></blockquote>

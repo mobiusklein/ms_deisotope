@@ -69,11 +69,10 @@ metadata that <a class="reference internal" href="#ms_deisotope.output.mzmlb.MzM
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mzmlb.</span></span><span class="sig-name descname"><span class="pre">MzMLbSerializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_spectra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deconvoluted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">build_extra_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_software_entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzmlb.html#MzMLbSerializer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_data_processing">
-<span class="sig-name descname"><span class="pre">add_data_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_processing_description</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_data_processing" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessingMethod</span></code>
-to the output document as a new <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> entry describing one or
-more <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;processingMethod&gt;`s</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">single</span> <span class="pre">referenced</span> <span class="pre">:class:`~.Software</span></code>
-instance.</p>
+<span class="sig-name descname"><span class="pre">add_data_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_processing_description</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ms_deisotope.data_source.metadata.data_transformation.DataProcessingInformation</span><span class="p"><span class="pre">,</span> </span><span class="pre">ms_deisotope.data_source.metadata.data_transformation.ProcessingMethod</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_data_processing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessingMethod</span></code>.</p>
+<p>Creates a new <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> entry describing one or more <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;processingMethod&gt;`s</span>
+<span class="pre">for</span> <span class="pre">a</span> <span class="pre">single</span> <span class="pre">referenced</span> <span class="pre">:class:`~.Software</span></code> instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_processing_description</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessingMethod</span></code>) – Data manipulation sequence to add to the document</p>
@@ -83,9 +82,8 @@ instance.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_contents">
-<span class="sig-name descname"><span class="pre">add_file_contents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_contents</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_contents" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a key to the resulting <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileDescription&gt;</span></code>
-of the output document.</p>
+<span class="sig-name descname"><span class="pre">add_file_contents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_contents</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">collections.abc.Mapping</span><span class="p"><span class="pre">,</span> </span><span class="pre">ms_deisotope.data_source.metadata.file_information.FileContent</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_contents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a key to the resulting <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileDescription&gt;</span></code> of the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>file_contents</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – The parameter to add</p>
@@ -95,9 +93,8 @@ of the output document.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_information">
-<span class="sig-name descname"><span class="pre">add_file_information</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_information</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_information" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add the information of a <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a> to the
-output document.</p>
+<span class="sig-name descname"><span class="pre">add_file_information</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_information</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><span class="pre">ms_deisotope.data_source.metadata.file_information.FileInformation</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_file_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the information of a <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a> to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>file_information</strong> (<a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a>) – The information to add.</p>
@@ -108,8 +105,7 @@ output document.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_instrument_configuration">
 <span class="sig-name descname"><span class="pre">add_instrument_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><span class="pre">ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_instrument_configuration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add an <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> object to
-the output document.</p>
+<dd><p>Add an <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> object to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>configuration</strong> (<a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a>) – The instrument configuration to add</p>
@@ -119,9 +115,8 @@ the output document.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_processing_parameter">
-<span class="sig-name descname"><span class="pre">add_processing_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_processing_parameter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a new processing method to the writer’s own
-<code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> element.</p>
+<span class="sig-name descname"><span class="pre">add_processing_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_processing_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new processing method to the writer’s own <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -134,7 +129,7 @@ the output document.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_software">
-<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_software" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">ms_deisotope.data_source.metadata.software.Software</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_software" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> object to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -145,7 +140,7 @@ the output document.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">ms_deisotope.data_source.metadata.software.Software</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> object to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -156,8 +151,8 @@ the output document.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.add_source_file">
-<span class="sig-name descname"><span class="pre">add_source_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_source_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add the <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> to the output document</p>
+<span class="sig-name descname"><span class="pre">add_source_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><span class="pre">ms_deisotope.data_source.metadata.file_information.SourceFile</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.add_source_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>source_file</strong> (<a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a>) – The source fil to add</p>
@@ -192,9 +187,8 @@ instances, dispatching to the appropriate logic.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan">
-<span class="sig-name descname"><span class="pre">save_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> to the output document
-as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
+<span class="sig-name descname"><span class="pre">save_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">ms_deisotope.data_source.scan.base.ScanBase</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> to the output document as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If no spectra have been written to the output document
@@ -214,9 +208,8 @@ no new document-level metadata can be added.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan_bunch">
-<span class="sig-name descname"><span class="pre">save_scan_bunch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the output document
-as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
+<span class="sig-name descname"><span class="pre">save_scan_bunch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.scan.base.ScanBunch"><span class="pre">ms_deisotope.data_source.scan.base.ScanBunch</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the output document as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If no spectra have been written to the output document
@@ -236,7 +229,27 @@ no new document-level metadata can be added.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.ProcessedMzMLbLoader">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mzmlb.</span></span><span class="sig-name descname"><span class="pre">ProcessedMzMLbLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_extended_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzmlb.html#ProcessedMzMLbLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzmlb.ProcessedMzMLbLoader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.ProcessedMzMLbLoader.get_index_information_by_scan_id">
+<span class="sig-name descname"><span class="pre">get_index_information_by_scan_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ms_deisotope.output.mzmlb.ProcessedMzMLbLoader.get_index_information_by_scan_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the scan description from the extended index.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ms_deisotope.output.mzmlb.ProcessedMzMLbLoader.has_index_file">
+<span class="sig-name descname"><span class="pre">has_index_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#ms_deisotope.output.mzmlb.ProcessedMzMLbLoader.has_index_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if an extended index file exists for this reader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
 
 </div>
 

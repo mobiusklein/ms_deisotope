@@ -1,0 +1,747 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms_deisotope.peak_set &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.peak_set</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.peak_set</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span> <span class="nn">brainpy</span> <span class="kn">import</span> <span class="n">mass_charge_ratio</span><span class="p">,</span> <span class="n">neutral_mass</span> <span class="k">as</span> <span class="n">calc_neutral_mass</span><span class="p">,</span> <span class="n">PROTON</span>
+
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">simple_peak</span><span class="p">,</span> <span class="n">PeakSet</span> <span class="k">as</span> <span class="n">FittedPeakSet</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network.intervals</span> <span class="kn">import</span> <span class="n">SimpleInterval</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.scoring</span> <span class="kn">import</span> <span class="n">IsotopicFitRecord</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">ppm_error</span>
+
+
+<span class="k">class</span> <span class="nc">_Index</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stores the ordered index of an object under sort by `mz` and</span>
+<span class="sd">    sort by `neutral_mass`</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mz : int</span>
+<span class="sd">        Index of this object (or its parent), ordered by mz</span>
+<span class="sd">    neutral_mass : int</span>
+<span class="sd">        Index of this object (or its parent), ordered by neutral mass</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;neutral_mass&quot;</span><span class="p">,</span> <span class="s2">&quot;mz&quot;</span><span class="p">]</span>
+
+    <span class="n">neutral_mass</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">mz</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mz</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">=</span> <span class="n">neutral_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mz</span> <span class="o">=</span> <span class="n">mz</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">|</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+
+
+<span class="n">EnvelopePair</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;EnvelopePair&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;mz&quot;</span><span class="p">,</span> <span class="s2">&quot;intensity&quot;</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Envelope</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="n">EnvelopePair</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a sequence of (mz, intensity) pairs which store peak positions</span>
+<span class="sd">    that were matched. Since these peaks may later be mutated by subtraction,</span>
+<span class="sd">    this structure stores copies of the numbers</span>
+
+<span class="sd">    Supports the Sequence protocol, and is read-only.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pairs : tuple of tuple of (float, float)</span>
+<span class="sd">        list of (mz, intensity) pairs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pairs&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pairs</span> <span class="o">=</span> <span class="p">[</span><span class="n">EnvelopePair</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">%0.4f</span><span class="s2">, </span><span class="si">%0.2f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">),)</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DeconvolutedPeak</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represent a single deconvoluted peak which represents an aggregated isotopic</span>
+<span class="sd">    pattern collapsed to its monoisotopic peak, with a known charge state</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a_to_a2_ratio : float</span>
+<span class="sd">        Ratio of intensities of A peak to A+2 peak</span>
+<span class="sd">    average_mass : float</span>
+<span class="sd">        The averaged neutral mass of the composition, the weighted average</span>
+<span class="sd">        of the envelope peaks.</span>
+<span class="sd">    charge : int</span>
+<span class="sd">        The signed charge state of the isotopic pattern</span>
+<span class="sd">    envelope : Envelope</span>
+<span class="sd">        The sequence of (mz, intensity) pairs which map to this peak</span>
+<span class="sd">    full_width_at_half_max : float</span>
+<span class="sd">        The averaged full width at half max of this isotopic pattern</span>
+<span class="sd">    index : _Index</span>
+<span class="sd">        The position of this peak in different orderings</span>
+<span class="sd">    intensity : float</span>
+<span class="sd">        The summed height of the peaks in the isotopic pattern this peak captures</span>
+<span class="sd">    most_abundant_mass : float</span>
+<span class="sd">        The neutral mass of the most abundant peak in the isotopic pattern this peak captures</span>
+<span class="sd">    mz : float</span>
+<span class="sd">        The mass-charge-ratio of the monoisotopic peak</span>
+<span class="sd">    neutral_mass : float</span>
+<span class="sd">        The neutral mass of the monoisotopic peak</span>
+<span class="sd">    score : float</span>
+<span class="sd">        An assigned value describing the quality of this peak&#39;s fit. The semantics of this score</span>
+<span class="sd">        depends upon the scoring function</span>
+<span class="sd">    signal_to_noise : float</span>
+<span class="sd">        The average signal-to-noise ratio of the peaks in the isotopic pattern this peak captures</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;neutral_mass&quot;</span><span class="p">,</span> <span class="s2">&quot;intensity&quot;</span><span class="p">,</span> <span class="s2">&quot;signal_to_noise&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;full_width_at_half_max&quot;</span><span class="p">,</span> <span class="s2">&quot;charge&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;a_to_a2_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;most_abundant_mass&quot;</span><span class="p">,</span> <span class="s2">&quot;average_mass&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="s2">&quot;mz&quot;</span><span class="p">,</span> <span class="s2">&quot;fit&quot;</span><span class="p">,</span> <span class="s2">&quot;chosen_for_msms&quot;</span><span class="p">,</span> <span class="s1">&#39;area&#39;</span>
+    <span class="p">]</span>
+
+    <span class="n">neutral_mass</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">intensity</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">signal_to_noise</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">_Index</span>
+    <span class="n">full_width_at_half_max</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">charge</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">a_to_a2_ratio</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">most_abundant_mass</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">average_mass</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">envelope</span><span class="p">:</span> <span class="n">Envelope</span>
+    <span class="n">mz</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">fit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IsotopicFitRecord</span><span class="p">]</span>
+    <span class="n">chosen_for_msms</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">area</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="p">,</span>
+                 <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">envelope</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mz</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chosen_for_msms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">area</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">_Index</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">envelope</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">envelope</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">=</span> <span class="n">neutral_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="n">intensity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span> <span class="o">=</span> <span class="n">signal_to_noise</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span> <span class="o">=</span> <span class="n">full_width_at_half_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="n">charge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span> <span class="o">=</span> <span class="n">a_to_a2_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span> <span class="o">=</span> <span class="n">most_abundant_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span> <span class="o">=</span> <span class="n">average_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span> <span class="o">=</span> <span class="n">Envelope</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mz</span> <span class="o">=</span> <span class="n">mz</span> <span class="ow">or</span> <span class="n">mass_charge_ratio</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span> <span class="o">=</span> <span class="n">fit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span> <span class="o">=</span> <span class="n">chosen_for_msms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">area</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">1e-3</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityDeconvolutedPeak</span><span class="p">(</span><span class="n">DeconvolutedPeak</span><span class="p">):</span>
+    <span class="n">drift_time</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="p">,</span>
+                 <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">envelope</span><span class="o">=</span><span class="p">(),</span> <span class="n">mz</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chosen_for_msms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">area</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">drift_time</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">IonMobilityDeconvolutedPeak</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="p">,</span>
+            <span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="p">,</span> <span class="n">average_mass</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span>
+            <span class="n">envelope</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="n">chosen_for_msms</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">=</span> <span class="n">drift_time</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">IonMobilityDeconvolutedPeak</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">IonMobilityDeconvolutedPeak</span><span class="p">,</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(a_to_a2_ratio=</span><span class="si">{self.a_to_a2_ratio}</span><span class="s2">, area=</span><span class="si">{self.area}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;average_mass=</span><span class="si">{self.average_mass}</span><span class="s2">, charge=</span><span class="si">{self.charge}</span><span class="s2">, chosen_for_msms=</span><span class="si">{self.chosen_for_msms}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;envelope=</span><span class="si">{self.envelope}</span><span class="s2">, full_width_at_half_max=</span><span class="si">{self.full_width_at_half_max}</span><span class="s2">, index=</span><span class="si">{self.index}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;intensity=</span><span class="si">{self.intensity}</span><span class="s2">, most_abundant_mass=</span><span class="si">{self.most_abundant_mass}</span><span class="s2">, mz=</span><span class="si">{self.mz}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;neutral_mass=</span><span class="si">{self.neutral_mass}</span><span class="s2">, score=</span><span class="si">{self.score}</span><span class="s2">, signal_to_noise=</span><span class="si">{self.signal_to_noise}</span><span class="s2">,&quot;</span>
+                <span class="s2">&quot;drift_time=</span><span class="si">{self.drift_time}</span><span class="s2">)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DeconvolutedPeakSolution</span><span class="p">(</span><span class="n">DeconvolutedPeak</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extends :class:`DeconvolutedPeak` to also include a reference to</span>
+<span class="sd">    the :class:`IsotopicFitRecord` instance it is derived from, and optionally an</span>
+<span class="sd">    object which the fit derives from.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fit : IsotpicFitRecord</span>
+<span class="sd">        The isotopic pattern fit used to construct this peak</span>
+<span class="sd">    solution : object</span>
+<span class="sd">        Representation of the &quot;source&quot; of the isotopic fit</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;solution&quot;</span><span class="p">,</span> <span class="s2">&quot;fit&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;neutral_mass&quot;</span><span class="p">,</span> <span class="s2">&quot;intensity&quot;</span><span class="p">,</span> <span class="s2">&quot;signal_to_noise&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;full_width_at_half_max&quot;</span><span class="p">,</span> <span class="s2">&quot;charge&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;a_to_a2_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;most_abundant_mass&quot;</span><span class="p">,</span> <span class="s2">&quot;average_mass&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="s2">&quot;mz&quot;</span><span class="p">,</span> <span class="s2">&quot;chosen_for_msms&quot;</span><span class="p">,</span> <span class="s1">&#39;area&#39;</span>
+    <span class="p">]</span>
+
+    <span class="n">solution</span><span class="p">:</span> <span class="n">Any</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solution</span> <span class="o">=</span> <span class="n">solution</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span> <span class="o">=</span> <span class="n">fit</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">solution</span>
+        <span class="k">yield</span> <span class="bp">self</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_peak</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">solution</span><span class="p">):</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">solution</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inst</span>
+
+
+<span class="k">class</span> <span class="nc">DeconvolutedPeakSet</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a collection of :class:`DeconvolutedPeak` instances under multiple orderings.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peaks : tuple of DeconvolutedPeak</span>
+<span class="sd">        Collection of peaks ordered by `neutral_mass`</span>
+<span class="sd">    _mz_ordered: tuple of DeconvolutedPeak</span>
+<span class="sd">        Collection of peaks ordered by `mz`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaks</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">peaks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the :attr:`index` of each peak in `self` and updates the</span>
+<span class="sd">        sorted order.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self: DeconvolutedPeakSet</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;neutral_mass&quot;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;mz&quot;</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">):</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">_Index</span><span class="p">()</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span><span class="p">):</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">mz</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_nearest_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">use_mz</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_get_nearest_peak</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="n">use_mz</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_get_nearest_peak</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="n">use_mz</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">has_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">use_mz</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">binary_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">mz_getter</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">binary_search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">neutral_mass_getter</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">all_peaks_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="n">neutral_mass</span> <span class="o">-</span> <span class="n">neutral_mass</span> <span class="o">*</span> <span class="n">tolerance</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="n">neutral_mass</span> <span class="o">+</span> <span class="n">neutral_mass</span> <span class="o">*</span> <span class="n">tolerance</span>
+        <span class="n">lo_peak</span><span class="p">,</span> <span class="n">lo_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_nearest_peak</span><span class="p">(</span><span class="n">lo</span><span class="p">)</span>
+        <span class="n">hi_peak</span><span class="p">,</span> <span class="n">hi_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_nearest_peak</span><span class="p">(</span><span class="n">hi</span><span class="p">)</span>
+        <span class="n">lo_ix</span> <span class="o">=</span> <span class="n">lo_peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">neutral_mass</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ppm_error</span><span class="p">(</span><span class="n">lo_peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">lo_ix</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">hi_ix</span> <span class="o">=</span> <span class="n">hi_peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ppm_error</span><span class="p">(</span><span class="n">hi_peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">hi_ix</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">lo_ix</span><span class="p">:</span><span class="n">hi_ix</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;DeconvolutedPeakSet </span><span class="si">%d</span><span class="s2"> Peaks&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">[</span><span class="n">item</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">peaks</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">peaks</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">between</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">collecting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_mz</span><span class="p">:</span>
+            <span class="n">getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;neutral_mass&quot;</span><span class="p">)</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;mz&quot;</span><span class="p">)</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">collecting</span> <span class="ow">and</span> <span class="n">getter</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">m1</span><span class="p">:</span>
+                <span class="n">collecting</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">collecting</span> <span class="ow">and</span> <span class="n">getter</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">m2</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">collecting</span><span class="p">:</span>
+                <span class="n">acc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span><span class="o">.</span><span class="n">_reindex</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="merge"><a class="viewcode-back" href="../../deconvolution/peaks.html#ms_deisotope.peak_set.merge">[docs]</a><span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="n">peaks_a</span><span class="p">,</span> <span class="o">*</span><span class="n">peaks_b</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Combine two :class:`DeconvolutedPeakSet` objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peaks_a: :class:`DeconvolutedPeakSet`</span>
+<span class="sd">    peaks_b: :class:`DeconvolutedPeakSet`</span>
+<span class="sd">    copy: bool</span>
+<span class="sd">        Whether or not to copy the peaks first. If not,</span>
+<span class="sd">        the two input peak sets should not be used again</span>
+<span class="sd">        as their indices will have been corrupted.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`DeconvolutedPeakSet`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">copy</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">peaks_a</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="n">peaks</span> <span class="o">+=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peaks_a</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">peaks_b</span><span class="p">:</span>
+            <span class="n">peaks</span> <span class="o">+=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">b</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">peaks_a</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">peaks_b</span><span class="p">:</span>
+            <span class="n">peaks</span> <span class="o">+=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">tp</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">peaks</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">peaks</span></div>
+
+
+<span class="n">mz_getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">&#39;mz&#39;</span><span class="p">)</span>
+<span class="n">neutral_mass_getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;neutral_mass&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_nearest_peak</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+
+    <span class="n">tol</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;mz&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">use_mz</span> <span class="k">else</span> <span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;neutral_mass&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">sweep</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+        <span class="n">best_error</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="n">best_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="n">lo</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">getter</span><span class="p">(</span><span class="n">peaklist</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">neutral_mass</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">err</span> <span class="o">&lt;</span> <span class="n">best_error</span><span class="p">:</span>
+                <span class="n">best_error</span> <span class="o">=</span> <span class="n">err</span>
+                <span class="n">best_index</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">return</span> <span class="n">peaklist</span><span class="p">[</span><span class="n">best_index</span><span class="p">],</span> <span class="n">best_error</span>
+
+    <span class="k">def</span> <span class="nf">binsearch</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sweep</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">+</span> <span class="n">lo</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">getter</span><span class="p">(</span><span class="n">peaklist</span><span class="p">[</span><span class="n">mid</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">neutral_mass</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sweep</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="n">neutral_mass</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">binsearch</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">binsearch</span><span class="p">(</span><span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">binsearch</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_sweep_solution</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">&#39;neutral_mass&#39;</span><span class="p">)):</span>
+
+    <span class="n">best_index</span> <span class="o">=</span> <span class="n">mid</span>
+    <span class="n">best_error</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">mid</span><span class="p">:</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">mid</span> <span class="o">-</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">abs_error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ppm_error</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">getter</span><span class="p">(</span><span class="n">target</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">abs_error</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">abs_error</span> <span class="o">&lt;</span> <span class="n">best_error</span><span class="p">:</span>
+                <span class="n">best_index</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">i</span>
+                <span class="n">best_error</span> <span class="o">=</span> <span class="n">abs_error</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">mid</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">mid</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">abs_error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ppm_error</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">getter</span><span class="p">(</span><span class="n">target</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">abs_error</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">abs_error</span> <span class="o">&lt;</span> <span class="n">best_error</span><span class="p">:</span>
+                <span class="n">best_index</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="n">i</span>
+                <span class="n">best_error</span> <span class="o">=</span> <span class="n">abs_error</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">best_error</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">array</span><span class="p">[</span><span class="n">best_index</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">binary_search</span><span class="p">(</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">&#39;neutral_mass&#39;</span><span class="p">)):</span>
+
+    <span class="n">lo</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_set</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="n">hi</span> <span class="o">!=</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">+</span> <span class="n">lo</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">found_peak</span> <span class="o">=</span> <span class="n">peak_set</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span>
+        <span class="n">found_mass</span> <span class="o">=</span> <span class="n">getter</span><span class="p">(</span><span class="n">found_peak</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ppm_error</span><span class="p">(</span><span class="n">found_mass</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">found_peak</span> <span class="o">=</span> <span class="n">_sweep_solution</span><span class="p">(</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mid</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">found_peak</span>
+        <span class="k">elif</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">found_mass</span> <span class="o">&gt;</span> <span class="n">neutral_mass</span><span class="p">:</span>
+            <span class="n">hi</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lo</span> <span class="o">=</span> <span class="n">mid</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">has_c</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">_Envelope</span> <span class="o">=</span> <span class="n">Envelope</span>
+    <span class="n">__Index</span> <span class="o">=</span> <span class="n">_Index</span>
+    <span class="n">_DeconvolutedPeak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span>
+    <span class="n">_DeconvolutedPeakSolution</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSolution</span>
+    <span class="n">_DeconvolutedPeakSet</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSet</span>
+
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.peak_set</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="n">Envelope</span><span class="p">,</span> <span class="n">_Index</span><span class="p">,</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span>
+        <span class="n">DeconvolutedPeakSetIndexed</span> <span class="k">as</span> <span class="n">DeconvolutedPeakSet</span>
+    <span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.peak_set</span> <span class="kn">import</span> <span class="n">IonMobilityDeconvolutedPeak</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">has_c</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="window_peak_set"><a class="viewcode-back" href="../../deconvolution/peaks.html#ms_deisotope.peak_set.window_peak_set">[docs]</a><span class="k">def</span> <span class="nf">window_peak_set</span><span class="p">(</span><span class="n">peak_set</span><span class="p">:</span> <span class="n">DeconvolutedPeakSet</span><span class="p">,</span> <span class="n">window_size</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">peaks_per_window</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">DeconvolutedPeak</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Generate non-overlapping windows over a :class:`~.DeconvolutedPeakSet`, selecting the most</span>
+<span class="sd">    abundant peaks in each window.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peak_set : DeconvolutedPeakSet</span>
+<span class="sd">        The peak set to generate windows from.</span>
+<span class="sd">    window_size : float</span>
+<span class="sd">        The width of the window in daltons. The default is 100.</span>
+<span class="sd">    peaks_per_window : int</span>
+<span class="sd">        The number of peaks to retain per window, by intensity. Default is 10.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List[List[DeconvolutedPeak]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">peak_set</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">/</span> <span class="n">window_size</span><span class="p">)</span> <span class="o">*</span> <span class="n">window_size</span>
+    <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">peak_set</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">/</span> <span class="n">window_size</span><span class="p">)</span> <span class="o">*</span> <span class="n">window_size</span>
+
+    <span class="n">window_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">upper_bound</span> <span class="o">-</span> <span class="n">lower_bound</span><span class="p">)</span> <span class="o">/</span> <span class="n">window_size</span><span class="p">))</span>
+    <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">window_upper_bound</span> <span class="o">=</span> <span class="n">lower_bound</span> <span class="o">+</span> <span class="n">window_size</span>
+    <span class="n">window_lower_bound</span> <span class="o">=</span> <span class="n">lower_bound</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">window_count</span><span class="p">):</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window_lower_bound</span><span class="p">,</span> <span class="n">window_upper_bound</span><span class="p">)</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">peaks_per_window</span><span class="p">],</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">)</span>
+        <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+        <span class="n">window_lower_bound</span> <span class="o">+=</span> <span class="n">window_size</span>
+        <span class="n">window_upper_bound</span> <span class="o">+=</span> <span class="n">window_size</span>
+    <span class="k">return</span> <span class="n">windows</span></div>
+
+
+<div class="viewcode-block" id="decharge"><a class="viewcode-back" href="../../deconvolution/peaks.html#ms_deisotope.peak_set.decharge">[docs]</a><span class="k">def</span> <span class="nf">decharge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_envelopes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">new_charge</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transfomr multiply charged deconvoluted peaks into singly charged deconvoluted peaks.</span>
+
+<span class="sd">    This operation returns a copy of the peak set, the input peak set is unchanged.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    include_envelopes : bool, optional</span>
+<span class="sd">        Whether or not to charge-transform the isotopic envelope fitted in :attr:`DeconvolutedPeak.envelope`</span>
+<span class="sd">        (the default is True)</span>
+<span class="sd">    charge_carrier : float, optional</span>
+<span class="sd">        The charge carrier mass to use when recalculating m/z (the default is PROTON)</span>
+<span class="sd">    new_charge : int, optional</span>
+<span class="sd">        The new charge to set all peaks to, the default being +1</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DeconvolutedPeakSet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+        <span class="n">mz</span> <span class="o">=</span> <span class="n">mass_charge_ratio</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">new_charge</span><span class="p">,</span>
+                               <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">include_envelopes</span><span class="p">:</span>
+            <span class="n">envelope</span> <span class="o">=</span> <span class="n">Envelope</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">EnvelopePair</span><span class="p">(</span>
+                    <span class="n">mass_charge_ratio</span><span class="p">(</span>
+                        <span class="n">calc_neutral_mass</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">),</span>
+                        <span class="n">new_charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">envelope</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span>
+        <span class="n">new_peak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">new_charge</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">most_abundant_mass</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">average_mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">envelope</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">chosen_for_msms</span><span class="p">,</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+        <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_peak</span><span class="p">)</span>
+    <span class="n">new_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+    <span class="n">new_peak_set</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">new_peak_set</span></div>
+
+
+<div class="viewcode-block" id="envelopes_to_peak_set"><a class="viewcode-back" href="../../deconvolution/peaks.html#ms_deisotope.peak_set.envelopes_to_peak_set">[docs]</a><span class="k">def</span> <span class="nf">envelopes_to_peak_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a set of deconvoluted peaks with fitted isotopic envelopes into a</span>
+<span class="sd">    set of centroids representing those envelope peaks.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`ms_peak_picker.PeakSet`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">:</span>
+            <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">simple_peak</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">point</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">))</span>
+    <span class="n">new_peak_set</span> <span class="o">=</span> <span class="n">FittedPeakSet</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+    <span class="n">new_peak_set</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">new_peak_set</span></div>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityDeconvolutedPeakSet</span><span class="p">(</span><span class="n">DeconvolutedPeakSet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">reindex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the :attr:`index` of each peak in `self` and updates the</span>
+<span class="sd">        sorted order.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self: DeconvolutedPeakSet</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">):</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">_Index</span><span class="p">()</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mz_ordered</span><span class="p">):</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">mz</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_fit</span> <span class="kn">import</span> <span class="n">IonMobilityProfileDeconvolutedLCMSFeature</span>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityProfileDeconvolutedPeakSolution</span><span class="p">(</span><span class="n">DeconvolutedPeakSolution</span><span class="p">):</span>
+    <span class="n">ion_mobility_interval</span><span class="p">:</span> <span class="n">SimpleInterval</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ion_mobility_interval</span> <span class="o">=</span> <span class="n">SimpleInterval</span><span class="p">(</span>
+            <span class="n">solution</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">solution</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">overlaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;IonMobilityProfileDeconvolutedPeakSolution&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ion_mobility_interval</span><span class="o">.</span><span class="n">overlaps</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">ion_mobility_interval</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_feature</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">feature</span><span class="p">:</span> <span class="s1">&#39;IonMobilityProfileDeconvolutedLCMSFeature&#39;</span><span class="p">,</span> <span class="n">include_mz</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_envelope</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;IonMobilityProfileDeconvolutedPeakSolution&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">,</span>
+                   <span class="n">intensity</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span>
+                   <span class="n">envelope</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">sum_envelopes</span><span class="p">()</span> <span class="k">if</span> <span class="n">include_envelope</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                   <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                   <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                   <span class="n">score</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">chosen_for_msms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">mz</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">mz</span> <span class="k">if</span> <span class="n">include_mz</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

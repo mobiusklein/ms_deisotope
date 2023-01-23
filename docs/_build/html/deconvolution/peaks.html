@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deconvoluted Peak Sets &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Access" href="../data_source/index.html" />
+    <link rel="prev" title="Deconvolution Pipeline" href="pipeline.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Deconvoluted Peak Sets</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="pipeline.html">Deconvolution Pipeline</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../data_source/index.html">Data Access</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-ms_deisotope.peak_set">
+<span id="deconvoluted-peak-sets"></span><h1>Deconvoluted Peak Sets<a class="headerlink" href="#module-ms_deisotope.peak_set" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">DeconvolutedPeak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neutral_mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_to_noise</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_width_at_half_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_to_a2_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">most_abundant_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envelope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chosen_for_msms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent a single deconvoluted peak which represents an aggregated isotopic
+pattern collapsed to its monoisotopic peak, with a known charge state</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.a_to_a2_ratio">
+<span class="sig-name descname"><span class="pre">a_to_a2_ratio</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.a_to_a2_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ratio of intensities of A peak to A+2 peak</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.average_mass">
+<span class="sig-name descname"><span class="pre">average_mass</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.average_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The averaged neutral mass of the composition, the weighted average
+of the envelope peaks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.charge">
+<span class="sig-name descname"><span class="pre">charge</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>The signed charge state of the isotopic pattern</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.envelope">
+<span class="sig-name descname"><span class="pre">envelope</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>The sequence of (mz, intensity) pairs which map to this peak</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set.Envelope" title="ms_deisotope.peak_set.Envelope">Envelope</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.full_width_at_half_max">
+<span class="sig-name descname"><span class="pre">full_width_at_half_max</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.full_width_at_half_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>The averaged full width at half max of this isotopic pattern</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.index">
+<span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The position of this peak in different orderings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set._Index" title="ms_deisotope.peak_set._Index">_Index</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.intensity">
+<span class="sig-name descname"><span class="pre">intensity</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>The summed height of the peaks in the isotopic pattern this peak captures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.most_abundant_mass">
+<span class="sig-name descname"><span class="pre">most_abundant_mass</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.most_abundant_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The neutral mass of the most abundant peak in the isotopic pattern this peak captures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.mz">
+<span class="sig-name descname"><span class="pre">mz</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>The mass-charge-ratio of the monoisotopic peak</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.neutral_mass">
+<span class="sig-name descname"><span class="pre">neutral_mass</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.neutral_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The neutral mass of the monoisotopic peak</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.score">
+<span class="sig-name descname"><span class="pre">score</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>An assigned value describing the quality of this peak’s fit. The semantics of this score
+depends upon the scoring function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeak.signal_to_noise">
+<span class="sig-name descname"><span class="pre">signal_to_noise</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeak.signal_to_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>The average signal-to-noise ratio of the peaks in the isotopic pattern this peak captures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSet">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">DeconvolutedPeakSet</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code> of <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects, ordered by neutral mass. This class is
+intended to support fast searches by mass.</p>
+<p>The recommended query method is <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.all_peaks_for" title="ms_deisotope.peak_set.DeconvolutedPeakSet.all_peaks_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">all_peaks_for()</span></code></a> when you care about all distinct charge states,
+while <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak" title="ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak"><code class="xref py py-meth docutils literal notranslate"><span class="pre">has_peak()</span></code></a> can be used when you only care about the closest peak matching the query mass.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak" title="ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak"><code class="xref py py-meth docutils literal notranslate"><span class="pre">has_peak()</span></code></a> and <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.between" title="ms_deisotope.peak_set.DeconvolutedPeakSet.between"><code class="xref py py-meth docutils literal notranslate"><span class="pre">between()</span></code></a> support searching for m/z values instead of intensity values, but
+this is purely for convenience. The PPM error scale on m/z is different than on neutral mass, and should
+not be assumed to give identical results as the neutral mass query methods.</p>
+</div>
+<p>If you wish to use the resulting peaks in another tool that assumes all peaks are singly charged, see
+<a class="reference internal" href="#ms_deisotope.peak_set.decharge" title="ms_deisotope.peak_set.decharge"><code class="xref py py-func docutils literal notranslate"><span class="pre">decharge()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak">
+<span class="sig-name descname"><span class="pre">has_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">self</span></em>, <em class="sig-param"><span class="pre">double</span> <span class="pre">neutral_mass</span></em>, <em class="sig-param"><span class="pre">double</span> <span class="pre">error_tolerance=1e-5</span></em>, <em class="sig-param"><span class="pre">bool</span> <span class="pre">use_mz=False</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><span class="pre">DeconvolutedPeak</span></a></span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.has_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the peak that best matches <code class="docutils literal notranslate"><span class="pre">neutral_mass</span></code> within <code class="docutils literal notranslate"><span class="pre">error_tolerance</span></code> mass accuracy ppm.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">use_mz</span></code> is True, instead of matching neutral masses, match peaks using m/z instead.</p>
+<p>If <code class="xref py py-attr docutils literal notranslate"><span class="pre">indexed</span></code> is not <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code>, then <code class="xref py py-meth docutils literal notranslate"><span class="pre">reindex()</span></code> will be called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>neutral_mass</strong> (<em>double</em>) – The mass to search for</p></li>
+<li><p><strong>error_tolerance</strong> (<em>double</em>) – The PPM error tolerance to apply</p></li>
+<li><p><strong>use_mz</strong> (<em>bool</em>) – Whether to search using m/z instead of neutral mass</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The found peak, or None if no peak is found</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak">DeconvolutedPeak</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSet.all_peaks_for">
+<span class="sig-name descname"><span class="pre">all_peaks_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">self</span></em>, <em class="sig-param"><span class="pre">double</span> <span class="pre">neutral_mass</span></em>, <em class="sig-param"><span class="pre">double</span> <span class="pre">tolerance=1e-5</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.all_peaks_for" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all peaks that match <code class="docutils literal notranslate"><span class="pre">neutral_mass</span></code> within <code class="docutils literal notranslate"><span class="pre">error_tolerance</span></code> mass accuracy ppm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>neutral_mass</strong> (<em>double</em>) – The mass to search for</p></li>
+<li><p><strong>error_tolerance</strong> (<em>double</em>) – The PPM error tolerance to apply</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The found peaks</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple of DeconvolutedPeak</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSet.between">
+<span class="sig-name descname"><span class="pre">between</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_mz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSet.between" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a> containing all the peaks
+whose mass is between <code class="docutils literal notranslate"><span class="pre">m1</span></code> and <code class="docutils literal notranslate"><span class="pre">m2</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">use_mz</span></code> is <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code> then search by m/z instead of mass</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>m1</strong> (<em>float</em>) – The lower mass limit</p></li>
+<li><p><strong>m2</strong> (<em>float</em>) – The upper mass limit</p></li>
+<li><p><strong>use_mz</strong> (<em>bool</em>) – Whether to search for m/z instead of neutral mass</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet">DeconvolutedPeakSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="transformations">
+<h2>Transformations<a class="headerlink" href="#transformations" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.decharge">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">decharge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_envelopes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_carrier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.00727646677</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_set.html#decharge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.peak_set.decharge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transfomr multiply charged deconvoluted peaks into singly charged deconvoluted peaks.</p>
+<p>This operation returns a copy of the peak set, the input peak set is unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>include_envelopes</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to charge-transform the isotopic envelope fitted in <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak.envelope" title="ms_deisotope.peak_set.DeconvolutedPeak.envelope"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DeconvolutedPeak.envelope</span></code></a>
+(the default is True)</p></li>
+<li><p><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The charge carrier mass to use when recalculating m/z (the default is PROTON)</p></li>
+<li><p><strong>new_charge</strong> (<em>int</em><em>, </em><em>optional</em>) – The new charge to set all peaks to, the default being +1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet">DeconvolutedPeakSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.merge">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peaks_a</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">peaks_b</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_set.html#merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.peak_set.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combine two <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a> objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks_a</strong> (<a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>) – </p></li>
+<li><p><strong>peaks_b</strong> (<a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>) – </p></li>
+<li><p><strong>copy</strong> (<em>bool</em>) – Whether or not to copy the peaks first. If not,
+the two input peak sets should not be used again
+as their indices will have been corrupted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.envelopes_to_peak_set">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">envelopes_to_peak_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_set.html#envelopes_to_peak_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.peak_set.envelopes_to_peak_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a set of deconvoluted peaks with fitted isotopic envelopes into a
+set of centroids representing those envelope peaks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.window_peak_set">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">window_peak_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peak_set</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">ms_deisotope._c.peak_set.DeconvolutedPeakSetIndexed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_size</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peaks_per_window</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope._c.peak_set.DeconvolutedPeak"><span class="pre">ms_deisotope._c.peak_set.DeconvolutedPeak</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/ms_deisotope/peak_set.html#window_peak_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.peak_set.window_peak_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate non-overlapping windows over a <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>, selecting the most
+abundant peaks in each window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peak_set</strong> (<a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><em>DeconvolutedPeakSet</em></a>) – The peak set to generate windows from.</p></li>
+<li><p><strong>window_size</strong> (<em>float</em>) – The width of the window in daltons. The default is 100.</p></li>
+<li><p><strong>peaks_per_window</strong> (<em>int</em>) – The number of peaks to retain per window, by intensity. Default is 10.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[List[<a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak">DeconvolutedPeak</a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="peak-components">
+<h2>Peak Components<a class="headerlink" href="#peak-components" title="Permalink to this headline">¶</a></h2>
+<p>Deconvoluted peaks may contain extra information beyond point-estimates from the raw spectrum. These data structures
+hold some of that information.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.Envelope">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">Envelope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.peak_set.Envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a sequence of (mz, intensity) pairs which store peak positions
+that were matched. Since these peaks may later be mutated by subtraction,
+this structure stores copies of the numbers</p>
+<p>Supports the Sequence protocol, and is read-only.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.Envelope.pairs">
+<span class="sig-name descname"><span class="pre">pairs</span></span><a class="headerlink" href="#ms_deisotope.peak_set.Envelope.pairs" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of (mz, intensity) pairs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>tuple of tuple of (float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set._Index">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">_Index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neutral_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.peak_set._Index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the ordered index of an object under sort by <cite>mz</cite> and
+sort by <cite>neutral_mass</cite></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set._Index.mz">
+<span class="sig-name descname"><span class="pre">mz</span></span><a class="headerlink" href="#ms_deisotope.peak_set._Index.mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of this object (or its parent), ordered by mz</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set._Index.neutral_mass">
+<span class="sig-name descname"><span class="pre">neutral_mass</span></span><a class="headerlink" href="#ms_deisotope.peak_set._Index.neutral_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of this object (or its parent), ordered by neutral mass</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="other-deconvolution-product-types">
+<h2>Other Deconvolution Product Types<a class="headerlink" href="#other-deconvolution-product-types" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSolution">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.peak_set.</span></span><span class="sig-name descname"><span class="pre">DeconvolutedPeakSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends <a class="reference internal" href="#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> to also include a reference to
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code> instance it is derived from, and optionally an
+object which the fit derives from.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSolution.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSolution.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The isotopic pattern fit used to construct this peak</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>IsotpicFitRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ms_deisotope.peak_set.DeconvolutedPeakSolution.solution">
+<span class="sig-name descname"><span class="pre">solution</span></span><a class="headerlink" href="#ms_deisotope.peak_set.DeconvolutedPeakSolution.solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of the “source” of the isotopic fit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="pipeline.html">Deconvolution Pipeline</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../data_source/index.html">Data Access</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

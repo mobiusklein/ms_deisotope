@@ -32,12 +32,12 @@
         
         
   <h1>Source code for ms_deisotope.data_source.mzml</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;mzML is a standard rich XML-format for raw mass spectrometry data storage.</span>
+<span></span><span class="sd">&quot;&quot;&quot;mzML is a standard rich XML-format for raw mass spectrometry data storage.</span>
 <span class="sd">This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`</span>
 <span class="sd">implementation.</span>
 
 <span class="sd">The parser is based on :mod:`pyteomics.mzml`.</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -90,10 +90,8 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">_MzMLParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_handle_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;value&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MzMLParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_handle_param</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_determine_array_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
@@ -132,6 +130,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">(</span><span class="n">_MzMLParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_read_byte_offsets</span><span class="p">()</span>
 
+
 <span class="k">def</span> <span class="nf">_find_arrays</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">decode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">arrays</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -145,6 +144,12 @@
                 <span class="n">arrays</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
     <span class="k">return</span> <span class="n">arrays</span>
 
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.units</span> <span class="kn">import</span> <span class="n">_handle_param_fill_missing_value</span>
+    <span class="n">_MzMLParser</span><span class="o">.</span><span class="n">_handle_param</span> <span class="o">=</span> <span class="n">_handle_param_fill_missing_value</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
 
 <span class="k">class</span> <span class="nc">MzMLDataInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Provides implementations of all of the methods needed to implement the</span>
@@ -722,8 +727,8 @@
 
 
 <span class="k">def</span> <span class="nf">read_file_checksum</span><span class="p">(</span><span class="n">stream</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">IOBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-    <span class="sd">&#39;&#39;&#39;Read the stored file checksum of an indexedmzML file.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;Read the stored file checksum of an indexedmzML file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">chunk</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5001</span><span class="p">)</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">br</span><span class="s2">&quot;&lt;fileChecksum&gt;\s*(\S+)\s*&lt;/fileChecksum&gt;&quot;</span><span class="p">)</span>
@@ -773,7 +778,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">decode_binary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Whether or not to eagerly decode binary data arrays&#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Whether or not to eagerly decode binary data arrays&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span>
 
     <span class="nd">@decode_binary</span><span class="o">.</span><span class="n">setter</span>

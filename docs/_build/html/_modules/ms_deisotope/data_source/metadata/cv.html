@@ -32,10 +32,10 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.cv</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;Represent controlled vocabulary (CV) terms and provides the machinery used</span>
+<span></span><span class="sd">&quot;&quot;&quot;Represent controlled vocabulary (CV) terms and provides the machinery used</span>
 <span class="sd">for building compile-time collections of CV terms from the PSI-MS controlled</span>
 <span class="sd">vocabulary.</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">textwrap</span>
 
@@ -43,7 +43,7 @@
 
 
 <div class="viewcode-block" id="Term"><a class="viewcode-back" href="../../../../data_source/metadata/cv.html#ms_deisotope.data_source.metadata.cv.Term">[docs]</a><span class="k">class</span> <span class="nc">Term</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Represents a single controlled vocabulary term.</span>
+    <span class="sd">&quot;&quot;&quot;Represents a single controlled vocabulary term.</span>
 
 <span class="sd">    :class:`Term` objects are comparable and hashable.</span>
 
@@ -60,7 +60,7 @@
 <span class="sd">    specialization: list</span>
 <span class="sd">        A sequence of increasingly specific categories that this term</span>
 <span class="sd">        belongs to</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;specialization&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">category</span><span class="p">,</span> <span class="n">specialization</span><span class="p">):</span>
@@ -177,13 +177,13 @@
         <span class="k">return</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">terms</span> <span class="ow">or</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_id</span> <span class="ow">or</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_name</span>
 
     <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Returns the list of keys that this collection recognizes, over</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of keys that this collection recognizes, over</span>
 <span class="sd">        all of its wrapped mappings.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">by_id</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">by_name</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Return the value of ``key`` or ``default`` if it is not</span>
+        <span class="sd">&quot;&quot;&quot;Return the value of ``key`` or ``default`` if it is not</span>
 <span class="sd">        found</span>
 
 <span class="sd">        Parameters</span>
@@ -196,7 +196,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        object</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
@@ -228,9 +228,9 @@
 
 
 <span class="k">class</span> <span class="nc">MappingProxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;An object that proxies :meth:`__getitem__` to another object</span>
+    <span class="sd">&quot;&quot;&quot;An object that proxies :meth:`__getitem__` to another object</span>
 <span class="sd">    which is loaded lazily through a callable :attr:`loader`</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loader</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
@@ -270,7 +270,7 @@
 
 
 <span class="k">def</span> <span class="nf">type_path</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-    <span class="sd">&#39;&#39;&#39;Traverse is-a relationships from more specialized to</span>
+    <span class="sd">&quot;&quot;&quot;Traverse is-a relationships from more specialized to</span>
 <span class="sd">    less specialized until the root term type has been found,</span>
 <span class="sd">    accumulating types along the way.</span>
 
@@ -284,7 +284,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    list</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>
@@ -313,9 +313,9 @@
 
 
 <span class="k">def</span> <span class="nf">render_list</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">list_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Term&quot;</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-    <span class="sd">&#39;&#39;&#39;A code generator for rendering static lists of :class:`Term`-like objects</span>
+    <span class="sd">&quot;&quot;&quot;A code generator for rendering static lists of :class:`Term`-like objects</span>
 <span class="sd">    from PSI-MS.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">writer</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span>
     <span class="n">component_type_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">seed</span><span class="p">]</span>

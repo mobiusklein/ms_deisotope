@@ -247,7 +247,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">PeakNode</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">add_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
-            <span class="sd">&#39;&#39;&#39;Add the relatoinship between the experimental peaks</span>
+            <span class="sd">&quot;&quot;&quot;Add the relatoinship between the experimental peaks</span>
 <span class="sd">            in `fit_record` to the graph, expressed as a hyper-edge</span>
 <span class="sd">            denoted by `fit_record`.</span>
 
@@ -259,7 +259,7 @@
 <span class="sd">            Parameters</span>
 <span class="sd">            ----------</span>
 <span class="sd">            fit_record: :class:`~.IsotopicFitRecord`</span>
-<span class="sd">            &#39;&#39;&#39;</span>
+<span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span><span class="p">:</span>
                 <span class="c1"># Check for null peak</span>
                 <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -279,9 +279,9 @@
                     <span class="k">return</span> <span class="n">value</span>
 
         <span class="k">def</span> <span class="nf">drop_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
-            <span class="sd">&#39;&#39;&#39;Remove this fit from the graph, deleting all</span>
+            <span class="sd">&quot;&quot;&quot;Remove this fit from the graph, deleting all</span>
 <span class="sd">            hyper-edges.</span>
-<span class="sd">            &#39;&#39;&#39;</span>
+<span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">fit_record</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">del</span> <span class="n">node</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
@@ -289,9 +289,9 @@
                     <span class="k">pass</span>
 
         <span class="k">def</span> <span class="nf">best_exact_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&#39;&#39;&#39;For each distinct group of experimental peaks, retain only</span>
+            <span class="sd">&quot;&quot;&quot;For each distinct group of experimental peaks, retain only</span>
 <span class="sd">            the best scoring fit using exactly those peaks.</span>
-<span class="sd">            &#39;&#39;&#39;</span>
+<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">by_peaks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
             <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
@@ -376,7 +376,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">interval_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;An :class:`~.IntervalTreeNode` built over all dependency clusters that</span>
+        <span class="sd">&quot;&quot;&quot;An :class:`~.IntervalTreeNode` built over all dependency clusters that</span>
 <span class="sd">        the :class:`PeakDependenceGraph` has seen over the course of all iterations.</span>
 
 <span class="sd">        Raises</span>
@@ -387,7 +387,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`~.IntervalTreeNode`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interval_tree</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Build tree from both the current set of clusters</span>
             <span class="c1"># and all clusters from previous iterations</span>
@@ -449,7 +449,7 @@
                 <span class="k">return</span> <span class="n">cluster</span>
 
     <span class="k">def</span> <span class="nf">find_solution_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Find the best isotopic pattern fit which includes ``peak``</span>
+        <span class="sd">&quot;&quot;&quot;Find the best isotopic pattern fit which includes ``peak``</span>
 <span class="sd">        or is close enough to ``peak`` that it might have been selected</span>
 <span class="sd">        instead.</span>
 
@@ -461,7 +461,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`~.DeconvolutedPeak`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">peak_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval_tree</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
@@ -500,7 +500,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_find_best_fit_by_weighted_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">candidates</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Locate the fit that is nearest to ``peak`` in m/z space, weighted by</span>
+        <span class="sd">&quot;&quot;&quot;Locate the fit that is nearest to ``peak`` in m/z space, weighted by</span>
 <span class="sd">        the score of the fit such that given two fits with the same m/z, the better</span>
 <span class="sd">        scoring fit is chosen.</span>
 
@@ -514,7 +514,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`~.IsotopicFitRecord`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidates</span><span class="p">):</span>
@@ -530,13 +530,13 @@
         <span class="k">return</span> <span class="n">fit</span>
 
     <span class="k">def</span> <span class="nf">claimed_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Return all nodes with at least one</span>
+        <span class="sd">&quot;&quot;&quot;Return all nodes with at least one</span>
 <span class="sd">        fit connecting it.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`set`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">:</span>
@@ -546,10 +546,10 @@
         <span class="k">return</span> <span class="n">peaks</span>
 
     <span class="k">def</span> <span class="nf">drop_superceded_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Drop all fits where there is a better fit</span>
+        <span class="sd">&quot;&quot;&quot;Drop all fits where there is a better fit</span>
 <span class="sd">        using the first fit&#39;s monoisotopic peak at the</span>
 <span class="sd">        same charge state.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">suppressed</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">keep</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -579,9 +579,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">drop_gapped_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Discard any fit with more missed peaks than</span>
+        <span class="sd">&quot;&quot;&quot;Discard any fit with more missed peaks than</span>
 <span class="sd">        :attr:`max_missed_peaks`.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_missed_peaks</span>
         <span class="n">keep</span> <span class="o">=</span> <span class="p">[]</span>
@@ -620,7 +620,7 @@
 
 
 <div class="viewcode-block" id="NetworkedTargetedDeconvolutionResult"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult">[docs]</a><span class="k">class</span> <span class="nc">NetworkedTargetedDeconvolutionResult</span><span class="p">(</span><span class="n">TargetedDeconvolutionResultBase</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Stores the necessary information to retrieve the local optimal solution for</span>
+    <span class="sd">&quot;&quot;&quot;Stores the necessary information to retrieve the local optimal solution for</span>
 <span class="sd">    a single peak for a deconvolution algorithm from the optimal fit containing</span>
 <span class="sd">    :attr:`query_peak` in the set of disjoint best fits for the enclosing connected</span>
 <span class="sd">    component</span>
@@ -631,7 +631,7 @@
 <span class="sd">        The peak queried with</span>
 <span class="sd">    solution_peak : DeconvolutedPeak</span>
 <span class="sd">        The optimal solution peak</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deconvoluter</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NetworkedTargetedDeconvolutionResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">deconvoluter</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_peak</span> <span class="o">=</span> <span class="n">peak</span>

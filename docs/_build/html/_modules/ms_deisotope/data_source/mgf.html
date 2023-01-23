@@ -32,14 +32,14 @@
         
         
   <h1>Source code for ms_deisotope.data_source.mgf</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;MGF is a simple human-readable format for MS/MS data. It</span>
+<span></span><span class="sd">&quot;&quot;&quot;MGF is a simple human-readable format for MS/MS data. It</span>
 <span class="sd">allows storing MS/MS peak lists and exprimental parameters.</span>
 
 <span class="sd">This module provides :class:`MGFLoader`, a :class:`~.RandomAccessScanSource`</span>
 <span class="sd">implementation.</span>
 
 <span class="sd">The parser is based on :mod:`pyteomics.mgf`.</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mgf</span>
@@ -62,8 +62,8 @@
 <span class="k">class</span> <span class="nc">_MGFParser</span><span class="p">(</span><span class="n">mgf</span><span class="o">.</span><span class="n">IndexedMGF</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">parse_charge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">charge_text</span><span class="p">,</span> <span class="n">list_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Pyteomics _parse_charge is very general-purpose, and</span>
-<span class="sd">        can&#39;t be sped up, so we specialize it here.&#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Pyteomics _parse_charge is very general-purpose, and</span>
+<span class="sd">        can&#39;t be sped up, so we specialize it here.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">list_only</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">charge_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
@@ -87,13 +87,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">file_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Describe the file and its components, as well</span>
+        <span class="sd">&quot;&quot;&quot;Describe the file and its components, as well</span>
 <span class="sd">        as any content types it has.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`~.FileInformation`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">finfo</span> <span class="o">=</span> <span class="n">FileInformation</span><span class="p">()</span>
         <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="s2">&quot;centroid spectrum&quot;</span><span class="p">)</span>
         <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="n">MS_MSn_Spectrum</span><span class="p">)</span>
@@ -104,34 +104,34 @@
         <span class="k">return</span> <span class="n">finfo</span>
 
     <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Describe the different instrument components and configurations used</span>
+        <span class="sd">&quot;&quot;&quot;Describe the different instrument components and configurations used</span>
 <span class="sd">        to acquire scans in this run.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`list` of :class:`~.InstrumentInformation`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Describe any preprocessing steps applied to the data described by this</span>
+        <span class="sd">&quot;&quot;&quot;Describe any preprocessing steps applied to the data described by this</span>
 <span class="sd">        instance.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`list` of :class:`~.DataProcessingInformation`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">data_processing</span><span class="p">()</span>
 
 
 <span class="k">class</span> <span class="nc">MGFInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Provides a basic set of widely used MASCOT Generic File (MGF)</span>
+    <span class="sd">&quot;&quot;&quot;Provides a basic set of widely used MASCOT Generic File (MGF)</span>
 <span class="sd">    data accessor mechanisms. Because MGF files lack any form of standardization,</span>
 <span class="sd">    no strong guarantees of correctness can be made.</span>
 
 <span class="sd">    This dialect does not know how to use the charge column of the peak data</span>
 <span class="sd">    section, see :class:`~.ProcessedMGFLoader`.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns raw data arrays for m/z and intensity</span>
@@ -305,12 +305,12 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Any top-of-the-file parameters</span>
+        <span class="sd">&quot;&quot;&quot;Any top-of-the-file parameters</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">header</span>
 
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -430,13 +430,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;The file parser that this reader consumes.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;The file parser that this reader consumes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;The byte offset index used to achieve fast random access.</span>
+        <span class="sd">&quot;&quot;&quot;The byte offset index used to achieve fast random access.</span>
 
 <span class="sd">        Maps :class:`~.ScanBase` IDs to the byte offsets, implying</span>
 <span class="sd">        the order the scans reside in the file.</span>
@@ -444,15 +444,15 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`pyteomics.xml.ByteEncodingOrderedDict`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">index</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MGFLoader.close"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Close the underlying reader.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Close the underlying reader.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span></div>
 
@@ -508,7 +508,7 @@
             <span class="k">yield</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MGFLoader.start_from_scan"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require_ms1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
+        <span class="sd">&quot;&quot;&quot;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
 <span class="sd">        ``rt``, or ``index``. Only one may be provided.</span>
 
 <span class="sd">        After invoking this method, the iterator this object wraps will be changed to begin</span>
@@ -530,7 +530,7 @@
 <span class="sd">            Whether the iterator must start from an MS1 scan. True by default.</span>
 <span class="sd">        grouped: bool, optional</span>
 <span class="sd">            whether the iterator should yield scan bunches or single scans. True by default.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scan_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">rt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_time</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>

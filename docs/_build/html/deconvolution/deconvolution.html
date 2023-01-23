@@ -84,7 +84,7 @@ deconvolving a peak list.</p>
 <div><dl class="py function">
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.deconvolute_peaks">
 <span class="sig-prename descclassname"><span class="pre">ms_deisotope.deconvolution.</span></span><span class="sig-name descname"><span class="pre">deconvolute_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">peaklist</span></em>, <em class="sig-param"><span class="pre">decon_config=None</span></em>, <em class="sig-param"><span class="pre">charge_range=(1</span></em>, <em class="sig-param"><span class="pre">8)</span></em>, <em class="sig-param"><span class="pre">error_tolerance=2e-05</span></em>, <em class="sig-param"><span class="pre">priority_list=None</span></em>, <em class="sig-param"><span class="pre">left_search_limit=1</span></em>, <em class="sig-param"><span class="pre">right_search_limit=0</span></em>, <em class="sig-param"><span class="pre">left_search_limit_for_priorities=None</span></em>, <em class="sig-param"><span class="pre">right_search_limit_for_priorities=None</span></em>, <em class="sig-param"><span class="pre">verbose_priorities=False</span></em>, <em class="sig-param"><span class="pre">verbose=False</span></em>, <em class="sig-param"><span class="pre">charge_carrier=1.00727646677</span></em>, <em class="sig-param"><span class="pre">truncate_after=0.95</span></em>, <em class="sig-param"><span class="pre">iterations=10</span></em>, <em class="sig-param"><span class="pre">deconvoluter_type=&lt;class</span> <span class="pre">'ms_deisotope.deconvolution.averagine_based.AveraginePeakDependenceGraphDeconvoluter'&gt;</span></em>, <em class="sig-param"><span class="pre">retention_strategy=None</span></em>, <em class="sig-param"><span class="pre">use_quick_charge=False</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/api.html#deconvolute_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.deconvolute_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deconvolute a centroided mass spectrum</p>
+<dd><p>Deconvolute a centroided mass spectrum.</p>
 <p>This function constructs a deconvoluter object using the <code class="docutils literal notranslate"><span class="pre">deconvoluter_type</span></code> argument
 and deconvolutes the input <code class="docutils literal notranslate"><span class="pre">peaklist</span></code> by calling its <code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute()</span></code> method.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">priority_list</span></code> is not <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>, it is expected to be an iterable of either
@@ -121,6 +121,10 @@ theoretical charge states to consider for each peak.</p></li>
 </ul>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.decharge" title="ms_deisotope.peak_set.decharge"><code class="xref py py-func docutils literal notranslate"><span class="pre">ms_deisotope.peak_set.decharge()</span></code></a></p>
+</div>
 <p class="rubric">Notes</p>
 <p>If speed is an issue, consider setting <cite>use_quick_charge</cite> <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code>. This will pre-screen charge
 states that are are missing peaks supporting the <span class="xref std std-term">monoisotopic peak</span> or the <span class="xref std std-term">A+1 peak</span>.
@@ -358,7 +362,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dd><p>Completely deconvolute the spectrum.</p>
 <p>For each iteration, clear <code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_depencency_network</span></code>, then invoke <a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">populate_graph()</span></code></a>
 followed by <code class="xref py py-meth docutils literal notranslate"><span class="pre">select_best_disjoint_subgraphs()</span></code> to populate the resulting
-<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -383,7 +387,7 @@ intensity_after)) / sum(intensity_after)</cite></p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -590,7 +594,7 @@ intensity_after)) / sum(intensity_after)</cite></p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -772,7 +776,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -934,7 +938,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1424,7 +1428,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1432,7 +1436,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak">
 <span class="sig-name descname"><span class="pre">deconvolute_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peak</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">8)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_search_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_search_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_carrier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.00727646677</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truncate_after</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_below</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Perform a deconvolution for <cite>peak</cite>, generating a new <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.peak_set.DeconvolutedPeak</span></code> instance
+<dd><p>Perform a deconvolution for <cite>peak</cite>, generating a new <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.peak_set.DeconvolutedPeak</span></code></a> instance
 corresponding to the optimal solution.</p>
 <p>This new peak has an m/z matching the monoisotopic peak of the pattern containing <cite>peak</cite>, and its intensity
 is the sum of all the matched peaks in its isotopic pattern. Its charge, isotopic fit, and other qualities
@@ -1458,7 +1462,7 @@ the overall shape of the isotopic pattern.</p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1540,7 +1544,7 @@ are constructed and solved.</p>
 <dd><p>Completely deconvolute the spectrum.</p>
 <p>For each iteration, clear <code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_depencency_network</span></code>, then invoke <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">populate_graph()</span></code></a>
 followed by <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select_best_disjoint_subgraphs()</span></code></a> to populate the resulting
-<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1565,7 +1569,7 @@ intensity_after)) / sum(intensity_after)</cite></p></li>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1696,7 +1700,7 @@ peptides and lower quality tandem mass spectra.</p>
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.__call__">
 <span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peaklist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_peaklist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solutions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>A wrapper for <a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks" title="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">retain_peaks()</span></code></a>. Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>
-objects left over after deconvolution, produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code>
+objects left over after deconvolution, produce a list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a>
 objects from them according to some criteria.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1709,11 +1713,11 @@ parameters may not be as good.</p></li>
 <li><p><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
 the minimum charge state to assign to the peaks this method creates. If
 not provided, the default charge state is :const`1`.</p></li>
-<li><p><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
+<li><p><strong>solutions</strong> (<a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+<dd class="field-even"><p>The list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
@@ -1728,7 +1732,7 @@ not provided, the default charge state is :const`1`.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.create_peak">
 <span class="sig-name descname"><span class="pre">create_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fitted_peak</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.create_peak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.create_peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> from a given <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> <code class="docutils literal notranslate"><span class="pre">peak</span></code>
+<dd><p>Create a <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> from a given <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> <code class="docutils literal notranslate"><span class="pre">peak</span></code>
 and an optional charge state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1741,7 +1745,7 @@ and an optional charge state.</p>
 <dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>DeconvolutedPeak</p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak">DeconvolutedPeak</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1770,7 +1774,7 @@ of the charge state range, rather than on its signed value.</p>
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks">
 <em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">retain_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peaklist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_peaklist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solutions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.retain_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> objects left over after deconvolution,
-produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects from them according to some
+produce a list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects from them according to some
 criteria.</p>
 <p>Deconvolution requires that the isotopic peak structure is present in the peak list,
 which may not be consistent for all types of data. This type of method is appropriate
@@ -1787,11 +1791,11 @@ parameters may not be as good.</p></li>
 <li><p><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
 the minimum charge state to assign to the peaks this method creates. If
 not provided, the default charge state is :const`1`.</p></li>
-<li><p><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
+<li><p><strong>solutions</strong> (<a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+<dd class="field-even"><p>The list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
@@ -1850,7 +1854,7 @@ monoisotopic peak and the peak will be discarded.</p>
 <dt class="sig sig-object py" id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.retain_peaks">
 <span class="sig-name descname"><span class="pre">retain_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peaklist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_peaklist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solutions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#TopNRetentionStrategy.retain_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.retain_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> objects left over after deconvolution,
-produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects from them according to some
+produce a list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects from them according to some
 criteria.</p>
 <p>Deconvolution requires that the isotopic peak structure is present in the peak list,
 which may not be consistent for all types of data. This type of method is appropriate
@@ -1867,11 +1871,11 @@ parameters may not be as good.</p></li>
 <li><p><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
 the minimum charge state to assign to the peaks this method creates. If
 not provided, the default charge state is :const`1`.</p></li>
-<li><p><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
+<li><p><strong>solutions</strong> (<a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+<dd class="field-even"><p>The list of <a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a> objects.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
@@ -1900,6 +1904,8 @@ to the appropriate type:</p>
 <li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakIndex</span></code> will have its peaks extracted and copied</p></li>
 <li><p>Any other <em>sequence</em> of <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakLike</span></code> objects (objects having an mz and
 intensity attribute) will be converted into a <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code></p></li>
+<li><p>A pair of parallel sequences or NumPy arrays corresponding to m/z and intensity
+values for a series of peaks.</p></li>
 <li><p>Any <em>sequence</em> of <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> having at least two entries
 will be converted into a <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code> with the m/z value
 of each peak being the the <cite>p[0]</cite> of each entry and the intensity <cite>p[1]</cite>. Any
@@ -1954,7 +1960,7 @@ thrown during any stage of deconvolution.</p>
 <dd><p>The resulting deconvoluted peaks</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeakSet" title="ms_deisotope.peak_set.DeconvolutedPeakSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1997,7 +2003,7 @@ solution for a single peak.</p>
 <dd class="field-odd"><p></p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></p>
+<dd class="field-even"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2028,7 +2034,7 @@ component</p>
 <dd><p>The optimal solution peak</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>DeconvolutedPeak</p>
+<dd class="field-odd"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak">DeconvolutedPeak</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2042,7 +2048,7 @@ component</p>
 <dd class="field-odd"><p></p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>DeconvolutedPeak</p>
+<dd class="field-even"><p><a class="reference internal" href="peaks.html#ms_deisotope.peak_set.DeconvolutedPeak" title="ms_deisotope.peak_set.DeconvolutedPeak">DeconvolutedPeak</a></p>
 </dd>
 </dl>
 </dd></dl>

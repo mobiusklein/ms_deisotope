@@ -32,9 +32,9 @@
         
         
   <h1>Source code for ms_deisotope.data_source.scan.base</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;Represent the basic structures of a mass spectrum and its processed contents,</span>
+<span></span><span class="sd">&quot;&quot;&quot;Represent the basic structures of a mass spectrum and its processed contents,</span>
 <span class="sd">and provide an interface for manipulating that data.</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
@@ -141,7 +141,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_map</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="ScanBunch.annotate_precursors"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch.annotate_precursors">[docs]</a>    <span class="k">def</span> <span class="nf">annotate_precursors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nperrow</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Plot the spectra in this group as a grid, with the full</span>
+        <span class="sd">&quot;&quot;&quot;Plot the spectra in this group as a grid, with the full</span>
 <span class="sd">        MS1 spectrum in profile in the top row, and each MSn spectrum&#39;s</span>
 <span class="sd">        precursor ion revealed in a grid panel below, with isolation</span>
 <span class="sd">        window and selected ion/monoisotopic peak annotated.</span>
@@ -158,7 +158,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`matplotlib._axes.Axes`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_annotate_precursors</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">precursor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">,</span> <span class="n">nperrow</span><span class="o">=</span><span class="n">nperrow</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span></div>
 
@@ -175,13 +175,13 @@
         <span class="n">p</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ScanBunch.pack"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch.pack">[docs]</a>    <span class="k">def</span> <span class="nf">pack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Build a new :class:`ScanBunch` where each scan in it is returned by calling</span>
+        <span class="sd">&quot;&quot;&quot;Build a new :class:`ScanBunch` where each scan in it is returned by calling</span>
 <span class="sd">        :meth:`~.Scan.pack`</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`ScanBunch`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">precursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
         <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">]</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
@@ -224,7 +224,7 @@
         <span class="k">return</span> <span class="n">inst</span>
 
 <div class="viewcode-block" id="RawDataArrays.has_array"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.RawDataArrays.has_array">[docs]</a>    <span class="k">def</span> <span class="nf">has_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array_type</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Check if this array set contains an array of the</span>
+        <span class="sd">&quot;&quot;&quot;Check if this array set contains an array of the</span>
 <span class="sd">        requested type.</span>
 
 <span class="sd">        This method uses the semantic lookup mechanism to test</span>
@@ -239,7 +239,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">binary_data_arrays</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">term</span> <span class="o">=</span> <span class="n">binary_data_arrays</span><span class="p">[</span><span class="n">array_type</span><span class="p">]</span>
@@ -400,12 +400,12 @@
 
 <div class="viewcode-block" id="RawDataArrays.empty"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.RawDataArrays.empty">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;RawDataArrays&#39;</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Create a new, empty instance.</span>
+        <span class="sd">&quot;&quot;&quot;Create a new, empty instance.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`RawDataArrays`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span></div>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
@@ -422,20 +422,20 @@
 
 
 <span class="k">class</span> <span class="nc">ScanBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Abstract base class for Scan-like objects</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for Scan-like objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">source</span><span class="p">:</span> <span class="s1">&#39;ScanDataSource&#39;</span>
     <span class="n">peak_set</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PeakSet</span><span class="p">]</span>
     <span class="n">deconvoluted_peak_set</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeconvolutedPeakSet</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">has_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Check whether this scan has drift time information associated with</span>
+        <span class="sd">&quot;&quot;&quot;Check whether this scan has drift time information associated with</span>
 <span class="sd">        it.</span>
 
 <span class="sd">        If this scan has been aggregated, it will only check the first scan in</span>
 <span class="sd">        the aggregate.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">acq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span>
         <span class="k">if</span> <span class="n">acq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -459,13 +459,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">drift_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-        <span class="sd">&#39;&#39;&#39;A convenience method to access the first</span>
+        <span class="sd">&quot;&quot;&quot;A convenience method to access the first</span>
 <span class="sd">        scan event to retrieve its drift time.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        float or None</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">acq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span>
         <span class="k">if</span> <span class="n">acq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -474,8 +474,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;An alias for :attr:`id`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;An alias for :attr:`id`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
 
     <span class="nd">@property</span>
@@ -654,32 +654,32 @@
     <span class="c1"># Scan objects shouldn&#39;t be hashed.</span>
 
     <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="s1">&#39;ScanDataSource&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanBase&#39;</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Attach this object and its other referent members</span>
+        <span class="sd">&quot;&quot;&quot;Attach this object and its other referent members</span>
 <span class="sd">        to ``source``, letting them load information.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">unbind</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanBase&#39;</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Detattch this object and its other referent members</span>
+        <span class="sd">&quot;&quot;&quot;Detattch this object and its other referent members</span>
 <span class="sd">        from their currently bound :attr:`source`.</span>
 
 <span class="sd">        This may cause errors if more information is requested but is not</span>
 <span class="sd">        cached, or if requesting another :class:`ScanBase` be loaded.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">unbind</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">source_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="sd">&#39;&#39;&#39;Get the name of the source file this :class:`~.ScanBase` object is bound to</span>
+        <span class="sd">&quot;&quot;&quot;Get the name of the source file this :class:`~.ScanBase` object is bound to</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        :class:`str`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span>
         <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -846,19 +846,19 @@
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PrecursorInformation.bind"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.bind">[docs]</a>    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="s1">&#39;ScanDataSource&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;PrecursorInformation&#39;</span><span class="p">:</span>
-        <span class="sd">&#39;&#39;&#39;Attach this object and its other referent members</span>
+        <span class="sd">&quot;&quot;&quot;Attach this object and its other referent members</span>
 <span class="sd">        to ``source``, letting them load information.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 <div class="viewcode-block" id="PrecursorInformation.unbind"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.unbind">[docs]</a>    <span class="k">def</span> <span class="nf">unbind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Detattch this object the currently bound :attr:`source`.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Detattch this object the currently bound :attr:`source`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="PrecursorInformation.extract"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.extract">[docs]</a>    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">:</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">override_charge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Populate the extracted attributes of this object from the attributes</span>
+        <span class="sd">&quot;&quot;&quot;Populate the extracted attributes of this object from the attributes</span>
 <span class="sd">        of a :class:`~.DeconvolutedPeak` instance.</span>
 
 <span class="sd">        Parameters</span>
@@ -867,7 +867,7 @@
 <span class="sd">            The peak to copy attributes from</span>
 <span class="sd">        override_charge: :class:`int`, optional</span>
 <span class="sd">            If provided, this charge will be used instead of the charge of ``peak``</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extracted_neutral_mass</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extracted_charge</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span> <span class="k">if</span> <span class="n">override_charge</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">override_charge</span>
@@ -877,7 +877,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">defaulted</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="PrecursorInformation.default"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.default">[docs]</a>    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orphan</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Populate the extracted attributes of this object from the matching</span>
+        <span class="sd">&quot;&quot;&quot;Populate the extracted attributes of this object from the matching</span>
 <span class="sd">        original attributes.</span>
 
 <span class="sd">        This usually reflects a failure to find an acceptable deconvolution solution,</span>
@@ -889,7 +889,7 @@
 <span class="sd">        orphan: :class:`bool`</span>
 <span class="sd">            Whether or not to set :attr:`orphan` to :const:`True`, indicating no peak was</span>
 <span class="sd">            found near :attr:`mz`.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="n">ChargeNotProvided</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="s2">&quot;A precursor has been defaulted with an unknown charge state.&quot;</span><span class="p">)</span>
@@ -1701,7 +1701,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_api</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">annotate_precursor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the</span>
+        <span class="sd">&quot;&quot;&quot;Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the</span>
 <span class="sd">        area around each precursor ion that gave rise to :attr:`scan`</span>
 <span class="sd">        with monoisotopic peaks and isolation windows marked.</span>
 
@@ -1717,7 +1717,7 @@
 <span class="sd">        See Also</span>
 <span class="sd">        --------</span>
 <span class="sd">        :func:`ms_deisotope.plot.annotate_scan_single`</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">precursor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;precursor&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">precursor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">pinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
