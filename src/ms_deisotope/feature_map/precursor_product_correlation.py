@@ -635,6 +635,8 @@ class NaiveIonMobilityOverlapIterator(LogUtilsMixin):
 
     def __next__(self):
         bunch: ScanBunch = next(self.frame_pair_iterator)
+        while bunch.precursor is None:
+            bunch: ScanBunch = next(self.frame_pair_iterator)
         ms1_scan = self.make_ms1_scan(bunch.precursor)
         msn_scans = []
         for product in bunch.products:

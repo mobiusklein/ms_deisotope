@@ -1,9 +1,10 @@
-"""Helpers for dealing with generic compressed files.
-"""
+"""Helpers for dealing with generic compressed files."""
 
 import io
 import os
 import gzip
+
+from typing import Union, BinaryIO
 
 from six import string_types as basestring
 
@@ -22,8 +23,8 @@ try:
     import idzip
 
     class IdzipFile(idzip.IdzipFile):
-        """Fixes io.BufferedWriter compatibility until merged upstream
-        """
+        """Fixes io.BufferedWriter compatibility until merged upstream"""
+
         def write(self, b):
             self._check_can_write()
             value = self._impl.write(b)
@@ -86,7 +87,7 @@ MaybeFastRandomAccess = Constant("MaybeFastRandomAccess", True)
 DefinitelyFastRandomAccess = Constant("DefinitelyFastRandomAccess", True)
 
 
-def test_gzipped(f):
+def test_gzipped(f: Union[BinaryIO, os.PathLike]) -> bool:
     """Checks the first two bytes of the
     passed file for gzip magic numbers
 
@@ -107,7 +108,7 @@ def test_gzipped(f):
     return magic == GZIP_MAGIC
 
 
-def starts_with_gz_magic(bytestring):
+def starts_with_gz_magic(bytestring: bytes) -> bool:
     """Tests whether or not a byte string starts with
     the GZIP magic bytes.
 
@@ -125,7 +126,7 @@ def starts_with_gz_magic(bytestring):
 
 ZSTD_MAGIC = b'(\xb5/\xfd'
 
-def starts_with_zstd_magic(bytestring):
+def starts_with_zstd_magic(bytestring: bytes) -> bool:
     """Tests whether or not a byte string starts with
     the ZSTD magic bytes.
 
@@ -141,7 +142,7 @@ def starts_with_zstd_magic(bytestring):
     return bytestring.startswith(ZSTD_MAGIC)
 
 
-def get_opener(f, buffer_size=None):
+def get_opener(f: Union[os.PathLike, str, BinaryIO], buffer_size=None) -> Union[BinaryIO, io.TextIOWrapper]:
     """Select the file reading type for the given path or stream.
 
     Detects whether the file is gzip encoded.

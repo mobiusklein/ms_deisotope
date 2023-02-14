@@ -1,4 +1,5 @@
 import io
+from typing import Literal
 
 DEFAULT_BUFFER_SIZE = 2 ** 18
 
@@ -10,16 +11,25 @@ class PreBufferedStreamReader(io.IOBase):
     that point.
 
     This type exists to adapt :obj:`sys.stdin` or socket files to work with the
-    behavior of readers like:class:`~ms_deisotope.data_source.mzml.MzMLLoader`
+    behavior of readers like :class:`~ms_deisotope.data_source.mzml.MzMLLoader`
     that rely on early random access to extract metadata even when full random
     access indexing isn't enabled.
 
     Attributes
     ----------
-    stream : file-like object
+    stream : :class:`io.IOBase`
         The object to actually read from. Must support :meth:`io.IOBase.read`,
-        :meth:`io.IOBase
+        :meth:`io.IOBase.tell`, and :meth:`close`. It will also proxy
+        :meth:`io.IOBase.fileno` if it is available.
     """
+
+    stream: io.IOBase
+    buffer: io.BytesIO
+
+    _cursor: int
+    _total_cursor: int
+    _buffer_size: int
+
     def __init__(self, stream, buffer_size=DEFAULT_BUFFER_SIZE):
         self.stream = stream
         dat = self.stream.read(buffer_size)
@@ -50,7 +60,7 @@ class PreBufferedStreamReader(io.IOBase):
     def fileno(self):
         return self.stream.fileno()
 
-    def seek(self, offset, whence=io.SEEK_SET):
+    def seek(self, offset: int, whence: Literal[0,1,2]=io.SEEK_SET):
         if (whence == io.SEEK_SET and offset > self._buffer_size):
             raise io.UnsupportedOperation(
                 "Cannot seek beyond the pre-loaded buffer")

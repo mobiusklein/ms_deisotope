@@ -217,6 +217,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
     data_arrays : dict
         Any other data arrays
     """
+
     def __new__(cls, mz, intensity, ion_mobility, distinct_ion_mobility, ion_mobility_array_type=None, data_arrays=None):
         inst = super(RawDataArrays3D, cls).__new__(
             cls, mz, intensity, ion_mobility)
