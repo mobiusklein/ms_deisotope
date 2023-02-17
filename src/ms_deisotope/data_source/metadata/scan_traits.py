@@ -425,7 +425,7 @@ scan_attributes = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('scan attribute', term_cls_name="ScanAttribute", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 scan_attributes = TermSet([
     ScanAttribute('mass resolution', 'MS:1000011',
                   ('Smallest mass difference between two equal magnitude peaks '
@@ -532,21 +532,21 @@ scan_attributes = TermSet([
                    'that compensates for the difference between high and low '
                    'field mobility of an ion.'),
                   'scan attribute',
-                  ['ion mobility attribute', 'scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+                  ['ion mobility attribute', 'peak attribute', 'scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('ion mobility drift time', 'MS:1002476',
                   ('Drift time of an ion or spectrum of ions as measured in an '
                    'ion mobility mass spectrometer. This time might refer to the '
                    'central value of a bin into which all ions within a narrow '
                    'range of drift time have been aggregated.'),
                   'scan attribute',
-                  ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+                  ['ion selection attribute', 'ion mobility attribute', 'peak attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('inverse reduced ion mobility', 'MS:1002815',
                   ('Ion mobility measurement for an ion or spectrum of ions as '
                    'measured in an ion mobility mass spectrometer. This might '
                    'refer to the central value of a bin into which all ions '
                    'within a narrow range of mobilities have been aggregated.'),
                   'scan attribute',
-                  ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+                  ['ion selection attribute', 'ion mobility attribute', 'peak attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
 ])
 # [[[end]]]
 
@@ -666,7 +666,7 @@ binary_data_arrays = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('binary data array', writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 binary_data_arrays = TermSet([
     Term('m/z array', 'MS:1000514',
          ('A data array of m/z values.'),

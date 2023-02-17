@@ -26,8 +26,7 @@ except ImportError:
 
 @click.group()
 def ms_conversion():
-    """A command line tool for converting between mass spectrometry data formats
-    """
+    """A command line tool for converting between mass spectrometry data formats."""
 
 
 def to_mgf(reader, outstream, msn_filters=None):

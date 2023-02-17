@@ -23,7 +23,7 @@ class Component(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('ionization type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 ionization_types = TermSet([
     Component('chemical ionization', 'MS:1000071',
               ('The formation of a new ion by the reaction of a neutral '
@@ -339,7 +339,7 @@ ionization_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('detector type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 detector_types = TermSet([
     Component('channeltron', 'MS:1000107',
               ('A horn-shaped (or cone-shaped) continuous dynode particle '
@@ -490,7 +490,7 @@ detector_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('mass analyzer type', 'analyzer_types', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 analyzer_types = TermSet([
     Component('fourier transform ion cyclotron resonance mass spectrometer', 'MS:1000079',
               ('A mass spectrometer based on the principle of ion cyclotron '
@@ -599,7 +599,7 @@ analyzer_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('inlet type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 inlet_types = TermSet([
     Component('continuous flow fast atom bombardment', 'MS:1000055',
               ('Fast atom bombardment ionization in which the analyte in '
@@ -728,7 +728,7 @@ class InstrumentModel(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('instrument model', term_cls_name="InstrumentModel", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 instrument_models = TermSet([
     InstrumentModel('SCIEX instrument model', 'MS:1000121',
                     ('The brand of instruments from the joint venture between '
@@ -953,6 +953,10 @@ instrument_models = TermSet([
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('Triple Quad 7500', 'MS:1003144',
                     ('SCIEX Triple Quad 7500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('ZenoTOF 7600', 'MS:1003293',
+                    ('SCIEX ZenoTOF 7600.'),
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('Bruker Daltonics HCT Series', 'MS:1000697',
@@ -2305,6 +2309,10 @@ instrument_models = TermSet([
     InstrumentModel('Q Exactive UHMR', 'MS:1003245',
                     ('Thermo Scientific Q Exactive UHMR (Ultra High Mass Range) '
                      'Hybrid Quadrupole Orbitrap MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Altis Plus', 'MS:1003292',
+                    ('Thermo Scientific TSQ Altis Plus Triple Quadrupole MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('explorer', 'MS:1000158',

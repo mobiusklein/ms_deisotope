@@ -67,7 +67,7 @@ software_names = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('software', list_name='software_names', term_cls_name="SoftwareName", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 software_names = TermSet([
     SoftwareName('Agilent software', 'MS:1000689',
                  ('Agilent software for data acquisition and analysis.'),
@@ -601,7 +601,7 @@ software_names = TermSet([
                  'software',
                  ['quantitation software name', 'analysis software', 'software', 'quantification information']),
     SoftwareName('QUIN-XL', 'MS:1003111',
-                 ('Quantification of cross-linked peptides in complex protein '
+                 ('Quantification of crosslinked peptides in complex protein '
                   'mixtures'),
                  'software',
                  ['quantitation software name', 'software', 'quantification information']),
@@ -655,6 +655,12 @@ software_names = TermSet([
                  ('The name of the Phenyx search engine.'),
                  'software',
                  ['analysis software', 'software']),
+    SoftwareName('Spectronaut', 'MS:1001327',
+                 ('Commercial cross-vendor software for library (peptide '
+                  'centric), and library-free (spectrum centric) analysis and '
+                  'quantification of DIA data.'),
+                 'software',
+                 ['analysis software', 'library creation software', 'software', 'spectral library attribute']),
     SoftwareName('greylag', 'MS:1001461',
                  ('Greylag identification software.'),
                  'software',
@@ -812,12 +818,12 @@ software_names = TermSet([
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('xiFDR', 'MS:1002543',
-                 ('Target/Decoy based FDR estimation for cross-linking peptide- '
+                 ('Target/Decoy based FDR estimation for crosslinking peptide- '
                   'identifications.'),
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('xi', 'MS:1002544',
-                 ('Search engine for cross-linked peptides.'),
+                 ('Search engine for crosslinked peptides.'),
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('Tide', 'MS:1002575',
@@ -846,6 +852,11 @@ software_names = TermSet([
                  ('Morpheus search engine.'),
                  'software',
                  ['analysis software', 'software']),
+    SoftwareName('FLASHDeconv', 'MS:1002714',
+                 ('Ultrafast, High-Quality Feature Deconvolution for Top-Down '
+                  'Proteomics.'),
+                 'software',
+                 ['analysis software', 'data processing software', 'software']),
     SoftwareName('MSPathFinder', 'MS:1002720',
                  ('PNNL top-down/bottom-up analysis software for identifying '
                   'peptides and proteoforms in fragmentation mass spectra.'),
@@ -939,8 +950,7 @@ software_names = TermSet([
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('SIM-XL', 'MS:1003109',
-                 ('Identifying cross-linked peptides in complex protein '
-                  'mixtures'),
+                 ('Identifying crosslinked peptides in complex protein mixtures'),
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('EPIFANY', 'MS:1003118',
@@ -991,6 +1001,12 @@ software_names = TermSet([
                   'infrastructure in metabolomics and fluxomics (MetaboHUB).'),
                  'software',
                  ['analysis software', 'library creation software', 'small molecule analysis software', 'software', 'spectral library attribute']),
+    SoftwareName('Casanovo', 'MS:1003281',
+                 ('Casanovo is a deep learning-based de novo spectrum '
+                  'identification tool. Official website '
+                  'https://github.com/Noble-Lab/casanovo/.'),
+                 'software',
+                 ['analysis software', 'software']),
     SoftwareName('massWolf', 'MS:1000538',
                  ('A software for converting Waters raw directory format to '
                   'mzXML or mzML. MassWolf was originally developed at the '
@@ -1145,6 +1161,13 @@ software_names = TermSet([
                   'number of open formats." [DOI:10.1021/acs.jproteome.9b00328'),
                  'software',
                  ['data processing software', 'software']),
+    SoftwareName('Goslin', 'MS:1003309',
+                 ('The Goslin implementations parse common lipid name dialects '
+                  'and normalize them to the recent lipid shorthand '
+                  'nomenclature based on grammars on succinct lipid '
+                  'nomenclature." [PMID:32589019'),
+                 'software',
+                 ['data processing software', 'postprocessing software', 'lipidomics analysis software', 'software', 'small molecule analysis software', 'analysis software']),
     SoftwareName('MALDI Solutions Microbial Identification', 'MS:1001878',
                  ('Shimadzu Biotech software for data acquisition, processing, '
                   'and analysis.'),

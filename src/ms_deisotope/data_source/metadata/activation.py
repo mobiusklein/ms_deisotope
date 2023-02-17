@@ -217,7 +217,7 @@ dissociation_methods = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('dissociation method', term_cls_name="DissociationMethod", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 dissociation_methods = TermSet([
     DissociationMethod('collision-induced dissociation', 'MS:1000133',
                        ('The dissociation of an ion after collisional excitation. The '
@@ -343,6 +343,13 @@ dissociation_methods = TermSet([
                         'excitation.'),
                        'dissociation method',
                        ['collision-induced dissociation', 'dissociation method']),
+    DissociationMethod('electron activated dissociation', 'MS:1003294',
+                       ('A process to fragment ions in a high intensity electron beam '
+                        'which results in a dissociation of various analytes ranging '
+                        'from singly charged small molecules to multiply protonated '
+                        'proteins.'),
+                       'dissociation method',
+                       ['electron capture dissociation', 'dissociation method']),
     DissociationMethod('infrared multiphoton dissociation', 'MS:1000262',
                        ('Multiphoton ionization where the reactant ion dissociates as '
                         'a result of the absorption of multiple infrared photons.'),

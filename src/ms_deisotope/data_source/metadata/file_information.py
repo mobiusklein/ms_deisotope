@@ -6,6 +6,7 @@ terms for them.
 import os
 import re
 import hashlib
+from typing import List, Union
 import warnings
 
 from collections import OrderedDict
@@ -144,6 +145,7 @@ class FileFormat(Term):
     A :class:`FileFormat` is equal to its name and its controlled
     vocabulary identifier.
     """
+
     pass
 
 
@@ -154,7 +156,208 @@ class FileContent(Term):
     A :class:`FileContent` is equal to its name and its controlled
     vocabulary identifier.
     """
+
     pass
+
+
+class DataAcquisitionAspect(Term):
+    """Describes a named mass spectrometry data acquisition method
+    aspect, either using a controlled-vocabulary term or user-defined
+    name.
+
+    """
+
+    BASE_TERM = "MS:1003214"
+
+
+data_acquisition_aspects = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('mass spectrometry acquisition method aspect',
+#             "data_acquisition_aspects", term_cls_name="DataAcquisitionAspect", writer=cog.out)
+# ]]]
+# CV Version: 4.1.114
+data_acquisition_aspects = TermSet([
+    DataAcquisitionAspect('data-independent acquisition', 'MS:1003215',
+                          ('Mass spectrometer data acquisition method wherein mass '
+                           'selection for fragmentation is configured according to a '
+                           'pre-determined program, rather than based on any detected '
+                           'precursor ions.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('dissociation of full mass range', 'MS:1003216',
+                          ('Mass spectrometer data acquisition method wherein all '
+                           'precursor ions of which the instrument is capable are '
+                           'fragmented at once..'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('dissociation of scanning quadrupole across a specified mass range', 'MS:1003217',
+                          ('Mass spectrometer data acquisition method wherein ????.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('dissociation of sequential mass ranges', 'MS:1003218',
+                          ('Mass spectrometer data acquisition method wherein a series '
+                           'of limited mass range fragmentation selection windows are '
+                           'preconfigured.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('ion mobility separation', 'MS:1003219',
+                          ('Mass spectrometer data acquisition method wherein precursor '
+                           'ions are separated by their ion mobility properties prior to '
+                           'measurement.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('data-dependent acquisition', 'MS:1003221',
+                          ('Mass spectrometer data acquisition method wherein MSn '
+                           'spectra are triggered based on the m/z of precursor ions '
+                           'detected in the same run.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['mass spectrometry acquisition method aspect', 'spectrum generation information']),
+    DataAcquisitionAspect('selected ion monitoring', 'MS:1000205',
+                          ('The operation of a mass spectrometer in which the '
+                           'intensities of several specific m/z values are recorded '
+                           'rather than the entire mass spectrum.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('selected reaction monitoring', 'MS:1000206',
+                          ('Data acquired from specific product ions corresponding to '
+                           'm/z selected precursor ions recorded via multiple stages of '
+                           'mass spectrometry. Selected reaction monitoring can be '
+                           'performed in time or in space.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('data independent acquisition from dissociation of sequential mass ranges', 'MS:1003224',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein a preconfigured sequence of mass ranges are '
+                           'fragmented. Examples of such an approach include SWATH-MS, '
+                           'FT-ARM, HRM, and PAcIFIC.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['dissociation of sequential mass ranges', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('data independent acquisition from dissociation of sequential mass ranges after ion mobility separation', 'MS:1003225',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein a preconfigured sequence of mass ranges are '
+                           'fragmented after being separated by ion mobility. An example '
+                           'of such an approach is Bruker diaPASEF.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['dissociation of sequential mass ranges', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('data independent acquisition from dissociation of full mass range after ion mobility separation', 'MS:1003226',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein the full mass range is fragmented after being '
+                           'separated by ion mobility. Examples of such an approach '
+                           'include HDMS^E and IMS-AIF.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('data independent acquisition from dissociation of full mass range', 'MS:1003227',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein the full mass range is fragmented. Examples of such '
+                           'an approach include MS^E, AIF, and bbCID.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionAspect('data independent acquisition from dissociation of scanning quadrupole across mass range', 'MS:1003228',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein ???. An example of such an approach is Waters SONAR.'),
+                          'mass spectrometry acquisition method aspect',
+                          ['data-independent acquisition', 'dissociation of scanning quadrupole across a specified mass range', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+])
+# [[[end]]]
+
+
+class DataAcquisitionMethod(Term):
+    """Describes a named mass spectrometry data acquisition method,
+    either using a controlled-vocabulary term or user-defined name.
+    """
+
+    BASE_TERM = "MS:1003213"
+
+    def is_dda(self) -> bool:
+        """Check if this method is data-dependent or not."""
+        return self.has_aspect('MS:1003221') or not self.has_aspect('MS:1003215')
+
+    def is_dia(self) -> bool:
+        """Check if this method is data-independent or not"""
+        return self.has_aspect('MS:1003215')
+
+    def is_ion_mobility(self) -> bool:
+        """Check if this method includes ion mobility"""
+        return self.has_aspect('MS:1003219')
+
+    def has_aspect(self, aspect: Union[str, DataAcquisitionAspect]) -> bool:
+        """Check if this method has a particular aspect.
+
+        Parameters
+        ----------
+        aspect : str or :class:`DataAcquisitionAspect`
+            The aspect to check for. Strings will be resolved to their matching aspects.
+
+        Returns
+        -------
+        bool
+        """
+        if not isinstance(aspect, DataAcquisitionAspect):
+            aspect: DataAcquisitionAspect = data_acquisition_aspects.get(aspect)
+        return aspect.name in self.specialization
+
+
+
+data_acquisition_methods = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('mass spectrometry acquisition method',
+#             "data_acquisition_methods", term_cls_name="DataAcquisitionMethod", writer=cog.out)
+# ]]]
+# CV Version: 4.1.114
+data_acquisition_methods = TermSet([
+    DataAcquisitionMethod('selected ion monitoring', 'MS:1000205',
+                          ('The operation of a mass spectrometer in which the '
+                           'intensities of several specific m/z values are recorded '
+                           'rather than the entire mass spectrum.'),
+                          'mass spectrometry acquisition method',
+                          ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('selected reaction monitoring', 'MS:1000206',
+                          ('Data acquired from specific product ions corresponding to '
+                           'm/z selected precursor ions recorded via multiple stages of '
+                           'mass spectrometry. Selected reaction monitoring can be '
+                           'performed in time or in space.'),
+                          'mass spectrometry acquisition method',
+                          ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('data independent acquisition from dissociation of sequential mass ranges', 'MS:1003224',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein a preconfigured sequence of mass ranges are '
+                           'fragmented. Examples of such an approach include SWATH-MS, '
+                           'FT-ARM, HRM, and PAcIFIC.'),
+                          'mass spectrometry acquisition method',
+                          ['dissociation of sequential mass ranges', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('data independent acquisition from dissociation of sequential mass ranges after ion mobility separation', 'MS:1003225',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein a preconfigured sequence of mass ranges are '
+                           'fragmented after being separated by ion mobility. An example '
+                           'of such an approach is Bruker diaPASEF.'),
+                          'mass spectrometry acquisition method',
+                          ['dissociation of sequential mass ranges', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('data independent acquisition from dissociation of full mass range after ion mobility separation', 'MS:1003226',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein the full mass range is fragmented after being '
+                           'separated by ion mobility. Examples of such an approach '
+                           'include HDMS^E and IMS-AIF.'),
+                          'mass spectrometry acquisition method',
+                          ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('data independent acquisition from dissociation of full mass range', 'MS:1003227',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein the full mass range is fragmented. Examples of such '
+                           'an approach include MS^E, AIF, and bbCID.'),
+                          'mass spectrometry acquisition method',
+                          ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    DataAcquisitionMethod('data independent acquisition from dissociation of scanning quadrupole across mass range', 'MS:1003228',
+                          ('Data independent mass spectrometer acquisition method '
+                           'wherein ???. An example of such an approach is Waters SONAR.'),
+                          'mass spectrometry acquisition method',
+                          ['data-independent acquisition', 'dissociation of scanning quadrupole across a specified mass range', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+])
+# [[[end]]]
 
 
 type_pat = re.compile("([A-Za-z]+)=xsd:(%s+)" % '|'.join(
@@ -322,7 +525,7 @@ id_formats = []
 # render_list('native spectrum identifier format',
 #             "id_formats", term_cls_name="IDFormat", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 id_formats = TermSet([
     IDFormat('Thermo nativeID format', 'MS:1000768',
              ('Native format defined by '
@@ -439,6 +642,10 @@ id_formats = TermSet([
              ('Native format defined by scan=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
+    IDFormat('Bruker TSF nativeID format', 'MS:1003283',
+             ('Native format defined by frame=xsd:nonNegativeInteger.'),
+             'native spectrum identifier format',
+             ['native spectrum identifier format']),
 ])
 # [[[end]]]
 
@@ -451,7 +658,7 @@ file_formats = []
 # render_list('mass spectrometer file format',
 #             "file_formats", term_cls_name="FileFormat", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 file_formats = TermSet([
     FileFormat('Waters raw format', 'MS:1000526',
                ('Waters data file format found in a Waters RAW directory, '
@@ -624,6 +831,10 @@ file_formats = TermSet([
                ('Shimadzu Biotech LCD file format.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
+    FileFormat('Bruker TSF format', 'MS:1003282',
+               ('Bruker TSF raw file format.'),
+               'mass spectrometer file format',
+               ['mass spectrometer file format', 'file format']),
 ])
 # [[[end]]]
 
@@ -636,7 +847,7 @@ content_keys = []
 # render_list('data file content',
 #             "content_keys", term_cls_name="FileContent", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 content_keys = TermSet([
     FileContent('mass spectrum', 'MS:1000294',
                 ('A plot of the relative abundance of a beam or other '
@@ -851,6 +1062,11 @@ content_keys = TermSet([
                  'fragmentation processes after precursor ion activation.'),
                 'data file content',
                 ['MSn spectrum', 'mass spectrum', 'data file content', 'spectrum type']),
+    FileContent('total ion currents', 'MS:4000104',
+                ('Tabular representation of the total ion current detected in '
+                 'each of a series of mass spectra.'),
+                'data file content',
+                ['table', 'total ion current chromatogram', 'QC metric value type', 'ion current chromatogram', 'data file content', 'chromatogram type']),
 ])
 # [[[end]]]
 
@@ -862,7 +1078,7 @@ spectrum_representation = []
 # render_list('spectrum representation',
 #             "spectrum_representation", term_cls_name="FileContent", writer=cog.out)
 # ]]]
-# CV Version: 4.1.95
+# CV Version: 4.1.114
 spectrum_representation = TermSet([
     FileContent('centroid spectrum', 'MS:1000127',
                 ('Processing of profile data to produce spectra that contains '
@@ -1062,6 +1278,33 @@ class FileInformation(MutableMapping):
         bool
         """
         return key in self.contents
+
+    def acquisition_methods(self) -> List[DataAcquisitionMethod]:
+        """Retrieve acquisition methods recorded for this data file.
+
+        Returns
+        -------
+        List[:class:`DataAcquisitionMethod`]
+        """
+        methods: List[DataAcquisitionMethod] = []
+        combos: List[DataAcquisitionMethod] = []
+        for (key, _v) in self.contents.items():
+            if key in data_acquisition_methods:
+                method = data_acquisition_methods.get(key)
+                if key in data_acquisition_aspects:
+                    combos.append(method)
+                else:
+                    methods.append(method)
+        if not methods:
+            return combos
+        else:
+            for combo in combos:
+                for method in methods:
+                    if combo.name in method.specialization:
+                        break
+                else:
+                    methods.append(combo)
+        return methods
 
     def __getitem__(self, key):
         return self.get_content(key)

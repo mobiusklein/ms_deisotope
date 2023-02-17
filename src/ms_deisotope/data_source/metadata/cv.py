@@ -27,6 +27,7 @@ class Term(object):
         A sequence of increasingly specific categories that this term
         belongs to
     """
+
     __slots__ = ("name", "id", "description", "category", "specialization")
 
     def __init__(self, name, id, description, category, specialization):
