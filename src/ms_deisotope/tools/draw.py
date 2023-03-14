@@ -11,8 +11,7 @@ from ms_deisotope.tools.utils import progress
 
 @click.group('draw')
 def draw():
-    """Draw images related to mass spectrometry data!
-    """
+    """Draw images related to mass spectrometry data!"""
 
 def _make_figure():
     try:
@@ -34,8 +33,7 @@ def _make_figure():
 @click.option("-s", "--start-time", type=float, required=False, help='Time to start from')
 @click.option("-e", "--end-time", type=float, required=False, help='Time to end at')
 def draw_tic(path, output_path=None, start_time=None, end_time=None):
-    """Draw the Total Ion Chromatogram (TIC), the total signal at each time point.
-    """
+    """Draw the Total Ion Chromatogram (TIC), the total signal at each time point."""
     if output_path is None:
         output_path = path + '.tic.png'
     if start_time is None:
@@ -81,6 +79,7 @@ def draw_tic(path, output_path=None, start_time=None, end_time=None):
 @click.option("-t", "--time", type=float,
               help="The acquisition time of the scan to draw. Exclusive with index and scan-id.")
 def draw_spectrum(ms_file_path, index=None, scan_id=None, time=None, output_path=None):
+    """Draw a single spectrum."""
     options = map(lambda x: x is not None, (index, scan_id, time))
     if sum(options) == 0 or sum(options) > 1:
         raise click.UsageError(

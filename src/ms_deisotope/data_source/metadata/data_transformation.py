@@ -22,12 +22,12 @@ DataTransformationOrStr = Union[str, 'DataTransformation']
 
 
 class DataTransformation(Term):
-    """Describes a named data transformation, either
-    using a controlled-vocabulary term or user-defined name.
+    """Describes a named data transformation, either using a controlled-vocabulary term or user-defined name.
 
     A :class:`DataTransformation` is equal to its name and its controlled
     vocabulary identifier.
     """
+
     pass
 
 
@@ -305,6 +305,7 @@ class ProcessingMethod(object):
     --------
     :class:`DataTransformation`
     """
+
     operations: OrderedDict[
         DataTransformation,
         Union[Any, List[Any]]

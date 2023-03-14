@@ -108,7 +108,7 @@ class MemoryScanInterface(ScanDataSource):
 
 
     def _scan_arrays(self, scan):
-        """Returns raw data arrays for m/z and intensity
+        """Return raw data arrays for m/z and intensity
 
         Parameters
         ----------
@@ -126,7 +126,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _precursor_information(self, scan):
-        """Returns information about the precursor ion,
+        """Return information about the precursor ion,
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
@@ -144,7 +144,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _scan_title(self, scan):
-        """Returns a verbose name for this scan, if one
+        """Return a verbose name for this scan, if one
         were stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
@@ -162,7 +162,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _scan_id(self, scan):
-        """Returns the scan's id string, a unique
+        """Return the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
 
@@ -182,7 +182,7 @@ class MemoryScanInterface(ScanDataSource):
             return None
 
     def _scan_index(self, scan):
-        """Returns the base 0 offset from the start
+        """Return the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
 
@@ -203,7 +203,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _ms_level(self, scan):
-        """Returns the degree of exponential fragmentation
+        """Return the degree of exponential fragmentation
         used to produce this scan.
 
         1 refers to a survey scan of unfragmented ions, 2
@@ -226,7 +226,7 @@ class MemoryScanInterface(ScanDataSource):
             return None
 
     def _scan_time(self, scan):
-        """Returns the time in minutes from the start of data
+        """Return the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
         Parameters
@@ -242,7 +242,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _is_profile(self, scan):
-        """Returns whether the scan contains profile data (`True`)
+        """Return whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
         Parameters
@@ -258,7 +258,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _polarity(self, scan):
-        """Returns whether this scan was acquired in positive mode (+1)
+        """Return whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
         Parameters
@@ -274,7 +274,7 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _activation(self, scan):
-        """Returns information about the activation method used to
+        """Return information about the activation method used to
         produce this scan, if any.
 
         Returns `None` for MS1 scans
@@ -299,6 +299,7 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
     """A :class:`~.RandomAccessScanSource` implementation which contains scan objects
     materialized from other sources or which have already been fully specified in memory.
     """
+
     _scans: List[ProcessedScan]
     _binds: bool
     _scan_id_map: Dict[str, ProcessedScan]
@@ -321,8 +322,7 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
 
     @classmethod
     def build(cls, scans: Iterable[ProcessedScan], binds: bool=True, **kwargs):
-        """Construct an :class:`ScanCollection`
-        """
+        """Construct an :class:`ScanCollection`"""
         scans = tuple(scans)
         try:
             scan = scans[0]

@@ -15,6 +15,7 @@ class ActivationInformation(object):
     method : :class:`DissociationMethod`
         The dissociation method used
     """
+
     __slots__ = ('energy', 'method', 'data')
 
     def __init__(self, method, energy, data=None):  # pylint: disable=redefined-outer-name
@@ -195,8 +196,7 @@ class MultipleActivationInformation(ActivationInformation):
 
 
 class DissociationMethod(Term):
-    """Controlled vocabulary describing a dissociation process
-    """
+    """Controlled vocabulary describing a dissociation process."""
 
     def is_supplemental(self):
         """Returns whether or not the dissociation process is

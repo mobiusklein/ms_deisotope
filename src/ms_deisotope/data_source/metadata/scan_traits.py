@@ -62,20 +62,20 @@ class IsolationWindow(_IsolationWindowBase):
 
     @property
     def lower_bound(self):
-        """The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`
-        """
+        """The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`"""
         return self.target - self.lower
 
     @property
     def upper_bound(self):
-        """The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`
-        """
+        """The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`"""
         return self.target + self.upper
 
     @property
     def width(self):
-        """The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
-        the window"""
+        """
+        The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
+        the window
+        """
         return self.lower + self.upper
 
     def __contains__(self, x):
@@ -370,6 +370,7 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
     upper: float
         The upper bound of the window
     """
+
     __slots__ = ()
 
     @property
@@ -415,6 +416,7 @@ class ScanAttribute(Term):
     """Describes a single trait or attribute belonging to a scan,
     such as injection time, filter string, or instrument configuration.
     """
+
     __slots__ = ()
 
 

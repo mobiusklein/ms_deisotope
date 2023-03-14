@@ -60,6 +60,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         from :attr:`precursor` or another element of this list derived
         from it.
     """
+
     precursor: 'ScanBase'
     produces: List['ScanBase']
     _id_map: Dict[str, 'ScanBase']
@@ -388,8 +389,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
 
 class ScanBase(object):
-    """Abstract base class for Scan-like objects
-    """
+    """Abstract base class for Scan-like objects"""
 
     source: 'ScanDataSource'
     peak_set: Optional[PeakSet]
@@ -440,8 +440,7 @@ class ScanBase(object):
 
     @property
     def scan_id(self) -> str:
-        """An alias for :attr:`id`
-        """
+        """An alias for :attr:`id`"""
         return self.id
 
     @property
@@ -1101,6 +1100,7 @@ class TICMethods(object):
     """A helper class that will figure out the most refined signal source to
     calculate the total ion current from.
     """
+
     def __init__(self, scan):
         self.scan = scan
 
@@ -1292,6 +1292,7 @@ class PeakSetMethods(_SequenceABC):
         Whether or not :attr:`scan` is of a known type or just a sequence.
 
     """
+
     def __init__(self, scan):
         self.scan = scan
         self.is_scan = self._is_scan()
@@ -1580,6 +1581,7 @@ class PlottingMethods(object):
     When called directly, the behavior is the same as calling :meth:`raw`, :meth:`centroided`,
     and meth:`deconvoluted` with a shared ``ax`` argument and common ``**kwargs``.
     """
+
     def __init__(self, scan):
         self.scan = scan
         self._plot_api = None

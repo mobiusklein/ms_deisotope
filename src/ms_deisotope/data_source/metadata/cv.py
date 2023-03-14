@@ -144,9 +144,7 @@ class TermSet(object):
         return term in self.terms or term in self.by_id or term in self.by_name
 
     def keys(self):
-        """Returns the list of keys that this collection recognizes, over
-        all of its wrapped mappings.
-        """
+        """Return the list of keys that this collection recognizes, over all of its wrapped mappings."""
         return set(self.by_id.keys()) | set(self.by_name.keys())
 
     def get(self, key, default=None):
@@ -195,9 +193,8 @@ def _unique_list(items):  # pragma: no cover
 
 
 class MappingProxy(object):
-    """An object that proxies :meth:`__getitem__` to another object
-    which is loaded lazily through a callable :attr:`loader`
-    """
+    """An object that proxies :meth:`__getitem__` to another object which is loaded lazily through a callable :attr:`loader`."""
+
     def __init__(self, loader):
         assert callable(loader)
         self.loader = loader
@@ -205,6 +202,7 @@ class MappingProxy(object):
 
     @property
     def metadata(self):
+        """The metadata forwarded from the wrapped object."""
         self._ensure_mapping()
         return self.mapping.metadata
 
@@ -280,9 +278,7 @@ def type_path(term, seed):  # pragma: no cover
 
 
 def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pragma: no cover
-    """A code generator for rendering static lists of :class:`Term`-like objects
-    from PSI-MS.
-    """
+    """Generate code for rendering static lists of :class:`Term`-like objects from PSI-MS."""
     if writer is None:
         writer = sys.stdout.write
     component_type_list = [seed]

@@ -88,13 +88,13 @@ class FilterString(str):
     --------
     :func:`filter_string_parser`
     """
+
     def __init__(self, value):
         super().__init__()
         self.data = self._parse()
 
     def get(self, key: str) -> Any:
-        """Get a field from the parsed filter string.
-        """
+        """Get a field from the parsed filter string."""
         return self.data.get(key)
 
     def _parse(self):
@@ -102,7 +102,7 @@ class FilterString(str):
 
 
 def filter_string_parser(line):
-    """Parses instrument information from Thermo's filter string
+    """Parse instrument information from Thermo's filter string
 
     Parameters
     ----------
@@ -319,8 +319,7 @@ class _InstrumentMethod(object):
          self.isolation_width_by_segment_and_ms_level) = method_parser(self.text)
 
     def isolation_width_for(self, segment, event=None, ms_level=None) -> float:
-        """Find the isolation window width for the specified scan
-        """
+        """Find the isolation window width for the specified scan"""
         if event is not None:
             try:
                 width = self.isolation_width_by_segment_and_event[segment][event]

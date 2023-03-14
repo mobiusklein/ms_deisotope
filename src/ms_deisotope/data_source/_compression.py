@@ -109,7 +109,7 @@ def test_gzipped(f: Union[BinaryIO, os.PathLike]) -> bool:
 
 
 def starts_with_gz_magic(bytestring: bytes) -> bool:
-    """Tests whether or not a byte string starts with
+    """Test whether or not a byte string starts with
     the GZIP magic bytes.
 
     Parameters
@@ -127,7 +127,7 @@ def starts_with_gz_magic(bytestring: bytes) -> bool:
 ZSTD_MAGIC = b'(\xb5/\xfd'
 
 def starts_with_zstd_magic(bytestring: bytes) -> bool:
-    """Tests whether or not a byte string starts with
+    """Test whether or not a byte string starts with
     the ZSTD magic bytes.
 
     Parameters

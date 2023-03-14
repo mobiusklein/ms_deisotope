@@ -45,7 +45,7 @@ logger = logging.getLogger('ms_deisotope')
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
-    """A collection of utilities for inspecting and manipulating mass spectrometry data."""
+    """Utilities for inspecting and manipulating mass spectrometry data."""
     init_logging()
 
 
@@ -55,7 +55,7 @@ def cli():
 @click.option("-d", "--diagnostics", is_flag=True,
               help="Run more diagnostics, greatly increasing runtime but producing additional informatoin")
 def describe(path, diagnostics=False):
-    """Produces a minimal textual description of a mass spectrometry data file."""
+    """Produce a minimal textual description of a mass spectrometry data file."""
     click.echo("Describing \"%s\"" % (path,))
     try:
         sf = SourceFile.from_path(path)

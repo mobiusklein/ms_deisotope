@@ -10,19 +10,48 @@ from .scan.loader import RandomAccessScanSource, ScanIterator
 from . import _compression
 
 
-class FormatGuesser(object):
-    guessers: List[Callable[[Union[io.IOBase, os.PathLike, str]], Type[RandomAccessScanSource]]]
-    reader_types: List[Type[RandomAccessScanSource]]
+PathLikeOrFile = Union[io.IOBase, os.PathLike, str]
+PathLikeOrFileToTypeFn = Callable[[
+    PathLikeOrFile], Union[RandomAccessScanSource, ScanIterator]]
 
-    def __init__(self, guessers: List[Callable], reader_types: List[Type]):
+
+class FormatGuesser(object):
+    """Infer which file format a given file path or file-like object.
+
+    Attributes
+    ----------
+    guessers : List[Callable[[PathLikeOrFile], Type[:class:`~.RandomAccessScanSource`]]]
+    reader_types : List[:class:`~.RandomAccessScanSource`]
+    """
+
+    guessers: List[PathLikeOrFileToTypeFn]
+    reader_types: List[Union[RandomAccessScanSource, ScanIterator]]
+
+    def __init__(self, guessers: List[PathLikeOrFileToTypeFn], reader_types: List[Type]):
         self.guessers = list(guessers or [])
         self.reader_types = list(reader_types or [])
 
-    def register_type_guesser(self, reader_guesser: Callable[[Union[io.IOBase, os.PathLike, str]], Type[RandomAccessScanSource]]):
+    def register_type_guesser(self, reader_guesser: PathLikeOrFileToTypeFn) -> PathLikeOrFileToTypeFn:
+        """
+        Add a type determining function to the internal registry.
+
+        This method can be used as a decorator.
+
+        Parameters
+        ----------
+        reader_guesser : Callable[[Union[io.IOBase, os.PathLike, str], Union[RandomAccessScanSource, ScanIterator]]
+            The function predicate that takes a path or file-like object and returns
+            an appropriate type for reading it, or raises an error if not compatible.
+
+        Returns
+        -------
+        Callable[[Union[io.IOBase, os.PathLike, str], Union[RandomAccessScanSource, ScanIterator]]
+        """
         self.guessers.append(reader_guesser)
         return reader_guesser
 
-    def guess_type(self, file_path: Union[io.IOBase, os.PathLike, str]):
+    def guess_type(self, file_path: PathLikeOrFile) -> Type[Union[RandomAccessScanSource, ScanIterator]]:
+        """Test the path or file-like objects using each registered predicate, returning the first type that works."""
         for guesser in self.guessers:
             try:
                 reader_type = guesser(file_path)
@@ -31,10 +60,10 @@ class FormatGuesser(object):
                 continue
         raise ValueError("Cannot determine ScanLoader type from %r" % (file_path, ))
 
-    def add_reader_type(self, reader: Type[RandomAccessScanSource]):
+    def add_reader_type(self, reader: Union[RandomAccessScanSource, ScanIterator]):
         self.reader_types.append(reader)
 
-    def guess_from_file_extension(self, file_path: Union[io.IOBase, os.PathLike, str], ext_map: Dict[str, Type[RandomAccessScanSource]]):
+    def guess_from_file_extension(self, file_path: PathLikeOrFile, ext_map: Dict[str, Type[Union[RandomAccessScanSource, ScanIterator]]]):
         if hasattr(file_path, 'name'):
             file_path = file_path.name
         if file_path.endswith(".gz"):
@@ -52,10 +81,11 @@ class FormatGuesser(object):
         self.register_type_guesser(guesser)
         return guesser
 
-    def open_file(self, file_path: Union[io.IOBase, os.PathLike, str], *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
-        """Factory function to create an object that reads scans from
-        any supported data file format. Provides both iterative and
-        random access.
+    def open_file(self, file_path: PathLikeOrFile, *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
+        """
+        Create an object that reads scans from any supported data file format.
+
+        Provides both iterative and random access.
         """
         reader_type = self.guess_type(file_path)
         try:
@@ -72,7 +102,17 @@ class FormatGuesser(object):
             fobj = file_path
         return reader_type(fobj, *args, **kwargs)
 
-    def __call__(self, file_path: Union[io.IOBase, os.PathLike], *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
+    def __call__(self, file_path: PathLikeOrFile, *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
+        """Proxy for :meth:`open_file`.
+
+        Parameters
+        ----------
+        file_path : str or :class:`io.IOBase`
+
+        Returns
+        -------
+        :class:`~.RandomAccessScanSource` or :class:`~.ScanIterator`
+        """
         return self.open_file(file_path, *args, **kwargs)
 
 

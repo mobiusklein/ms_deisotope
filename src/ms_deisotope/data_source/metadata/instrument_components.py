@@ -15,6 +15,7 @@ class Component(Term):
     A :class:`Component` is equal to its name and its controlled
     vocabulary identifier.
     """
+
     pass
 
 
@@ -720,6 +721,7 @@ class InstrumentModel(Term):
     A :class:`InstrumentModel` is equal to its name and its controlled
     vocabulary identifier.
     """
+
     pass
 
 

@@ -15,7 +15,7 @@ def maintenance():
 
 @maintenance.command('vendor-readers-available', short_help="Check if vendor readers are available")
 def has_vendor_readers():
-    """Logs whether libraries for using mass spectrometry vendor libraries to read
+    """Log whether libraries for using mass spectrometry vendor libraries to read
     directly from their native file formats are installed.
     """
     from ms_deisotope.data_source.agilent_d import determine_if_available as agilent_d_available
@@ -147,8 +147,7 @@ def register_waters_masslynx(path):
 
 @maintenance.command('show-config', short_help="Display the config file's contents")
 def show_config():
-    """Load the config file and write it to STDOUT
-    """
+    """Load the config file and write it to STDOUT"""
     import json
     click.echo(get_config_dir())
     config = get_config()

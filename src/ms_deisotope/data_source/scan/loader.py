@@ -84,7 +84,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _scan_arrays(self, scan: DataPtrType) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]]:
-        """Returns raw data arrays for m/z and intensity
+        """Return raw data arrays for m/z and intensity
 
         Parameters
         ----------
@@ -103,7 +103,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _precursor_information(self, scan: DataPtrType) -> Optional[PrecursorInformation]:
-        """Returns information about the precursor ion,
+        """Return information about the precursor ion,
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
@@ -122,7 +122,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _scan_title(self, scan: DataPtrType) -> str:
-        """Returns a verbose name for this scan, if one
+        """Return a verbose name for this scan, if one
         was stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
@@ -141,7 +141,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _scan_id(self, scan: DataPtrType) -> str:
-        """Returns the scan's id string, a unique
+        """Return the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
 
@@ -159,7 +159,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _scan_index(self, scan: DataPtrType) -> int:
-        """Returns the base 0 offset from the start
+        """Return the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
 
@@ -181,7 +181,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _ms_level(self, scan: DataPtrType) -> int:
-        """Returns the degree of exponential fragmentation
+        """Return the degree of exponential fragmentation
         used to produce this scan. 1 refers to a survey scan
         of unfragmented ions, 2 refers to a tandem scan derived
         from an ms level 1 ion, and so on.
@@ -200,7 +200,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _scan_time(self, scan: DataPtrType) -> float:
-        """Returns the time in minutes from the start of data
+        """Return the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
         Parameters
@@ -217,7 +217,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _is_profile(self, scan: DataPtrType) -> bool:
-        """Returns whether the scan contains profile data (`True`)
+        """Return whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
         Parameters
@@ -234,7 +234,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _polarity(self, scan: DataPtrType) -> int:
-        """Returns whether this scan was acquired in positive mode (+1)
+        """Return whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
         Parameters
@@ -251,7 +251,7 @@ class ScanDataSource(Generic[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _activation(self, scan: DataPtrType) -> Optional[ActivationInformation]:
-        """Returns information about the activation method used to
+        """Return information about the activation method used to
         produce this scan, if any.
 
         Returns :const:`None` for MS1 scans
@@ -710,8 +710,8 @@ class TimeIndex(object):
     """A facade that translates ``[x]`` into
     scan time access, and supports slicing over
     a time range.
-
     """
+
     def __init__(self, scan_loader):
         self.scan_loader = scan_loader
 
