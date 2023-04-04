@@ -14,7 +14,7 @@ requires = ["setuptools",
 target-version = "py38"
 line-length = 120
 select = ["D"]
-ignore = ["D400", "D205", "D105"]
+ignore = ["D415", "D400", "D212", "D205", "D203", "D105"]
 
 [tool.ruff.pydocstyle]
 convention = "numpy"

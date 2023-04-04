@@ -1,6 +1,8 @@
-"""Simple library-wide configuration management to handle
-the tracking of external 3rd-party libraries and machine state.
+"""
+Simple library-wide configuration management to handle the tracking of external 3rd-party
+libraries and machine state.
 
+Controlled externally by `ms-index maintenance`
 """
 import os
 import sys
@@ -15,8 +17,8 @@ CONFIG_FILE_NAME = 'config.json'
 
 
 def _get_home_dir():
-    """Find user's home directory if possible.
-    Otherwise, returns None.
+    """
+    Find user's home directory if possible. Otherwise, returns None.
 
     :see:
         http://mail.python.org/pipermail/python-list/2005-February/325395.html
@@ -35,7 +37,8 @@ def _get_home_dir():
 
 
 def get_config_dir():
-    """Get the configuration directory path.
+    """
+    Get the configuration directory path.
 
     Tries the following routes:
         1. The environment variable "MS_DEISOTOPE_CONFIGDIR"
@@ -98,8 +101,8 @@ _DEFAULT_CONFIG = {
 
 
 def get_config():
-    """Load the config.json file from the configuration
-    directory given by :func:`get_config_dir`.
+    """
+    Load the config.json file from the configuration directory given by :func:`get_config_dir`.
 
     If the config file does not exist, a default one
     will be created.
@@ -129,8 +132,8 @@ def get_config():
 
 
 def save_config(config=None):
-    """Save the configuration in `config` to disk in the
-    configuration directory given by :func:`get_config_dir`.
+    """
+    Save the configuration in `config` to disk in the configuration directory given by :func:`get_config_dir`.
 
     Parameters
     ----------

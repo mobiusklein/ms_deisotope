@@ -806,6 +806,13 @@ cdef class DeconvolutedPeakSet:
 
         return self.__class__(acc).reindex()
 
+    def select_top_n(self, n: int=200):
+        top_peaks = sorted(self, key=operator.attrgetter('intensity'), reverse=True)[:n]
+        dup = self.__class__((p.clone() for p in top_peaks))
+        dup.reindex()
+        return dup
+
+
 cdef double INF
 INF = float('inf')
 

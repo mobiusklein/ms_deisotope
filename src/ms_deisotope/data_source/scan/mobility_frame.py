@@ -524,8 +524,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return 0
 
     def between_mz(self, low, high):
-        """Returns a slice of the arrays between ``low`` and ``high``
-        m/z
+        """Return a slice of the arrays between ``low`` and ``high`` m/z.
 
         Parameters
         ----------
@@ -982,6 +981,7 @@ def weighted_centroid(feature):
 
 
 def merge_envelopes(envelopes):
+    envelopes = sorted(envelopes, key=len, reverse=True)
     base = envelopes[0].clone()
     for env in envelopes[1:]:
         for i, p in enumerate(env):

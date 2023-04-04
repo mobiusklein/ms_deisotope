@@ -16,8 +16,8 @@ class Sample(Base):
         A name for the sample
     parameters : :class:`dict`
         A collection of descriptive
-
     """
+
     def __init__(self, id, name=None, parameters=None, **kwargs):
         if parameters is None:
             parameters = dict(kwargs)

@@ -62,8 +62,7 @@ class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
         return self
 
     def next(self):
-        """Py2 compatible iterator
-        """
+        """Py2 compatible iterator"""
         if self._producer is None:
             self._producer = self._make_producer()
         return next(self._producer)
@@ -76,8 +75,7 @@ class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
 
     @property
     def iteration_mode(self):
-        """The iteration mode of the strategy, "grouped" or "single"
-        """
+        """The iteration mode of the strategy, "grouped" or "single"."""
         raise NotImplementedError()
 
     @classmethod
@@ -193,7 +191,7 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], I
             yield ScanBunch(precursor_scan, product_scans)
 
 
-class GenerationTracker(object):
+class _GenerationTracker(object):
     _generations_type = list if PY2 else deque
 
     def __init__(self):
@@ -254,7 +252,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
     ms1_buffer: Deque[ScanType]
     product_mapping: DefaultDict[str, List[ScanType]]
 
-    generation_tracker: GenerationTracker
+    generation_tracker: _GenerationTracker
     orphans: List[ScanType]
 
     passed_first_ms1: bool
@@ -269,7 +267,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         self.buffering = buffering
         self.ms1_buffer = deque()
         self.product_mapping = defaultdict(list)
-        self.generation_tracker = GenerationTracker()
+        self.generation_tracker = _GenerationTracker()
         self.orphans = []
         self.passed_first_ms1 = False
         self.highest_ms_level = 0

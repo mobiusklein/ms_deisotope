@@ -306,7 +306,7 @@ class DeconvolutedPeakSet(Base):
 
     def reindex(self):
         """
-        Updates the :attr:`index` of each peak in `self` and updates the
+        Update the :attr:`index` of each peak in `self` and updates the
         sorted order.
 
         Returns
@@ -399,6 +399,12 @@ class DeconvolutedPeakSet(Base):
                 acc.append(peak.clone())
 
         return self.__class__(acc)._reindex()
+
+    def select_top_n(self, n: int=200):
+        top_peaks = sorted(self, key=lambda x: x.intensity, reverse=True)[:n]
+        dup = self.__class__((p.clone() for p in top_peaks))
+        dup.reindex()
+        return dup
 
 
 def merge(peaks_a, *peaks_b, **kwargs):
