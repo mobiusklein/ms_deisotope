@@ -1,0 +1,56 @@
+name: debug-mse-build
+
+on:
+  push:
+    branches:
+      - 'debug_mse/**'
+    tags:
+      - 'mse_tool_*'
+
+jobs:
+  install-library:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9']
+        os: [ubuntu-20.04, windows-2019]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install coverage pytest pytest-cov -U
+        pip install Cython --install-option="--no-cython-compile"
+        pip install --only-binary=numpy,scipy,matplotlib numpy scipy matplotlib -U
+        pip install -v ".[cli,mzmlb]"
+    - name: Check MSE tool
+      run: |
+        python examples/waters_cyclic_deconvolute.py --help
+    - name: Install PyInstaller
+      run: |
+        pip install pyinstaller
+    - name: Run PyInstaller
+      shell: bash
+      run: |
+        rm -rf ./build_${{ runner.os }}/ ./dist_${{ runner.os }}/
+        echo "Beginning build"
+        python -m PyInstaller -c "./examples/waters_cyclic_deconvolute.py" -D \
+            --distpath dist_${{ runner.os }} \
+            --workpath build_${{ runner.os }} \
+            --exclude-module _tkinter \
+            --exclude-module PyQt4 \
+            --exclude-module PyQt5 \
+            --exclude-module IPython \
+            --exclude-module pandas \
+            --additional-hooks-dir "./pyinstaller_hooks/"
+        ./dist_${{ runner.os }}/waters_cyclic_deconvolute/waters_cyclic_deconvolute --help
+    - uses: actions/upload-artifact@v3
+      with:
+        name: "waters_cyclic_deconvolute_${{ runner.os }}"
+        path: ./dist_${{ runner.os }}/waters_cyclic_deconvolute/
+        retention-days: 30

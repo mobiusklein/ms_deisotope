@@ -32,6 +32,8 @@ from ms_deisotope.tools.deisotoper.output import ThreadedMzMLScanStorageHandler
 
 from ms_deisotope.task import TaskBase
 from ms_deisotope.tools.utils import processes_option, register_debug_hook, progress
+from ms_deisotope.tools.maintenance import register_waters_masslynx
+from ms_deisotope.tools.indexing import describe
 
 
 faulthandler.enable()
@@ -566,12 +568,13 @@ def naive_ion_mobility_overlap_pseudospectra(input_path, output_path):
                 prog.update(n_steps=2, current_item=bunch.precursor.id)
                 writer.save(bunch)
 
+cli.add_command(describe)
+cli.add_command(register_waters_masslynx)
 
-
-register_debug_hook()
 
 if __name__ == "__main__":
     import multiprocessing
+    register_debug_hook()
     multiprocessing.freeze_support()
     logging.captureWarnings(True)
     TaskBase.log_with_logger(logger)
