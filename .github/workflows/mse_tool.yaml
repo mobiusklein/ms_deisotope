@@ -46,3 +46,11 @@ jobs:
             --workpath build --distpath dist \
             --additional-hooks-dir "./pyinstaller_hooks/"
         ./dist/waters_cyclic_deconvolute/waters_cyclic_deconvolute --help
+    - name: Package PyInstaller
+      shell: bash
+      run: |
+        zip ./dist/waters_cyclic_deconvolute/
+    - uses: actions/upload-artifact@v3
+      with:
+        name: waters_cyclic_deconvolute_${RUNNER_OS}.zip
+        path: ./dist/waters_cyclic_deconvolute.zip
