@@ -1,4 +1,4 @@
-name: debug-mse-build
+name: Build Waters Cyclic MSE Tool
 
 on:
   push:
