@@ -26,4 +26,6 @@ jobs:
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
         pip install -v ".[cli,mzmlb]"
-        py.test -l -s -v ./tests --cov=ms_deisotope --cov-report=html --cov-report term
+    - name: Check MSE tool
+      run: |
+        python examples/waters_cyclic_deconvolute.py --help
