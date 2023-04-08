@@ -51,4 +51,4 @@ jobs:
       with:
         name: "waters_cyclic_deconvolute_${{ runner.os }}"
         path: ./dist_${{ runner.os }}/waters_cyclic_deconvolute/
-        retention-days: 5
+        retention-days: 7
