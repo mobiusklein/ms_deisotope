@@ -35,18 +35,20 @@ jobs:
     - name: Run PyInstaller
       shell: bash
       run: |
-        rm -rf ./build/ ./dist/
+        rm -rf ./build_${{ env.RUNNER_OS }}/ ./dist_${{ env.RUNNER_OS }}/
         echo "Beginning build"
         python -m PyInstaller -c "./examples/waters_cyclic_deconvolute.py" -D \
+            --distpath dist_${{ env.RUNNER_OS }} \
+            --workpath build_${{ env.RUNNER_OS }} \
             --exclude-module _tkinter \
             --exclude-module PyQt4 \
             --exclude-module PyQt5 \
             --exclude-module IPython \
             --exclude-module pandas \
-            --workpath build --distpath dist \
             --additional-hooks-dir "./pyinstaller_hooks/"
         ./dist/waters_cyclic_deconvolute/waters_cyclic_deconvolute --help
     - uses: actions/upload-artifact@v3
       with:
-        name: waters_cyclic_deconvolute_${RUNNER_OS}
-        path: ./dist/waters_cyclic_deconvolute/
+        name: "waters_cyclic_deconvolute_${{ env.RUNNER_OS }}"
+        path: ./dist/waters_cyclic_deconvolute_${{ env.RUNNER_OS }}/
+        retention-days: 5
