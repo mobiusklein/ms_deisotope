@@ -49,7 +49,8 @@ jobs:
     - name: Package PyInstaller
       shell: bash
       run: |
-        zip ./dist/waters_cyclic_deconvolute/
+        ls -l ./dist/ ./dist/waters_cyclic_deconvolute
+        zip ./dist/waters_cyclic_deconvolute
     - uses: actions/upload-artifact@v3
       with:
         name: waters_cyclic_deconvolute_${RUNNER_OS}.zip
