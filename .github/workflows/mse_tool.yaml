@@ -33,6 +33,7 @@ jobs:
       run: |
         pip install pyinstaller
     - name: Run PyInstaller
+      shell: bash
       run: |
         rm -rf ./build/ ./dist/
         echo "Beginning build"
