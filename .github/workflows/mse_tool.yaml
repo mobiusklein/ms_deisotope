@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'debug_mse/**'
+    tags:
+      - 'mse_tool_*'
 
 jobs:
   install-library:
