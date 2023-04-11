@@ -67,8 +67,8 @@ jobs:
           ls -la artifacts/
           for p in $(ls artifacts/); do
             echo $p
-            ls $p
-            zip -r ${p}.zip ${p}/
+            ls artifacts/$p
+            cd artifacts && zip -r ${p}.zip ${p}/
           done
       - name: Make Release
         if: "startsWith(github.ref, 'refs/tags/mse_tool')"
@@ -76,5 +76,5 @@ jobs:
         with:
           draft: true
           token: ${{ secrets.RELEASE_TOKEN }}
-          files: artifacts/*
+          files: artifacts/*.zip
           fail_on_unmatched_files: true
