@@ -67,7 +67,7 @@ jobs:
           ls -la artifacts/
           for p in $(ls artifacts/); do
             echo $p
-            zip $p
+            zip ${p}.zip $p
           done
       - name: Make Release
         if: "startsWith(github.ref, 'refs/tags/mse_tool')"
