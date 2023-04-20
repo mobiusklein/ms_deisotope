@@ -3,7 +3,7 @@ name: debug-wheel-build
 on:
   push:
     branches:
-      - 'debug/**'
+      - 'debug/wheel**'
 
 jobs:
   build-wheels:
