@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 
 from six import string_types as basestring
-from ms_deisotope.data_source import ScanBase, Scan, ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation
+from ms_deisotope.data_source import ScanBase, Scan, ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation, ProcessedRandomAccessScanSource
 from ms_deisotope.peak_set import DeconvolutedPeak
 
 from ms_deisotope.utils import Base
@@ -401,3 +401,7 @@ class LCMSMSQueryInterfaceMixin(object):
         except AttributeError as ae:
             raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
                 ae, scan_id))
+
+__all__ = [
+    "ScanSerializerBase", "ScanDeserializerBase", "SampleRun", "LCMSMSQueryInterfaceMixin", "ProcessedRandomAccessScanSource"
+]

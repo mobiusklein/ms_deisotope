@@ -27,7 +27,8 @@ class GraphBasedDenoiser(object):
         self.product_losses = list(product_losses)
 
     def initialize_graph(self, peak_set, precursor_mass):
-        """Construct a spectrum graph which connects peaks by :attr:`component` masses
+        """
+        Construct a spectrum graph which connects peaks by :attr:`component` masses
 
         This method relies on :attr:`path_finder` for most of its heavy lifting through
         :meth:`~.PathFinder.find_edges` and :meth:`~.PathFinder.find_complements`.
@@ -49,7 +50,8 @@ class GraphBasedDenoiser(object):
         return graph
 
     def find_precursor_peak(self, peak_set, precursor_mass, losses=None):
-        """Find peaks derived from intact- and neutral losses of the precursor ion
+        """
+        Find peaks derived from intact- and neutral losses of the precursor ion
 
         Parameters
         ----------
@@ -80,7 +82,8 @@ class GraphBasedDenoiser(object):
         return keep
 
     def find_loss_peaks(self, peak_set, kept_peak_indices, losses=None):
-        """Find neutral loss peaks from the set of peaks that are already set to be retained.
+        """
+        Find neutral loss peaks from the set of peaks that are already set to be retained.
 
         Parameters
         ----------
@@ -108,10 +111,9 @@ class GraphBasedDenoiser(object):
         return kept_peak_indices
 
     def walk_graph(self, graph):
-        """Traverse `graph` along its edges, and save the peak indices at either end of each
+        """
+        Traverse `graph` along its edges, and save the peak indices at either end of each
         edge for use later.
-
-        [description]
 
         Parameters
         ----------
@@ -130,7 +132,8 @@ class GraphBasedDenoiser(object):
         return keep
 
     def select_peaks(self, peak_set, indices):
-        """Given a :class:`~.DeconvolutedPeakSet` and a set of indices into it, construct a
+        """
+        Given a :class:`~.DeconvolutedPeakSet` and a set of indices into it, construct a
         new :class:`~.DeconvolutedPeakSet` with copies of the peaks at those indices
 
         Parameters
@@ -152,7 +155,8 @@ class GraphBasedDenoiser(object):
         return keep
 
     def apply_filter(self, peak_set, precursor_mass):
-        """Does the actual work of filtering the peak set.
+        """
+        Does the actual work of filtering the peak set.
 
         This method is designed to decouple the :class:`~.ScanBase`
         consuming interface from the actual filtering process.
@@ -181,7 +185,8 @@ class GraphBasedDenoiser(object):
         return peak_set
 
     def filter(self, scan):
-        """Filter an MSn scan's deconvoluted peak set according to graph-connectedness.
+        """
+        Filter an MSn scan's deconvoluted peak set according to graph-connectedness.
 
         This noise filter will remove any peak that is not connected to another peak by a
         mass shift from :attr:`components` or connected to such a peak via a loss mass shift
@@ -212,7 +217,8 @@ class GraphBasedDenoiser(object):
         return filtered_peak_set
 
     def __call__(self, scan):
-        """Filter an MSn scan's deconvoluted peak set according to graph-connectedness.
+        """
+        Filter an MSn scan's deconvoluted peak set according to graph-connectedness.
 
         This is a wrapper around the :meth:`filter` method.
 

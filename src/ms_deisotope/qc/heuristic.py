@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Heuristic methods for estimating whether a peak list is likely
+"""
+Heuristic methods for estimating whether a peak list is likely
 to produce a high quality interpretation.
 """
 import numbers
@@ -8,7 +9,8 @@ import numpy as np
 
 
 def xrea(peaks):
-    """Calculate an approximation of the Xrea spectral quality metric.
+    """
+    Calculate an approximation of the Xrea spectral quality metric.
 
     Xrea is essentially a measure of whether or not a spectrum is "flat", having no prominent
     peaks. Such spectra are more likely to be low quality.
