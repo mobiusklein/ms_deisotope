@@ -2,7 +2,8 @@ from collections import deque
 
 
 class SpanningMixin(object):
-    """Provides methods for checking whether an entity
+    """
+    Provides methods for checking whether an entity
     which has a defined start and end point over a single
     dimension contains or overlaps with another entity in
     that same dimension.
@@ -13,7 +14,8 @@ class SpanningMixin(object):
         self.end = end
 
     def __contains__(self, i):
-        """Tests for point inclusion, `start <= i <= end`
+        """
+        Tests for point inclusion, `start <= i <= end`
 
         Parameters
         ----------
@@ -27,7 +29,8 @@ class SpanningMixin(object):
         return self.contains(i)
 
     def contains(self, i):
-        """Tests for point inclusion, `start <= i <= end`
+        """
+        Tests for point inclusion, `start <= i <= end`
 
         Parameters
         ----------
@@ -41,13 +44,15 @@ class SpanningMixin(object):
         return self.start <= i <= self.end
 
     def overlaps(self, interval):
-        """Tests whether another spanning entity with
+        """
+        Tests whether another spanning entity with
         a defined start and end point overlaps with
         this spanning entity
 
         Parameters
         ----------
         interval : SpanningMixin
+            The interval to test overlap with
 
         Returns
         -------
@@ -71,12 +76,14 @@ class SpanningMixin(object):
             return self.start - interval.end
 
     def is_contained_in_interval(self, interval):
-        """Tests whether this spanning entity is
+        """
+        Tests whether this spanning entity is
         completely contained inside the other entity
 
         Parameters
         ----------
         interval : SpanningMixin
+            The interval to test containment with
 
         Returns
         -------
@@ -85,12 +92,14 @@ class SpanningMixin(object):
         return self.start >= interval.start and self.end <= interval.end
 
     def contains_interval(self, interval):
-        """Tests whether the other spanning entity is
+        """
+        Tests whether the other spanning entity is
         completely contained inside this entity
 
         Parameters
         ----------
         interval : SpanningMixin
+            The interval to test containment with
 
         Returns
         -------
@@ -100,7 +109,8 @@ class SpanningMixin(object):
 
 
 class Interval(SpanningMixin):
-    """A generic wrapper around data associated
+    """
+    A generic wrapper around data associated
     with a particular interval over a single dimension
 
     Attributes
@@ -116,6 +126,7 @@ class Interval(SpanningMixin):
     start : Number
         The start point of the interval described
     """
+
     def __init__(self, start, end, members=None, **kwargs):
         if members is None:
             members = []
@@ -138,7 +149,8 @@ class Interval(SpanningMixin):
 
 
 class IntervalTreeNode(object):
-    """A single node in an Interval Tree. The
+    """
+    A single node in an Interval Tree. The
     root node of an interval tree can be treated
     as the tree itself.
 
@@ -172,6 +184,7 @@ class IntervalTreeNode(object):
         The start point of this node's collection or it's
         leftmost child's start point, whichever is smaller
     """
+
     def __init__(self, center, left, contained, right, level=0, parent=None):
         self.center = center
         self.left = left
@@ -198,7 +211,8 @@ class IntervalTreeNode(object):
             self.start = self.end = center
 
     def contains_point(self, x):
-        """Returns the list of contained intervals for all
+        """
+        Returns the list of contained intervals for all
         nodes which contain the point `x`.
 
         Parameters
@@ -232,7 +246,8 @@ class IntervalTreeNode(object):
         return result
 
     def overlaps(self, start, end):
-        """Returns the list of all contained intervals which
+        """
+        Returns the list of all contained intervals which
         overlap with the interval described by `start` and `end`
 
         Parameters
@@ -396,11 +411,14 @@ class IntervalTreeNode(object):
 
 
 def iterative_build_interval_tree(cls, intervals):
-    """Builds an IntervalTreeNode hierarchy from `intervals`. This
+    """
+    Builds an IntervalTreeNode hierarchy from `intervals`. This
     iterative method is preferable to avoid recursion limits.
 
     Parameters
     ----------
+    cls
+        The class this method is bound to
     intervals : Iterable of Intervals
         The set of Interval-like objects to use to construct
         the Interval Tree
