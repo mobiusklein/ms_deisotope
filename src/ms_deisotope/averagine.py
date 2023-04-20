@@ -17,7 +17,8 @@ from .constants import IGNORE_BELOW, TRUNCATE_AFTER
 
 
 class TheoreticalIsotopicPattern(object):
-    """Represent a theoretical isotopic peak list
+    """
+    Represent a theoretical isotopic peak list
 
     Attributes
     ----------
@@ -53,7 +54,8 @@ class TheoreticalIsotopicPattern(object):
         return self.__class__([p.clone() for p in self.peaklist], self.origin, self.offset)
 
     def truncate_after(self, truncate_after=0.95):
-        """Drops peaks from the end of the isotopic pattern
+        """
+        Drops peaks from the end of the isotopic pattern
         which make up the last ``1 - truncate_after`` percent
         of the isotopic pattern.
 
@@ -88,7 +90,8 @@ class TheoreticalIsotopicPattern(object):
         return self
 
     def shift(self, offset):
-        """Shift all the m/z of peaks in the isotopic pattern by ``offset``
+        """
+        Shift all the m/z of peaks in the isotopic pattern by ``offset``
         m/z.
 
         This will update :attr:`origin` to reflect the new starting
@@ -112,7 +115,8 @@ class TheoreticalIsotopicPattern(object):
         return self
 
     def ignore_below(self, ignore_below=0):
-        """Discards peaks whose intensity is below ``ignore_below``.
+        """
+        Discards peaks whose intensity is below ``ignore_below``.
 
         After discarding peaks, the pattern will be renormalized to
         sum to ``1.0``
@@ -157,7 +161,8 @@ class TheoreticalIsotopicPattern(object):
             ', '.join("%0.3f" % p.intensity for p in self.peaklist))
 
     def scale(self, experimental_distribution, method='sum'):
-        r"""Scales ``self``'s intensity to match the intensity distribution of the
+        r"""
+        Scales ``self``'s intensity to match the intensity distribution of the
         experimental isotopic pattern in ``experimental_distribution``.
 
         The ``method`` argument must be one of:
@@ -273,7 +278,8 @@ class TheoreticalIsotopicPattern(object):
         return total
 
     def incremental_truncation(self, threshold):
-        """Create incremental truncations of `self`, dropping the last peak until
+        """
+        Create incremental truncations of `self`, dropping the last peak until
         the the total signal in reaches `threshold`
 
         Parameters
@@ -312,7 +318,8 @@ class TheoreticalIsotopicPattern(object):
 
 @dict_proxy("base_composition")
 class Averagine(object):
-    """An isotopic model which can be used to interpolate the composition
+    """
+    An isotopic model which can be used to interpolate the composition
     of a class of molecule given an average monomer composition and a theoretical
     polymer mass
 
@@ -332,7 +339,8 @@ class Averagine(object):
         self.base_mass = calculate_mass(self.base_composition)
 
     def scale(self, mz, charge=1, charge_carrier=PROTON):
-        """Given an m/z and a charge state, interpolate the composition
+        """
+        Given an m/z and a charge state, interpolate the composition
         of the polymer with the matching neutral mass
 
         Parameters
@@ -375,7 +383,8 @@ class Averagine(object):
 
     def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                          ignore_below=IGNORE_BELOW):
-        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        """
+        Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
         by theoretical peak height and density.
 
         Parameters
@@ -422,7 +431,8 @@ class Averagine(object):
 
 
 def average_compositions(compositions, weights=None):
-    """Calculate the average composition
+    """
+    Calculate the average composition
 
     Parameters
     ----------
@@ -486,7 +496,8 @@ def isotopic_shift(charge=1):
 
 @dict_proxy("averagine")
 class AveragineCache(object):
-    """A wrapper around a :class:`Averagine` instance which will cache isotopic patterns
+    """
+    A wrapper around a :class:`Averagine` instance which will cache isotopic patterns
     produced for new (m/z, charge) pairs and reuses it for nearby m/z values
 
     Attributes
@@ -523,7 +534,8 @@ class AveragineCache(object):
 
     def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                          ignore_below=IGNORE_BELOW):
-        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        """
+        Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
         by theoretical peak height and density.
 
         Mimics :meth:`.Averagine.isotopic_cluster` but uses the object's cache through
@@ -581,7 +593,8 @@ except ImportError:
 
 
 class BasePeakToMonoisotopicOffsetEstimator(object):
-    """A type to predict the distance (in neutron count) from the base peak to
+    """
+    A type to predict the distance (in neutron count) from the base peak to
     the monoisotopic peak of an isotopic pattern given a mass and an
     :class:`Averagine` model.
 
@@ -599,8 +612,8 @@ class BasePeakToMonoisotopicOffsetEstimator(object):
         A sequence of positive :class:`int` values corresponding to the distance
         between the base peak and the monoisotopic peak in neutrons in
         the given bin. The mass for the bin is the bin index times :attr:`step_size`.
-
     """
+
     def __init__(self, averagine, step_size=100.0):
         self.averagine = averagine
         self.bins = pyarray('I')
@@ -629,7 +642,8 @@ class BasePeakToMonoisotopicOffsetEstimator(object):
         return i
 
     def get_peak_offset(self, mass, binned=True):
-        """Estimate the number of neutrons separating the most intense peak of
+        """
+        Estimate the number of neutrons separating the most intense peak of
         an isotopic pattern from the pattern's monoisotopic peak.
 
         Parameters
@@ -655,7 +669,8 @@ class BasePeakToMonoisotopicOffsetEstimator(object):
             return self.bins[index]
 
     def __call__(self, mass, binned=True):
-        """Estimate the number of neutrons separating the most intense peak of
+        """
+        Estimate the number of neutrons separating the most intense peak of
         an isotopic pattern from the pattern's monoisotopic peak.
 
         Parameters

@@ -7,12 +7,14 @@ from ms_deisotope.data_source import ChargeNotProvided
 class JSONScanFormatter(object):
 
     def _pack_activation(self, activation_information):
-        """Pack :class:`~.ActivationInformation` into a :class:`dict` structure
+        """
+        Pack :class:`~.ActivationInformation` into a :class:`dict` structure
         which that :class:`~psims.mzml.writer.MzMLWriter` expects.
 
         Parameters
         ----------
-        activation_information: :class:`~.ActivationInformation`
+        activation_information : :class:`~.ActivationInformation`
+            The precursor activation to describe.
 
         Returns
         -------
@@ -65,15 +67,19 @@ class JSONScanFormatter(object):
 
     def _pack_precursor_information(self, precursor_information, activation_information=None,
                                     isolation_window=None):
-        """Repackage the :class:`~.PrecursorInformation`, :class:`~.ActivationInformation`,
+        """
+        Repackage the :class:`~.PrecursorInformation`, :class:`~.ActivationInformation`,
         and :class:~.IsolationWindow` into the nested :class:`dict` structure that
         :class:`~psims.mzml.writer.MzMLWriter` expects.
 
         Parameters
         ----------
         precursor_information : :class:`~.PrecursorInformation`
+            The precursor ion description to encode.
         activation_information : :class:`~.ActivationInformation`, optional
+            The precursor activation description to encode.
         isolation_window : :class:`~.IsolationWindow`, optional
+            The isolation window to encode.
 
         Returns
         -------

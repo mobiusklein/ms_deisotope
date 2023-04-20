@@ -1,4 +1,5 @@
-"""Code for writing Mascot Generic Format files and for reading deconvoluted
+"""
+Code for writing Mascot Generic Format files and for reading deconvoluted
 generic format files.
 
 """
@@ -15,7 +16,8 @@ def _format_parameter(key, value):
 
 
 class MGFSerializer(HeaderedDelimitedWriter):
-    """A MASCOT Generic Format writer which is deconvolution aware.
+    """
+    A MASCOT Generic Format writer which is deconvolution aware.
 
     Implements :class:`~.HeaderedDelimitedWriter, as well as allowing
     global parameters to be included at the beginning of the file.
@@ -41,7 +43,8 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.started = False
 
     def add_global_parameter(self, name, value):
-        """Add a global parameter at the beginning of the file, before scans
+        """
+        Add a global parameter at the beginning of the file, before scans
         are written.
 
         Global parameters follow the same ``KEY=value`` format as scan-level
@@ -68,7 +71,8 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.stream.write(_format_parameter(name, value).encode('utf-8'))
 
     def add_parameter(self, name, value):
-        """Add a parameter to the current block.
+        """
+        Add a parameter to the current block.
 
         Parameters are written ``KEY=value`` format.
 
@@ -86,7 +90,8 @@ class MGFSerializer(HeaderedDelimitedWriter):
             self.save_scan(scan, **kwargs)
 
     def format_peak_vectors(self, scan):
-        """As in :class:`~.HeaderedDelimitedTextWriter` but always writes m/z, even when charge
+        """
+        As in :class:`~.HeaderedDelimitedTextWriter` but always writes m/z, even when charge
         is known.
         """
         if self.deconvoluted:
@@ -122,7 +127,8 @@ class MGFSerializer(HeaderedDelimitedWriter):
 
 
 class ProcessedMGFLoader(MGFLoader):
-    """A variant of the :class:`~.MGFLoader` that reads deconvoluted mass spectra
+    """
+    A variant of the :class:`~.MGFLoader` that reads deconvoluted mass spectra
     with a charge value for each peak, and looks for additional annotation of the
     precursor ion.
 

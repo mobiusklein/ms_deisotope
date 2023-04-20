@@ -8,19 +8,19 @@ import warnings
 import numpy as np
 
 from six import string_types as basestring
-from ms_deisotope.data_source import Scan, ProcessedScan, ProcessedRandomAccessScanSource
+from ms_deisotope.data_source import ScanBase, Scan, ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation
 from ms_deisotope.peak_set import DeconvolutedPeak
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
     _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
 from ms_deisotope.data_source._compression import get_opener
-from ms_deisotope.data_source.common import ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation
 from ms_deisotope.feature_map.scan_index import ExtendedScanIndex
 
 
 class ScanSerializerBase(object):
-    """A common base class for all types which serialize :class:`~.Scan`-like objects to
+    """
+    A common base class for all types which serialize :class:`~.Scan`-like objects to
     disk.
 
     These types support the context manager protocol, controlling their closing behavior.
@@ -36,7 +36,8 @@ class ScanSerializerBase(object):
         self.close()
 
     def save_scan_bunch(self, bunch: ScanBunch, **kwargs):
-        """Save a single :class:`~.ScanBunch` to the
+        """
+        Save a single :class:`~.ScanBunch` to the
         writing stream, recording any information relating
         the precursors and products to each other.
 
@@ -46,23 +47,29 @@ class ScanSerializerBase(object):
         ----------
         bunch : :class:`~.ScanBunch`
             The scan bunch to save
+        **kwargs
+            Passed to :meth:`save_scan`
         """
         self.save_scan(bunch.precursor, **kwargs)
         for prod in bunch.products:
             self.save_scan(prod, **kwargs)
 
-    def save_scan(self, scan: Scan, **kwargs):
-        """Save a single scan to the writing stream.
+    def save_scan(self, scan: ScanBase, **kwargs):
+        """
+        Save a single scan to the writing stream.
 
         Parameters
         ----------
         scan : :class:`ScanBase`
             The scan to save
+        **kwargs
+            Extra information on how to save the scan
         """
         raise NotImplementedError()
 
-    def save(self, bunch: Union[Scan, ScanBunch], **kwargs):
-        """Save any scan information in `bunch`.
+    def save(self, bunch: Union[ScanBase, ScanBunch], **kwargs):
+        """
+        Save any scan information in `bunch`.
 
         This method can handle :class:`~.ScanBunch` or :class:`ScanBase`
         instances, dispatching to the appropriate logic.
@@ -71,6 +78,8 @@ class ScanSerializerBase(object):
         ----------
         bunch : :class:`~.ScanBunch` or :class:`ScanBase`
             The scan data to save. May be a collection of related scans or a single scan.
+        **kwargs
+            Extra information on how to save the scan
 
         See Also
         --------
@@ -83,7 +92,8 @@ class ScanSerializerBase(object):
             self.save_scan(bunch, **kwargs)
 
     def close(self):
-        """Finish writing scan data, write any pending metadata
+        """
+        Finish writing scan data, write any pending metadata
         and close the file stream.
 
         May call :meth:`complete`.
@@ -91,7 +101,8 @@ class ScanSerializerBase(object):
         self.complete()
 
     def complete(self):
-        """Perform any final operations after all spectra have been
+        """
+        Perform any final operations after all spectra have been
         written, adding any trailing content necessary for the format.
 
         May be called from :meth:`close`, but before the writing stream
@@ -136,7 +147,8 @@ class LCMSMSQueryInterfaceMixin(object):
     """A mixin class for querying an extended data index on a processed data file."""
 
     def require_extended_index(self) -> Optional[ExtendedScanIndex]:
-        """Require the extended index is initialized.
+        """
+        Require the extended index is initialized.
 
         Either load the index if it exists, or build a new one.
 
@@ -167,7 +179,8 @@ class LCMSMSQueryInterfaceMixin(object):
         return self.extended_index is not None
 
     def read_index_file(self, index_path=None):
-        """Attempt to read the extended index from the file system.
+        """
+        Attempt to read the extended index from the file system.
 
         This updates :attr:`extended_index`.
         """
@@ -179,7 +192,8 @@ class LCMSMSQueryInterfaceMixin(object):
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def has_index_file(self) -> bool:
-        """Checks if an extended index file exists for this reader.
+        """
+        Checks if an extended index file exists for this reader.
 
         Returns
         -------
@@ -201,7 +215,8 @@ class LCMSMSQueryInterfaceMixin(object):
                 return None
 
     def build_extended_index(self, header_only=True):
-        """Build the extended index for this reader.
+        """
+        Build the extended index for this reader.
 
         This method builds the index in-process and may be slower
         than the multiprocessing builders.
@@ -279,7 +294,8 @@ class LCMSMSQueryInterfaceMixin(object):
         return out
 
     def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> Deque[Tuple[str, DeconvolutedPeak, Hashable]]:
-        """Read out all MS1 peaks from this spectrum source, if they satisfy the requested minimum values.
+        """
+        Read out all MS1 peaks from this spectrum source, if they satisfy the requested minimum values.
 
         Loop over the MS1 index, reading out peaks from the processed peak set whose
         mass exceeds ``mass_threshold`` and whose intensity exceeds ``intensity_threshold``.
@@ -363,7 +379,8 @@ class LCMSMSQueryInterfaceMixin(object):
         self.reset()
 
     def get_scan_header_by_id(self, scan_id: str) -> Scan:
-        """Retrieve the scan object for the specified scan id. If the
+        """
+        Retrieve the scan object for the specified scan id. If the
         scan object is still bound and in memory somewhere, a reference
         to that same object will be returned. Otherwise, a new object will
         be created.

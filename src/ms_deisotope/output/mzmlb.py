@@ -52,6 +52,11 @@ from .mzml import MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin, 
 
 
 class MzMLbSerializer(_MzMLSerializer):
+    """
+    Write :mod:`ms_deisotope` data structures to a file in mzMLb format.
+
+    This type inherits most of its functionality from :class:`~ms_deisotope.output.mzml.MzMLSerializer`.
+    """
 
     file_extensions = {
         "mzmlb",
@@ -82,6 +87,17 @@ class IonMobilityAware3DMzMLbSerializer(_IonMobility3DSerializerBase, MzMLbSeria
 
 
 class ProcessedMzMLbLoader(PeakSetDeserializingMixin, MzMLbLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
+    """
+    Extends :class:`.MzMLbLoader` to support deserializing preprocessed data and to provide indexing information.
+
+    Attributes
+    ----------
+    extended_index: :class:`~.ExtendedIndex`
+        Holds the additional indexing information
+        that may have been generated with the data
+        file being accessed.
+    sample_run: :class:`SampleRun`
+    """
 
     file_extensions = {
         "mzmlb",
