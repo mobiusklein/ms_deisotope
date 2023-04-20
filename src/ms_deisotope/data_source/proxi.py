@@ -9,12 +9,13 @@ import dataclasses
 from dataclasses import dataclass, field as dfield
 from collections import defaultdict
 from threading import RLock, Thread, local
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 
 import idzip
 
 import ms_deisotope
 from ms_deisotope.data_source.scan.base import ScanBase
+from ms_deisotope.data_source.scan.loader import RandomAccessScanSource
 
 from ms_deisotope.utils import LRUDict
 from ms_deisotope.data_source._compression import get_opener
@@ -22,7 +23,7 @@ from ms_deisotope.data_source.usi import USI
 
 
 BLOCK_SIZE = 2 ** 20
-logger = logging.getLogger("proxi_backend")
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class FileType:
@@ -34,6 +35,10 @@ class FileType:
 
     def to_dict(self) -> Dict:
         return dataclasses.asdict(self)
+
+    @classmethod
+    def from_dict(cls, state):
+        return cls(**state)
 
 
 PeakListFile = FileType("MS:1002850", "Peak list file URI")
@@ -76,7 +81,7 @@ class PROXIDataset:
         d = dataclasses.asdict(self)
         d['datasetLinks'] = d.pop("dataset_links", None)
         # TODO: Make this consistent whether or not it is a dict or an instance
-        d['dataFiles'] = [PROXIDataFile(f['uri'], FileType(**f['file_type'])).to_dict() for f in d.pop('dataset_files', [])]
+        d['dataFiles'] = [PROXIDataFile(f['uri'], FileType.from_dict(f['file_type'])).to_dict() for f in d.pop('dataset_files', [])]
         return d
 
     @classmethod
@@ -113,11 +118,13 @@ class PROXIDatasetAPIMixinBase(object):
 
     @property
     def peaklist_file_types(self):
-        """Alias to allow :attr:`valid_file_types` to vary.
+        """
+        Alias to allow :attr:`valid_file_types` to vary.
 
         Returns
         -------
-        list[str]"""
+        list[str]
+        """
         return self.valid_file_types
 
     def describe_dataset(self, dataset_id: str) -> PROXIDataset:
@@ -184,8 +191,60 @@ class IndexManagingMixin(object):
 
 
 class SpectrumSerializerServiceMixin(object):
+    scan_filters: List[Callable[[
+        ScanBase, Optional[RandomAccessScanSource]], ScanBase]]
+
+    def __init__(self, scan_filters: Optional[List]=None):
+        self.scan_filters = scan_filters or []
+
+    def process_scan(self, scan: ScanBase, reader: Optional[RandomAccessScanSource]):
+        """
+        Process ``scan`` with each callable in :attr:`scan_filters` prior to serialization.
+
+        Arguments
+        ---------
+        scan : :class:`~.ScanBase`
+            The scan being processed
+        reader : :class:`~.RandomAccessScanSource`
+            The data source for ``scan``
+
+        Returns
+        -------
+        :class:`~.ScanBase`
+        """
+        for filt in self.scan_filters:
+            scan = filt(scan, reader)
+        return scan
+
+    def add_scan_filter(self, filt: Callable[[ScanBase, Optional[RandomAccessScanSource]], ScanBase]):
+        """
+        Add a new scan filtering callable to the chain of filters.
+
+        This new filter is applied after all previous filters.
+
+        Parameters
+        ----------
+        filt : Callable[[ScanBase, Optional[RandomAccessScanSource]], ScanBase]
+            A callable object that transforms a :class:`~.ScanBase` object with optional access to its
+            source.
+        """
+        self.scan_filters.append(filt)
 
     def build_response(self, usi: USI, scan: ScanBase):
+        """
+        Build a response :class:`dict` representing ``scan`` for the requested ``usi``.
+
+        Parameters
+        ----------
+        usi : :class:`~pyteomics.usi.USI`
+            The parsed USI requested.
+        scan : :class:`~.ScanBase`
+            The scan retrieved for this request.
+
+        Returns
+        -------
+        dict
+        """
         payload = {
             "usi": str(usi),
             "status": "READABLE",
@@ -262,23 +321,24 @@ class SpectrumSerializerServiceMixin(object):
 
 
 class DatasetNotAvailable(ValueError):
-    pass
+    """An error code indicating that the requested dataset isn't available."""
 
 
 class UnrecognizedIndexFlag(ValueError):
-    pass
+    """An error code indicating that the USI index flag was not recognized."""
 
 
 class MassSpectraDataArchiveBase(SpectrumSerializerServiceMixin, PROXIDatasetAPIMixinBase, IndexManagingMixin):
     valid_file_types = ['mzML', 'mzXML', 'mgf', 'mzMLb']
     special_openers = set()
 
-    def __init__(self, base_uri, cache_size=None, **kwargs):
+    def __init__(self, base_uri, cache_size=None, scan_filters: Optional[List] = None, **kwargs):
         if cache_size is None:
             cache_size = 1
         self.base_uri = base_uri
         self.cache = LRUDict(cache_size=cache_size)
         IndexManagingMixin.__init__(self, **kwargs)
+        SpectrumSerializerServiceMixin.__init__(self, scan_filters=scan_filters)
 
     def build_index(self, use_cache=True):
         file_types = self.valid_file_types + ['json']
@@ -409,15 +469,12 @@ class MassSpectraDataArchiveBase(SpectrumSerializerServiceMixin, PROXIDatasetAPI
         scan = reader.get_scan_by_index(index)
         return scan
 
-    def process_scan(self, scan, reader):
-        # No processing
-        return scan
-
     def enumerate_spectra_for(self, dataset, ms_run=None):
         raise NotImplementedError()
 
     def handle_usi(self, usi, convert_json=True):
-        """Receive a USI, parse it into its constituent pieces, locate
+        """
+        Receive a USI, parse it into its constituent pieces, locate
         the relevant spectrum, and return it formatted message.
 
         Parameters
@@ -534,27 +591,26 @@ class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
                 index.pop(group)
 
 
-class PeakPickingScanProcessingMixin(object):
-    def __init__(self, *args, **kwargs):
-        super(PeakPickingScanProcessingMixin, self).__init__(*args, **kwargs)
+class PeakPickingScanFilter(object):
+    def __init__(self, peak_picking_args=None, *args, **kwargs):
+        if peak_picking_args is None:
+            peak_picking_args = {}
+        self.peak_picking_args = peak_picking_args
 
-    def process_scan(self, scan, reader):
-        scan = super(PeakPickingScanProcessingMixin,
-                     self).process_scan(scan, reader)
-        scan.pick_peaks()
+    def __call__(self, scan, reader):
+        scan.pick_peaks(**self.peak_picking_args)
         return scan
 
 
-class DeconvolutingScanProcessingMixin(PeakPickingScanProcessingMixin):
-    def __init__(self, *args, **kwargs):
+class DeconvolutingScanFilter(PeakPickingScanFilter):
+    def __init__(self, *args, averagine=ms_deisotope.peptide, scorer=ms_deisotope.MSDeconVFitter(0), truncate_after: float=0.8, **kwargs):
         self.deconvolution_args = kwargs.get('deconvolution_args', {})
-        self.deconvolution_args.setdefault("averagine", ms_deisotope.peptide)
-        self.deconvolution_args.setdefault(
-            "scorer", ms_deisotope.MSDeconVFitter(0))
-        self.deconvolution_args.setdefault("truncate_after", 0.8)
-        super(DeconvolutingScanProcessingMixin, self).__init__(*args, **kwargs)
+        self.deconvolution_args.setdefault("averagine", averagine)
+        self.deconvolution_args.setdefault("scorer", scorer)
+        self.deconvolution_args.setdefault("truncate_after", truncate_after)
+        super(DeconvolutingScanFilter, self).__init__(*args, **kwargs)
 
-    def process_scan(self, scan, reader):
-        scan = super(DeconvolutingScanProcessingMixin, self).process_scan(scan, reader)
+    def __call__(self, scan, reader):
+        scan = super().__call__(scan, reader)
         scan.deconvolute(**self.deconvolution_args)
         return scan
