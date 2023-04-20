@@ -10,11 +10,9 @@ from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
 from .common import (
-    Scan,
-    PrecursorInformation, ProcessedScan,
     IsolationWindow,
-    ScanDataSource, ScanIterator, ScanBunch,
-    RandomAccessScanSource, ChargeNotProvided)
+    ChargeNotProvided
+)
 
 from .metadata.file_information import (
     FileInformation,
@@ -34,7 +32,17 @@ from .metadata.activation import (
     ActivationInformation, MultipleActivationInformation,
     DissociationMethod, dissociation_methods)
 
-from .scan import ScanProxyContext
+from .scan import (
+    ScanProxyContext,
+    ScanBase,
+    Scan,
+    ProcessedScan,
+    ScanBunch,
+    PrecursorInformation,
+    ScanDataSource,
+    ScanIterator,
+    RandomAccessScanSource
+)
 
 from ._compression import get_opener
 
@@ -49,7 +57,7 @@ __all__ = [
     "MSFileLoader", "MzMLLoader",
     "MzXMLLoader", "MGFLoader",
 
-    "Scan", "ProcessedScan",
+    "Scan", "ProcessedScan", "ScanBase",
 
     "PrecursorInformation",
 
