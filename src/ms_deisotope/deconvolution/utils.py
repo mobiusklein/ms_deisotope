@@ -28,7 +28,8 @@ def _is_parallel_arrays(peaks):
 
 
 def prepare_peaklist(peaks):
-    """Ensure ``peaks`` is a :class:`~.PeakSet` object,
+    """
+    Ensure ``peaks`` is a :class:`~.PeakSet` object,
     converting from other compatible types as needed. Additionally, make a deep
     copy of the peaks as signal subtraction methods will modify peaks in place.
 
@@ -81,7 +82,8 @@ def prepare_peaklist(peaks):
 
 
 def from_fitted_peak(peak, charge=1):
-    """Convert a :class:`~.FittedPeak` into a :class:`~.DeconvolutedPeak`
+    """
+    Convert a :class:`~.FittedPeak` into a :class:`~.DeconvolutedPeak`
     at the specified charge state.
 
     Parameters
@@ -105,12 +107,14 @@ def from_fitted_peak(peak, charge=1):
 
 
 def mean(numbers):
-    """quick and dirty mean calculation
+    """
+    Quick and dirty mean calculation
     without converting to a NumPy array
 
     Parameters
     ----------
     numbers: Iterable
+        Iterable of numerical values
 
     Returns
     -------
@@ -125,7 +129,8 @@ def mean(numbers):
 
 
 def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
-    """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
+    """
+    Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
@@ -138,6 +143,8 @@ def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_t
         The charge state to interpolate from. Defaults to 2.
     step : int, optional
         The number of peaks along the isotopic pattern to search.
+    error_tolerance : float, optional
+        The mass error to tolerate.
 
     Returns
     -------
@@ -148,7 +155,8 @@ def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_t
 
 
 def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
-    """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
+    """
+    Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
@@ -161,6 +169,8 @@ def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_
         The charge state to interpolate from. Defaults to 2.
     step : int, optional
         The number of peaks along the isotopic pattern to search.
+    error_tolerance : float, optional
+        The mass error to tolerate.
 
     Returns
     -------
@@ -171,11 +181,13 @@ def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_
 
 
 def first_peak(peaks):
-    """Get the first non-placeholder peak in a list of peaks
+    """
+    Get the first non-placeholder peak in a list of peaks
 
     Parameters
     ----------
     peaks : Iterable of FittedPeak
+        The sequence of peaks to filter
 
     Returns
     -------
@@ -187,11 +199,13 @@ def first_peak(peaks):
 
 
 def drop_placeholders(peaks):
-    """Removes all placeholder peaks from an iterable of peaks
+    """
+    Removes all placeholder peaks from an iterable of peaks
 
     Parameters
     ----------
     peaks : Iterable of FittedPeak
+        The sequence of peaks to filter over
 
     Returns
     -------
@@ -201,12 +215,14 @@ def drop_placeholders(peaks):
 
 
 def count_placeholders(peaks):
-    """Counts the number of placeholder peaks in an iterable
+    """
+    Counts the number of placeholder peaks in an iterable
     of FittedPeaks
 
     Parameters
     ----------
     peaks : Iterable of FittedPeak
+        The sequence of peaks to process
 
     Returns
     -------
@@ -221,7 +237,8 @@ def count_placeholders(peaks):
 
 
 def drop_placeholders_parallel(peaks, otherpeaks):
-    """Given two parallel iterables of Peak objects, `peaks` and `otherpeaks`,
+    """
+    Given two parallel iterables of Peak objects, `peaks` and `otherpeaks`,
     for each position that is not a placeholder in `peaks`, include that Peak object
     and its counterpart in `otherpeaks` in a pair of output lists.
 
@@ -251,7 +268,8 @@ def drop_placeholders_parallel(peaks, otherpeaks):
 
 
 def quick_charge(peak_set, index, min_charge, max_charge):
-    """An implementation of Hoopman's :title-reference:`QuickCharge` [1] algorithm for quickly capping charge
+    """
+    An implementation of Hoopman's :title-reference:`QuickCharge` [1] algorithm for quickly capping charge
     state queries
 
     Parameters
@@ -327,7 +345,8 @@ except ImportError:
 
 
 def charge_range_(lo, hi, step=None):
-    """Generate a sequence of successive charge states, automatically deducing
+    """
+    Generate a sequence of successive charge states, automatically deducing
     the polarity of the charge range to infer the step.
 
     Parameters

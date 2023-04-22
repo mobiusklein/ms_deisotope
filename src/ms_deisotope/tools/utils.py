@@ -114,8 +114,8 @@ def is_debug_mode() -> bool:
 
 
 class Spinner(object):
-    """Super-simple synchronous CLI spinner implementation.
-    """
+    """Super-simple synchronous CLI spinner implementation."""
+
     _default_symbols = ['-', '/', '|', '\\']
 
     def __init__(self, stream=None, symbols=None, title=None):
@@ -161,11 +161,13 @@ spinner = Spinner
 
 
 class ProgressLogger(object):
-    """A simple text logger that wraps an iterable and logs update messages as chunks are requested.
+    """
+    A simple text logger that wraps an iterable and logs update messages as chunks are requested.
 
     This class tries to emulate :func:`click.progressbar` for use when the attached STDERR stream is not
     a terminal.
     """
+
     def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None,
                  file=None, writer=None, **kwargs):
         if iterable is not None:
@@ -233,7 +235,8 @@ class ProgressLogger(object):
 
 
 def progress(*args, **kwargs):
-    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
+    """
+    A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
     TTY and :class:`ProgressLogger` otherwise.
     """
     if sys.stdout.isatty():

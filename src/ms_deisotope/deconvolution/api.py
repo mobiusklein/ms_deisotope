@@ -33,7 +33,8 @@ def deconvolute_peaks(peaklist, decon_config=None,
                       retention_strategy=None,
                       use_quick_charge=False,
                       **kwargs):
-    """Deconvolute a centroided mass spectrum.
+    """
+    Deconvolute a centroided mass spectrum.
 
     This function constructs a deconvoluter object using the ``deconvoluter_type`` argument
     and deconvolutes the input ``peaklist`` by calling its :meth:`deconvolute` method.
@@ -77,6 +78,8 @@ def deconvolute_peaks(peaklist, decon_config=None,
         The mass of the charge carrier. Defaults to |PROTON|
     truncate_after : float, optional
         The percentage of the isotopic pattern to include. Defaults to |TRUNCATE_AFTER|
+    iterations : int, optional
+        The maximum number of iterations to attempt to deconvolve the spectrum. Defaults to |MAX_ITERATIONS|
     deconvoluter_type : type or callable, optional
         A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`
     retention_strategy: :class:`~.PeakRetentionStrategyBase` or callable, optional

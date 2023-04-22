@@ -1,5 +1,4 @@
-"""Deconvolution strategies using a list of compositions.
-"""
+"""Deconvolution strategies using a list of compositions."""
 
 from ms_deisotope.averagine import (
     PROTON, isotopic_variants,
@@ -28,7 +27,8 @@ from .utils import (
 
 
 class CompositionListDeconvoluterBase(DeconvoluterBase):
-    """A mixin class to provide common features for deconvoluters which process spectra
+    """
+    A mixin class to provide common features for deconvoluters which process spectra
     using a list of targeted compositions.
 
     Attributes
@@ -47,7 +47,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
     def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=TRUNCATE_AFTER,
                                               mass_shift=None, charge_carrier=PROTON,
                                               ignore_below=IGNORE_BELOW):
-        """Generate a theoretical isotopic pattern for ``composition``
+        """
+        Generate a theoretical isotopic pattern for ``composition``
 
         Parameters
         ----------
@@ -60,6 +61,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         mass_shift : float, optional
             An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
             moving all peaks forward by that mass charge ratio transformed mass.
@@ -82,7 +85,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         return tid
 
     def recalibrate_theoretical_mz(self, theoretical_distribution, experimental_mz):
-        """Recalibrate the m/z of the theoretical isotopic pattern to start from the
+        """
+        Recalibrate the m/z of the theoretical isotopic pattern to start from the
         peak matching the experimental monoisotopic m/z
 
         Parameters
@@ -101,7 +105,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
     def fit_composition_at_charge(self, composition, charge, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON,
                                   truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, mass_shift=None):
-        """Produce an isotopic fit for `composition` at `charge` against the experimental peak set.
+        """
+        Produce an isotopic fit for `composition` at `charge` against the experimental peak set.
 
         This method requires that the instance also possess a method named `match_theoretical_isotopic_distribution`
         such as the one implemented in :class:`DeconvoluterBase`.
@@ -119,6 +124,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         mass_shift : float, optional
             An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
             moving all peaks forward by that mass charge ratio transformed mass.
@@ -182,7 +189,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
     def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                 charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                                 mass_shift=None):
-        """For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
+        """
+        For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
         and if the fit is satisfactory, add it to the results set.
 
         Parameters
@@ -198,6 +206,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         mass_shift : float, optional
             An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
             moving all peaks forward by that mass charge ratio transformed mass.
@@ -231,7 +241,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
 
 class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
-    """Fit exact isotopic patterns from a list of compositions.
+    """
+    Fit exact isotopic patterns from a list of compositions.
 
     Fits are accepted as they are made, making this algorithm unsuitable for
     complex spectra where isotopic patterns will share peaks.
@@ -279,7 +290,8 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), charge_carrier=PROTON,
                     truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, mass_shift=None, **kwargs):
-        """Deconvolute the spectrum, extracting isotopic patterns from the composition list.
+        """
+        Deconvolute the spectrum, extracting isotopic patterns from the composition list.
 
         Parameters
         ----------
@@ -294,8 +306,12 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         mass_shift: float, optional
             An optional mass shift to apply to each composition
+        **kwargs
+            Passed to inner methods.
 
         Returns
         -------
@@ -310,7 +326,8 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
 
 class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter):
-    """Fit exact isotopic patterns from a list of compositions.
+    """
+    Fit exact isotopic patterns from a list of compositions.
 
     Fits are added to a peak dependence graph, and the best fit is chosen after
     all fits are calculated at each iteration.
@@ -363,7 +380,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
 
     @property
     def max_missed_peaks(self):
-        """The maximum number of missed peaks per isotopic fit record permitted.
+        """
+        The maximum number of missed peaks per isotopic fit record permitted.
 
         This property directly mirrors :attr:`PeakDependenceGraph.max_missed_peaks`
 
@@ -402,7 +420,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
 
     def populate_graph(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
                        charge_carrier=PROTON, ignore_below=IGNORE_BELOW, mass_shift=None):
-        """For each composition, for each charge state under consideration, fit the theoretical
+        """
+        For each composition, for each charge state under consideration, fit the theoretical
         isotopic pattern for this composition, and if the fit is satisfactory, add it to the
         peak dependence graph for later selecting the optimal solution.
 
@@ -417,6 +436,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
             each incremental change in charge state. Defaults to |PROTON|
@@ -430,7 +451,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                                          ignore_below=ignore_below, mass_shift=mass_shift)
 
     def select_best_disjoint_subgraphs(self, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
-        """Construct connected envelope graphs from :attr:`peak_dependency_network` and
+        """
+        Construct connected envelope graphs from :attr:`peak_dependency_network` and
         extract the best disjoint isotopic pattern fits in each envelope graph. This in
         turn produces one or more :class:`~.DeconvolutedPeakSolution` instances from each
         disjoint fit, which are processed and added to the results set.
@@ -464,7 +486,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=MAX_ITERATION,   # pylint: disable=arguments-differ
                     truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, ignore_below=IGNORE_BELOW,
                     mass_shift=None, convergence=CONVERGENCE, **kwargs):
-        """Deconvolute the spectrum, extracting isotopic patterns from the composition list.
+        """
+        Deconvolute the spectrum, extracting isotopic patterns from the composition list.
 
         Parameters
         ----------
@@ -474,16 +497,22 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             The range of charge states to consider. Defaults to (1, 8)
         charge_carrier : float, optional
             The mass of the charge carrier. Defaults to |PROTON|
+        iterations : int, optional
+            The maximum number of iterations to deconvolve the spectrum.
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         mass_shift: float, optional
             An optional mass shift to apply to each composition
         convergence : float, optional
             The threshold of the below which after the `(sum(intensity_before) - sum(
             intensity_after)) / sum(intensity_after)`
+        **kwargs
+            Passed to inner methods.
 
         Returns
         -------

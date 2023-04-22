@@ -7,7 +7,8 @@ from ms_deisotope.tools.utils import register_debug_hook
 
 @click.group()
 def maintenance():
-    """Tools for checking features and managing optional dependencies
+    """
+    Tools for checking features and managing optional dependencies
     of ms_deisotope.
     """
     pass
@@ -15,7 +16,8 @@ def maintenance():
 
 @maintenance.command('vendor-readers-available', short_help="Check if vendor readers are available")
 def has_vendor_readers():
-    """Log whether libraries for using mass spectrometry vendor libraries to read
+    """
+    Log whether libraries for using mass spectrometry vendor libraries to read
     directly from their native file formats are installed.
     """
     from ms_deisotope.data_source.agilent_d import determine_if_available as agilent_d_available
@@ -43,7 +45,8 @@ def has_vendor_readers():
 @maintenance.command('register-thermo-com', short_help="Register Thermo COM Reader Library")
 @click.option('--path', type=click.Path(file_okay=True, dir_okay=False), help="Specify a DLL to try to register", multiple=True)
 def register_thermo_com(path=None):
-    """Register an installed MSFileReader or XRawFile DLL. Searches the standard installation
+    """
+    Register an installed MSFileReader or XRawFile DLL. Searches the standard installation
     paths, but the `--path` option can be used to specify additional search paths.
     """
     if path is None:
@@ -84,7 +87,8 @@ def register_thermo_com(path=None):
 @click.option('--path', type=click.Path(file_okay=False, dir_okay=True),
               help="Specify a Directory of DLLs to try to register", multiple=True)
 def register_thermo_net(path):
-    """Register a bundle of Thermo's RawFileReader library's DLLs. The `--path` option can
+    """
+    Register a bundle of Thermo's RawFileReader library's DLLs. The `--path` option can
     be used to specify additional search paths.
     """
     if path is None:

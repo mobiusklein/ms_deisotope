@@ -1,4 +1,5 @@
-"""A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
+"""
+A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
 data file formats.
 """
 import os
@@ -30,7 +31,8 @@ def ms_conversion():
 
 
 def to_mgf(reader, outstream, msn_filters=None):
-    """Translate the spectra from `reader` into MGF format written to `outstream`.
+    """
+    Translate the spectra from `reader` into MGF format written to `outstream`.
 
     As MGF files do not usually contain MS1 spectra, these will be omitted. Additionally,
     MSn spectra will be centroided if they are not already.
@@ -78,7 +80,8 @@ def to_mgf(reader, outstream, msn_filters=None):
 @click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
 def mgf(source, output, compress=False, msn_filters=None):
-    """Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
+    """
+    Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
     and generally does not contain any MS1 information.
     """
     if compress:
@@ -102,7 +105,8 @@ def mgf(source, output, compress=False, msn_filters=None):
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
             default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
             writer_type=None, compression='zlib', close=True, **kwargs):
-    """Translate the spectra from `reader` into mzML format written to `outstream`.
+    """
+    Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
     and then converts each :class:`~.Scan` into mzML format. Any data transformations are described in the
@@ -235,7 +239,8 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
               help="Pass an arbitrary key-value pair through to configure the writer")
 def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False, compress=False,
          correct_precursor_mz=False, update_metadata=True, options=None):
-    """Convert `source` into mzML format written to `output`, applying a collection of optional data
+    """
+    Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
     use_index = True
@@ -295,7 +300,8 @@ try:
               help="Pass an arbitrary key-value pair through to configure the writer")
     def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
               correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR, options=None):
-        """Convert `source` into mzML format written to `output`, applying a collection of optional data
+        """
+        Convert `source` into mzML format written to `output`, applying a collection of optional data
         transformations along the way.
         """
         use_index = True

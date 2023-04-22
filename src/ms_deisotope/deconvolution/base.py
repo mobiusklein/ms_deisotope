@@ -25,7 +25,8 @@ error = logger.error
 
 
 class DeconvoluterBase(Base):
-    """Base class for all Deconvoluter types. Provides basic configuration for common operations,
+    """
+    Base class for all Deconvoluter types. Provides basic configuration for common operations,
     regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
     this class has a C-extension implementation as well.
 
@@ -52,6 +53,7 @@ class DeconvoluterBase(Base):
     verbose : bool
         Produce extra logging information
     """
+
     use_subtraction = False
     scale_method = 'sum'
     merge_isobaric_peaks = True
@@ -69,7 +71,8 @@ class DeconvoluterBase(Base):
         self._slice_cache = {}
 
     def has_peak(self, mz, error_tolerance):
-        """Query :attr:`peaklist` for a peak at `mz` within `error_tolerance` ppm. If a peak
+        """
+        Query :attr:`peaklist` for a peak at `mz` within `error_tolerance` ppm. If a peak
         is not found, this method returns a placeholder peak.
 
         Parameters
@@ -90,7 +93,8 @@ class DeconvoluterBase(Base):
         return peak
 
     def between(self, m1, m2):
-        """Take a slice from :attr:`peaklist` using it's :meth:`between` method. Caches
+        """
+        Take a slice from :attr:`peaklist` using it's :meth:`between` method. Caches
         repeated queries in :attr:`_scan_cache`.
 
         Parameters
@@ -114,7 +118,8 @@ class DeconvoluterBase(Base):
             return region
 
     def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance=ERROR_TOLERANCE):
-        """Given a list of theoretical peaks, find their counterparts in :attr:`peaklist` within `error_tolerance`
+        """
+        Given a list of theoretical peaks, find their counterparts in :attr:`peaklist` within `error_tolerance`
         ppm error. If no experimental peak is found, a placeholder will be used in its stead.
 
         Parameters
@@ -134,7 +139,8 @@ class DeconvoluterBase(Base):
         return experimental_distribution
 
     def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
-        """Scale up a theoretical isotopic pattern such that its total intensity matches the experimental
+        """
+        Scale up a theoretical isotopic pattern such that its total intensity matches the experimental
         isotopic pattern. This mutates `theoretical_distribution`.
 
         This assumes that the sum of intensities in `theoretical_distribution` is 1.0. This method is also
@@ -158,7 +164,8 @@ class DeconvoluterBase(Base):
             experimental_distribution, self.scale_method)
 
     def _evaluate_theoretical_distribution(self, experimental, theoretical, peak, charge):
-        """Evaluate a provided theoretical isotopic pattern fit against a
+        """
+        Evaluate a provided theoretical isotopic pattern fit against a
         set of matched experimental peaks.
 
         Parameters
@@ -181,7 +188,8 @@ class DeconvoluterBase(Base):
         return IsotopicFitRecord(peak, score, charge, theoretical, experimental)
 
     def fit_incremental_truncation(self, seed_fit, lower_bound):
-        """Fit incrementally truncated versions of the seed fit to check to see if a narrower
+        """
+        Fit incrementally truncated versions of the seed fit to check to see if a narrower
         theoretical fit matches the data better.
 
         Parameters
@@ -206,7 +214,8 @@ class DeconvoluterBase(Base):
         return fits
 
     def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
-        """Subtract signal attributed to `isotopic_cluster` from the equivalent
+        """
+        Subtract signal attributed to `isotopic_cluster` from the equivalent
         peaks in :attr:`peaklist`, mutating the peaks within.
 
         This will change the intensity value of the matched `FittedPeak` instances,

@@ -1,4 +1,5 @@
-"""A collection of base classes for "exhaustive" search strategies.
+"""
+A collection of base classes for "exhaustive" search strategies.
 These strategies attempt to assign *every* peak, but they are not meant
 to be used on their own.
 
@@ -45,7 +46,8 @@ from .utils import (
 
 
 class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
-    """Provides common methods for algorithms which attempt to find a deconvolution for every peak
+    """
+    Provides common methods for algorithms which attempt to find a deconvolution for every peak
     in a spectrum. This assumes no dependence between different peaks, instead it relies on subtraction,
     breadth of search, and order of encounter to avoid artefactual fits. This is usually not reasonable,
     so instead please use this class's extension, :class:`PeakDependenceGraphDeconvoluterBase` which can
@@ -76,7 +78,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
     def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                    left_search_limit=3, right_search_limit=3,
                                    recalculate_starting_peak=True, use_quick_charge=False):
-        """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
+        """
+        Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
         the provided search parameters.
 
         The search is performed using :func:`has_previous_peak_at_charge`, :func:`has_successor_peak_at_charge`,
@@ -97,13 +100,14 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
         recalculate_starting_peak : bool, optional
             Whether or not to re-calculate the putative starting peak m/z based upon nearby
             peaks close to where isotopic peaks for `peak` should be. Defaults to True
+        use_quick_charge : bool, optional
+            Whether or not to use the quickcharge shortcut algorithm
 
         Returns
         -------
         set
             The set of all unique candidate (monoisotopic peak, charge state)
         """
-
         target_peaks = set()
 
         charges = ChargeIterator(*charge_range)
@@ -148,7 +152,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
     def _fit_all_charge_states(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=3,
                                right_search_limit=3, recalculate_starting_peak=True, charge_carrier=PROTON,
                                truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
-        """Carry out the fitting process for `peak`.
+        """
+        Carry out the fitting process for `peak`.
 
         This method calls :meth:`_get_all_peak_charge_pairs` to collect all hypothetical solutions
         for `peak`, and invokes :meth:`_fit_peaks_at_charges` to evaluate them.
@@ -180,6 +185,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -203,7 +210,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
                                    left_search_limit=3, right_search_limit=3,
                                    charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                                    ignore_below=IGNORE_BELOW):
-        """Determine the optimal isotopic fit for `peak`, extracting it's charge state and monoisotopic peak.
+        """
+        Determine the optimal isotopic fit for `peak`, extracting it's charge state and monoisotopic peak.
 
         This method invokes :meth:`_fit_all_charge_states`, and then uses :attr:`scorer`'s `select` method to
         choose the optimal solution.
@@ -227,6 +235,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -276,7 +286,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
     def deconvolute_peak(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                          left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
                          truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
-        """Perform a deconvolution for `peak`, generating a new :class:`ms_deisotope.peak_set.DeconvolutedPeak` instance
+        """
+        Perform a deconvolution for `peak`, generating a new :class:`ms_deisotope.peak_set.DeconvolutedPeak` instance
         corresponding to the optimal solution.
 
         This new peak has an m/z matching the monoisotopic peak of the pattern containing `peak`, and its intensity
@@ -304,6 +315,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -328,7 +341,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
                                left_search_limit=3, right_search_limit=3,
                                charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                                ignore_below=IGNORE_BELOW):
-        """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
+        """
+        Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
         and that it should be deconvoluted, and return a handle to retrieve the results with.
 
         This algorithm's implementation is simple enough that this is equivalent to just performing the deconvolution
@@ -355,6 +369,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -373,7 +389,8 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
                     left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
                     truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                     **kwargs):
-        """Completely deconvolute the spectrum.
+        """
+        Completely deconvolute the spectrum.
 
         Visit each peak in the order chosen by `order_chooser`, and call :meth:`deconvolute_peak`
         on it with the provided arguments. This assumes all overlaps in isotopic pattern are captured
@@ -400,6 +417,10 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
+        **kwargs
+            Additional arguments passed to inner functions.
 
         Returns
         -------
@@ -434,7 +455,8 @@ except ImportError as e:
 
 
 class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
-    """Extends the concept of :class:`ExhaustivePeakSearchDeconvoluterBase` to include a way to handle
+    """
+    Extends the concept of :class:`ExhaustivePeakSearchDeconvoluterBase` to include a way to handle
     conflicting solutions which claim the same experimental peak.
 
     This lets the Deconvoluter assign a single peak only once, and to the "best" solution to use it. To
@@ -470,7 +492,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
     @property
     def max_missed_peaks(self):
-        """The maximum number of missed peaks per isotopic fit record permitted.
+        """
+        The maximum number of missed peaks per isotopic fit record permitted.
 
         This property directly mirrors :attr:`PeakDependenceGraph.max_missed_peaks`
 
@@ -487,7 +510,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def _explore_local(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                        ignore_below=IGNORE_BELOW):
-        """Given a peak, explore the local neighborhood for candidate isotopic fits and add each
+        """
+        Given a peak, explore the local neighborhood for candidate isotopic fits and add each
         fit above a threshold to the peak dependence graph.
 
         The threshold assumes that a single peak's neighborhood will contain many, many fits, but
@@ -516,6 +540,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -553,7 +579,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def populate_graph(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, charge_carrier=PROTON,
                        truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
-        """Visit each experimental peak and execute :meth:`_explore_local` on it with the provided
+        """
+        Visit each experimental peak and execute :meth:`_explore_local` on it with the provided
         parameters, populating the peak dependence graph with all viable candidates.
 
         Parameters
@@ -574,6 +601,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
         """
         for peak in self.peaklist:
             if peak in self._priority_map or peak.intensity < self.minimum_intensity:
@@ -591,7 +620,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
     def postprocess_fits(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                          charge_carrier=PROTON, *args, **kwargs):
-        """Postprocesses fits before solving the peak dependence graph.
+        """
+        Postprocesses fits before solving the peak dependence graph.
 
         Currently a no-op.
 
@@ -603,12 +633,17 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             The range of charge states to consider. Defaults to (1, 8)
         charge_carrier : float, optional
             The mass of the charge carrier. Defaults to |PROTON|
+        *args
+            Passed forward to inner methods.
+        **kwargs
+            Passed forward to inner methods.
         """
         if self.fit_postprocessor is None:
             return
 
     def select_best_disjoint_subgraphs(self, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
-        """Construct connected envelope graphs from :attr:`peak_dependency_network` and
+        """
+        Construct connected envelope graphs from :attr:`peak_dependency_network` and
         extract the best disjoint isotopic pattern fits in each envelope graph. This in turn
         produces one or more :class:`DeconvolutedPeak` instances from each disjoint fit,
         which are processed and added to the results set.
@@ -642,7 +677,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 i += 1
 
     def _solve_subgraph_top(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
-        """Given a :class:`~.DependenceCluster`, return the single best fit from the collection of
+        """
+        Given a :class:`~.DependenceCluster`, return the single best fit from the collection of
         co-dependent fits.
 
         Parameters
@@ -672,7 +708,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         return [dpeak]
 
     def _solve_subgraph_disjoint(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
-        """Given a :class:`~.DependenceCluster`, find a greedy disjoint set of isotopic fits.
+        """
+        Given a :class:`~.DependenceCluster`, find a greedy disjoint set of isotopic fits.
 
         Parameters
         ----------
@@ -707,7 +744,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         return solutions
 
     def _solve_subgraph_iterative(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
-        """Given a :class:`~.DependenceCluster`, build a :class:`~.ConnectedSubgraph` and incrementally
+        """
+        Given a :class:`~.DependenceCluster`, build a :class:`~.ConnectedSubgraph` and incrementally
         subtract the best fitting solution and update its overlapping envelopes.
 
         Parameters
@@ -803,7 +841,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
                                truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
-        """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
+        """
+        Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
         and that it should be deconvoluted, and return a handle to retrieve the results with.
 
         As the operation does not immediately result in a deconvoluted peak but just adds the resulting fits to
@@ -825,6 +864,13 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
             The mass of the charge carrier. Defaults to |PROTON|
+        truncate_after : float, optional
+            The percent of intensity to ensure is included in a theoretical isotopic pattern
+            starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+            to be truncated, excluding trailing peaks which do not contribute substantially to
+            the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -860,7 +906,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     left_search_limit=1, right_search_limit=0, iterations=MAX_ITERATION,
                     charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                     convergence=CONVERGENCE, **kwargs):
-        """Completely deconvolute the spectrum.
+        """
+        Completely deconvolute the spectrum.
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
         followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting
@@ -881,6 +928,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             The number of steps to search to the right of :obj:`peak`. Defaults to 0
         charge_carrier : float, optional
             The mass of the charge carrier. Defaults to |PROTON|
+        iterations : int
+            The number of iterations to attempt to deconvolve the spectrum.
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -892,6 +941,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         convergence : float, optional
             The threshold of the below which after the `(sum(intensity_before) - sum(
             intensity_after)) / sum(intensity_after)`
+        **kwargs
+            Passed forward to inner methods.
 
         Returns
         -------

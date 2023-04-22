@@ -1,4 +1,5 @@
-"""A set of strategies for retaining peaks following deconvolution to
+"""
+A set of strategies for retaining peaks following deconvolution to
 recover from low quality spectra. These methods are not recommended for
 use on spectra where most ions are multiply charged.
 
@@ -20,7 +21,8 @@ intensity_getter = operator.attrgetter("intensity")
 
 @add_metaclass(abc.ABCMeta)
 class PeakRetentionStrategyBase(object):
-    """A strategy for retaining peaks left behind by the deconvolution procedure.
+    """
+    A strategy for retaining peaks left behind by the deconvolution procedure.
 
     Deconvolution requires that the isotopic peak structure is present in the peak list,
     which may not be consistent for all types of data. This type of method is appropriate
@@ -29,7 +31,8 @@ class PeakRetentionStrategyBase(object):
     """
 
     def create_peak(self, fitted_peak, charge=1):
-        """Create a :class:`~.DeconvolutedPeak` from a given :class:`~.FittedPeak` ``peak``
+        """
+        Create a :class:`~.DeconvolutedPeak` from a given :class:`~.FittedPeak` ``peak``
         and an optional charge state.
 
         Parameters
@@ -47,7 +50,8 @@ class PeakRetentionStrategyBase(object):
 
     @abc.abstractmethod
     def retain_peaks(self, peaklist, original_peaklist=None, charge_range=None, solutions=None):
-        """Given a list of :class:`~.FittedPeak` objects left over after deconvolution,
+        """
+        Given a list of :class:`~.FittedPeak` objects left over after deconvolution,
         produce a list of :class:`~.DeconvolutedPeak` objects from them according to some
         criteria.
 
@@ -80,7 +84,8 @@ class PeakRetentionStrategyBase(object):
         raise NotImplementedError()
 
     def __call__(self, peaklist, original_peaklist=None, charge_range=None, solutions=None):
-        """A wrapper for :meth:`retain_peaks`. Given a list of :class:`~.FittedPeak`
+        """
+        A wrapper for :meth:`retain_peaks`. Given a list of :class:`~.FittedPeak`
         objects left over after deconvolution, produce a list of :class:`~.DeconvolutedPeak`
         objects from them according to some criteria.
 
@@ -112,7 +117,8 @@ class PeakRetentionStrategyBase(object):
         return self.retain_peaks(peaklist, original_peaklist, charge_range)
 
     def infer_minimum_charge(self, charge_range):
-        """Given a charge range :class:`tuple`, return the smallest absolute magnitude
+        """
+        Given a charge range :class:`tuple`, return the smallest absolute magnitude
         charge state possible in that range.
 
         This method is polarity aware, and does its reasoning on the absolute magnitude
@@ -139,7 +145,8 @@ class PeakRetentionStrategyBase(object):
 
 
 class TopNRetentionStrategy(PeakRetentionStrategyBase):
-    """This strategy retains up to at most :attr:`n_peaks` peaks from the
+    """
+    This strategy retains up to at most :attr:`n_peaks` peaks from the
     leftover signal, and requires that any peaks it retains are atleast
     :attr:`base_peak_coefficient` * the base peak of the original peak list.
 
@@ -160,6 +167,7 @@ class TopNRetentionStrategy(PeakRetentionStrategyBase):
         monoisotopic peak and the peak will be discarded.
 
     """
+
     def __init__(self, n_peaks=50, base_peak_coefficient=0.05, max_mass=850.0):
         self.n_peaks = n_peaks
         self.base_peak_coefficient = base_peak_coefficient

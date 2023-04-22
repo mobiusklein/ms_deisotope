@@ -177,7 +177,8 @@ def byte_index(paths):
               'processed specifically by ms_deisotope\'s deconvolution algorithm')
 @processes_option
 def metadata_index(paths, processes=4, deconvoluted=False):
-    """Build an external scan metadata index for a mass spectrometry data file.
+    """
+    Build an external scan metadata index for a mass spectrometry data file.
 
     This extended index is saved in a separate JSON file that can be loaded with
     :class:`~.ExtendedScanIndex`. It includes the scan time of all scans, the precursor
@@ -326,7 +327,8 @@ def _ensure_metadata_index(path):
 @cli.command("charge-states", short_help='Count the different precursor charge states in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def charge_states(path):
-    """Count the different precursor charge states in a mass spectrometry data file.
+    """
+    Count the different precursor charge states in a mass spectrometry data file.
 
     This command will construct a metadata index if it is not found.
     """
@@ -367,7 +369,8 @@ def _binsearch(array, x):
 @cli.command("precursor-clustering", short_help='Cluster precursor masses in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def precursor_clustering(path, grouping_error=2e-5):
-    """Cluster precursor masses in a mass spectrometry data file.
+    """
+    Cluster precursor masses in a mass spectrometry data file.
 
     This command will construct a metadata index if it is not found.
     """
@@ -425,7 +428,8 @@ def precursor_clustering(path, grouping_error=2e-5):
     "Whether to assume the spectra are deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
                         in_memory=False, deconvoluted=False, cache_size=2**10):
-    """Cluster spectra by precursor mass and cosine similarity.
+    """
+    Cluster spectra by precursor mass and cosine similarity.
 
     Spectrum clusters are written out to a text file recording
     cluster precursor mass, within-cluster similarity, and the

@@ -1,5 +1,4 @@
-"""A collection of tools for drawing and annotating mass spectra
-"""
+"""A collection of tools for drawing and annotating mass spectra"""
 # pragma: no cover
 from typing import (
     Iterable,
@@ -70,7 +69,8 @@ def annotate_scan(
     ax: Optional["Axes"] = None,
     label: bool = True,
 ) -> "Axes":
-    """Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
+    """
+    Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
     :class:`~.ScanBase` product scans, draw the MS1 spectrum in full profile,
     and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum
     surrounding the area around each precursor ion that gave rise to the scans in
@@ -110,6 +110,8 @@ def annotate_scan(
     ax: :class:`matplotlib._axes.Axes`
         An :class:`~.Axes` object to use to find the figure to
         draw the plot on.
+    label : bool, optional
+        label peak m/zs
 
     Returns
     -------
@@ -258,7 +260,8 @@ def annotate_scan_single(
     label: bool = True,
     standalone=True,
 ) -> "Axes":
-    """Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
+    """
+    Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
     area around each precursor ion that gave rise to ``product_scan``
     with monoisotopic peaks and isolation windows marked.
 
@@ -282,8 +285,6 @@ def annotate_scan_single(
         ax = plot.annotate_scan_single(bunch.precursor, bunch.products[0])
         ax.figure.set_figwidth(12)
 
-
-
     Parameters
     ----------
     scan: ScanBase
@@ -292,6 +293,10 @@ def annotate_scan_single(
         The product scan to annotate the precursor ion of
     ax: :class:`matplotlib._axes.Axes`
         An :class:`~.Axes` object to draw the plot on
+    label : bool, optional
+        label peak m/zs
+    standalone : bool, optional
+        Whether to format the figure to be used stand-alone or in composite.
 
     Returns
     -------
@@ -404,7 +409,8 @@ def annotate_isotopic_peaks(
     mz_range: Optional[Tuple[float, float]]=None,
     **kwargs
 ):
-    """Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
+    """
+    Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
     in ``scan``.
 
     .. plot::
@@ -440,6 +446,8 @@ def annotate_isotopic_peaks(
     mz_range: (float, float), optional
         The m/z range to annotate peaks within. Defaults to
         the full range if not specified.
+    **kwargs
+        Passed to inner methods
 
     Returns
     -------
@@ -479,7 +487,8 @@ def label_peaks(
     threshold: Optional[float] = None,
     **kwargs
 ):
-    """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
+    """
+    Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
     of `scan` have been deconvoluted, the most abundant peak will be annotated with
     "<neutral mass> (<charge>)", otherwise just "<m/z>".
 
@@ -497,6 +506,8 @@ def label_peaks(
         Whether or not to always use :attr:`Scan.deconvoluted_peak_set`
     threshold : float, optional
         The intensity threshold under which peaks will be ignored
+    **kwargs
+        Passed to inner methods
 
     Returns
     -------
@@ -580,7 +591,8 @@ def draw_spectrum_paths(
     ax=None,
     **kwargs
 ):
-    """Draw all the paths given by `graph` over a rendered peak list.
+    """
+    Draw all the paths given by `graph` over a rendered peak list.
 
     This function will draw all peaks which an edge connects in `peak_color`, and
     draws edges as lines connecting peaks in `edge_color`, with their annotations
@@ -604,6 +616,8 @@ def draw_spectrum_paths(
     ax : :class:`matplotlib._axes.Axes`, optional
         The axes to draw the plot on (the default is None, which will cause a new figure with a
         single axes to be created)
+    **kwargs
+        Passed to inner methods
 
     Returns
     -------

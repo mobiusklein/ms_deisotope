@@ -30,7 +30,8 @@ from .utils import count_placeholders, prepare_peaklist
 
 
 class AveragineDeconvoluterBase(DeconvoluterBase):
-    """A base class derived from :class:`DeconvoluterBase` which provides some common methods
+    """
+    A base class derived from :class:`DeconvoluterBase` which provides some common methods
     for fitting isotopic patterns using an Averagine model.
     """
 
@@ -42,7 +43,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
     def fit_theoretical_distribution(self, peak, error_tolerance, charge, charge_carrier=PROTON, truncate_after=0.8,
                                      ignore_below=IGNORE_BELOW):
-        """Fit an isotopic pattern seeded at `peak` at `charge` charge.
+        """
+        Fit an isotopic pattern seeded at `peak` at `charge` charge.
 
         Generates a theoretical isotopic pattern using :attr:`averagine`, calls
         :meth:`match_theoretical_isotopic_distribution`
@@ -59,6 +61,13 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             The charge state to produce an isotopic pattern for
         charge_carrier : float, optional
             The charge carrier mass, defaults to |PROTON|
+        truncate_after : float, optional
+            The percent of intensity to ensure is included in a theoretical isotopic pattern
+            starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+            to be truncated, excluding trailing peaks which do not contribute substantially to
+            the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -76,7 +85,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
     def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8,
                               ignore_below=IGNORE_BELOW):
-        """Given a set of candidate monoisotopic peaks and charge states, and a PPM error tolerance,
+        """
+        Given a set of candidate monoisotopic peaks and charge states, and a PPM error tolerance,
         fit each putative isotopic pattern.
 
         Calls :meth:`fit_theoretical_distribution` on each candidate.
@@ -92,6 +102,13 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             Matching error tolerance
         charge_carrier : float, optional
             The charge carrier to use. Defaults to |PROTON|
+        truncate_after : float, optional
+            The percent of intensity to ensure is included in a theoretical isotopic pattern
+            starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+            to be truncated, excluding trailing peaks which do not contribute substantially to
+            the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -122,7 +139,8 @@ except ImportError:
 
 
 class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDeconvoluterBase):
-    """A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical
+    """
+    A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical
     isotopic patterns for each peak to consider. Combines :class:`AveragineDeconvoluterBase` and
     :class:`ExhaustivePeakSearchDeconvoluterBase` to create a working Deconvoluter type.
 
@@ -166,13 +184,15 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
 
 
 class MultiAveragineDeconvoluterBase(DeconvoluterBase):
-    """A base class derived from :class:`DeconvoluterBase` which provides some common methods
+    """
+    A base class derived from :class:`DeconvoluterBase` which provides some common methods
     for fitting isotopic patterns using multiple Averagine models.
     """
 
     def fit_theoretical_distribution(self, peak, error_tolerance, charge, averagine, charge_carrier=PROTON, truncate_after=0.8,
                                      ignore_below=IGNORE_BELOW):
-        """Fit an isotopic pattern seeded at `peak` at `charge` charge.
+        """
+        Fit an isotopic pattern seeded at `peak` at `charge` charge.
 
         Generates a theoretical isotopic pattern using :attr:`averagine`, calls
         :meth:`match_theoretical_isotopic_distribution`
@@ -191,6 +211,13 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             The isotopic model to use for this fitting
         charge_carrier : float, optional
             The charge carrier mass, defaults to |PROTON|
+        truncate_after : float, optional
+            The percent of intensity to ensure is included in a theoretical isotopic pattern
+            starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+            to be truncated, excluding trailing peaks which do not contribute substantially to
+            the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            An intensity threshold under which theoretical peaks are ignored.
 
         Returns
         -------
@@ -234,7 +261,8 @@ except ImportError:
 
 
 class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakSearchDeconvoluterBase):
-    """A Deconvoluter which uses multiple :title-reference:`averagine` [1] model to generate theoretical
+    """
+    A Deconvoluter which uses multiple :title-reference:`averagine` [1] model to generate theoretical
     isotopic patterns for each peak to consider. Combines :class:`MultiAveragineDeconvoluterBase` and
     :class:`ExhaustivePeakSearchDeconvoluterBase` to create a working Deconvoluter type.
 
@@ -289,7 +317,8 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
 
 
 class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDependenceGraphDeconvoluterBase):
-    """A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical
+    """
+    A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical
     isotopic patterns for each peak to consider, using a peak dependence graph to solve complex mass
     spectra.
 
@@ -341,7 +370,8 @@ class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDepend
 
 
 class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, PeakDependenceGraphDeconvoluterBase):
-    """Extends :class:`MultiAveragineDeconvoluter` to include features from
+    """
+    Extends :class:`MultiAveragineDeconvoluter` to include features from
     :class:`PeakDependenceGraphDeconvoluterBase` making it suitable for deconvoluting complex spectra where
     peak overlaps are common.
 
