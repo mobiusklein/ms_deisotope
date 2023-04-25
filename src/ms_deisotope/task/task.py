@@ -43,7 +43,8 @@ class TaskBase(LogUtilsMixin):
             return ''
 
     def try_set_process_name(self, name=None):
-        """This helper method may be used to try to change a process's name
+        """
+        This helper method may be used to try to change a process's name
         in order to make discriminating which role a particular process is
         fulfilling. This uses a third-party utility library that may not behave
         the same way on all platforms, and therefore this is done for convenience

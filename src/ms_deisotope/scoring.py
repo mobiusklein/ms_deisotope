@@ -10,9 +10,10 @@ eps = 1e-4
 
 
 class IsotopicFitRecord(object):
-    """Describes a single isotopic pattern fit, comparing how well an
-    experimentally observed sequence of peaks matches a theoretical isotopic
-    pattern.
+    """
+    Describes a single isotopic pattern fit, comparing how well an
+    experimentally observed sequence of peaks matches a theoretical
+    isotopic pattern.
 
     IsotopicFitRecord instances are hashable and orderable (by score).
 
@@ -53,7 +54,8 @@ class IsotopicFitRecord(object):
         self.missed_peaks = missed_peaks
 
     def clone(self) -> 'IsotopicFitRecord':
-        """Make a shallow copy of this object.
+        """
+        Make a shallow copy of this object.
 
         Returns
         -------
@@ -95,7 +97,8 @@ class IsotopicFitRecord(object):
 
     @property
     def npeaks(self):
-        """The number of experimental peaks covered in the fit.
+        """
+        The number of experimental peaks covered in the fit.
 
         Returns
         -------
@@ -109,8 +112,8 @@ class IsotopicFitRecord(object):
 
 
 class FitSelectorBase(Base):
-    """An object that controls the filtering and
-    selection of IsotopicFitRecord
+    """
+    An object that controls the filtering and selection of IsotopicFitRecord
 
     Attributes
     ----------
@@ -144,7 +147,8 @@ class MinimizeFitSelector(FitSelectorBase):
     """A FitSelector which tries to minimize the score of the best fit."""
 
     def best(self, results):
-        """Returns the IsotopicFitRecord with the smallest score
+        """
+        Returns the IsotopicFitRecord with the smallest score
 
         Parameters
         ----------
@@ -159,12 +163,14 @@ class MinimizeFitSelector(FitSelectorBase):
         return min(results, key=operator.attrgetter("score"))
 
     def reject(self, fit):
-        """Decide whether the fit should be discarded for having too
+        """
+        Decide whether the fit should be discarded for having too
         large a score. Compares against :attr:`minimum_score`
 
         Parameters
         ----------
         fit : IsotopicFitRecord
+            The isotopic fit to accept or reject
 
         Returns
         -------
@@ -176,11 +182,12 @@ class MinimizeFitSelector(FitSelectorBase):
         return score > self.minimum_score
 
     def is_maximizing(self):
-        """Returns that this is *not* a maximizing selector
+        """
+        Returns that this is *not* a maximizing selector
 
         Returns
         -------
-        False
+        bool
         """
         return False
 
@@ -189,7 +196,8 @@ class MaximizeFitSelector(FitSelectorBase):
     """A FitSelector which tries to maximize the score of the best fit."""
 
     def best(self, results):
-        """Returns the IsotopicFitRecord with the largest score
+        """
+        Returns the IsotopicFitRecord with the largest score
 
         Parameters
         ----------
@@ -204,12 +212,14 @@ class MaximizeFitSelector(FitSelectorBase):
         return max(results, key=operator.attrgetter("score"))
 
     def reject(self, fit):
-        """Decide whether the fit should be discarded for having too
+        """
+        Decide whether the fit should be discarded for having too
         small a score. Compares against :attr:`minimum_score`
 
         Parameters
         ----------
         fit : IsotopicFitRecord
+            The isotopic fit to accept or reject
 
         Returns
         -------
@@ -221,17 +231,19 @@ class MaximizeFitSelector(FitSelectorBase):
         return score < self.minimum_score
 
     def is_maximizing(self):
-        """Returns that this *is* a maximizing selector
+        """
+        Returns that this *is* a maximizing selector
 
         Returns
         -------
-        False
+        bool
         """
         return True
 
 
 class IsotopicFitterBase(Base):
-    """A base class for Isotopic Pattern Fitters, objects
+    """
+    A base class for Isotopic Pattern Fitters, objects
     which given a set of experimental peaks and a set of matching
     theoretical peaks, returns a fit score describing how good the
     match is.
@@ -246,7 +258,8 @@ class IsotopicFitterBase(Base):
         self.select = MinimizeFitSelector(score_threshold)
 
     def evaluate(self, peaklist, observed, expected, **kwargs):
-        """Evaluate a pair of peak lists for goodness-of-fit.
+        """
+        Evaluate a pair of peak lists for goodness-of-fit.
 
         Parameters
         ----------
@@ -257,6 +270,7 @@ class IsotopicFitterBase(Base):
         expected : list
             The list of theoretical peaks that are part of this fit
         **kwargs
+            Extra parameters passed to inner methods
 
         Returns
         -------
@@ -269,7 +283,8 @@ class IsotopicFitterBase(Base):
         return self.evaluate(peaklist, observed, expected, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        """Invokes :meth:`evaluate`
+        """
+        Invokes :meth:`evaluate`
 
         Parameters
         ----------
@@ -286,7 +301,8 @@ class IsotopicFitterBase(Base):
         return self.evaluate(*args, **kwargs)
 
     def reject(self, fit):
-        """Test whether this fit is too poor to be used
+        """
+        Test whether this fit is too poor to be used
 
         Parameters
         ----------
@@ -300,7 +316,8 @@ class IsotopicFitterBase(Base):
         return self.select.reject(fit)
 
     def is_maximizing(self):
-        """Whether or not this fitter's score gets better as it grows
+        """
+        Whether or not this fitter's score gets better as it grows
 
         Returns
         -------
@@ -314,7 +331,8 @@ class IsotopicFitterBase(Base):
 
 
 class GTestFitter(IsotopicFitterBase):
-    r"""Evaluate an isotopic fit using a G-test
+    r"""
+    Evaluate an isotopic fit using a G-test
 
     .. math::
         G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}
@@ -333,7 +351,8 @@ g_test = GTestFitter()
 
 
 class ScaledGTestFitter(IsotopicFitterBase):
-    r"""Evaluate an isotopic fit using a G-test after normalizing the
+    r"""
+    Evaluate an isotopic fit using a G-test after normalizing the
     list of experimental and theoretical peaks to both sum to 1.
 
     .. math::
@@ -371,7 +390,8 @@ chi_sqr_test = ChiSquareFitter()
 
 
 class LeastSquaresFitter(IsotopicFitterBase):
-    r"""Evaluate an isotopic fit using least squares coefficient of
+    r"""
+    Evaluate an isotopic fit using least squares coefficient of
     determination :math:`R^2`.
 
     .. math::
@@ -406,7 +426,8 @@ least_squares = LeastSquaresFitter()
 
 
 class MSDeconVFitter(IsotopicFitterBase):
-    """An implementation of the scoring function used in :title-reference:`MSDeconV`
+    """
+    An implementation of the scoring function used in :title-reference:`MSDeconV`
 
     References
     ----------
@@ -467,7 +488,8 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
-    r"""An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    r"""
+    An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
     weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
 
     .. math::

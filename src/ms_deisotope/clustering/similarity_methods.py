@@ -1,4 +1,5 @@
-"""A collection of methods for comparing two peak sets for similarity.
+"""
+A collection of methods for comparing two peak sets for similarity.
 
 Provides an adaptive cosine similarity implementation for both sparse and
 dense spectra.
@@ -9,7 +10,8 @@ from collections import defaultdict
 
 
 def top_n_filter(peak_set, n=40):
-    """Keep only the top `n` most abundant peaks in the spectrum.
+    """
+    Keep only the top `n` most abundant peaks in the spectrum.
 
     Parameters
     ----------
@@ -28,14 +30,18 @@ def top_n_filter(peak_set, n=40):
 
 
 def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
-    """Computes the normalized dot product, also called cosine similarity between
+    """
+    Computes the normalized dot product, also called cosine similarity between
     two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).
 
     Parameters
     ----------
     peak_set_a : Iterable of Peak-like
+        The first peak collection to compare. It is usually only useful to
+        compare the similarity of peaks of the same class, so the types
+        of the elements of `peak_set_a` and `peak_set_b` should match.
     peak_set_b : Iterable of Peak-like
-        The two peak collections to compare. It is usually only useful to
+        The second peak collection to compare. It is usually only useful to
         compare the similarity of peaks of the same class, so the types
         of the elements of `peak_set_a` and `peak_set_b` should match.
     precision : int, optional
@@ -65,8 +71,7 @@ def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
 
 
 def bin_dot_product(positions, bin_a, bin_b, normalize=True):
-    """Compute a normalzied dot product between two aligned intensity maps
-    """
+    """Compute a normalzied dot product between two aligned intensity maps"""
     z = 0
     n_a = 0
     n_b = 0
@@ -123,8 +128,7 @@ try:
     from ms_deisotope._c import similarity_methods as csimilarity_methods
 
     def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
-        """A thin dispatching wrapper for peak_set_similarity methods
-        """
+        """A thin dispatching wrapper for peak_set_similarity methods"""
         if peak_set_a is None or peak_set_b is None:
             raise TypeError("Peak sets cannot be None!")
         if precision > 2:

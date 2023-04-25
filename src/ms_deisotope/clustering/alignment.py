@@ -6,7 +6,8 @@ Neighbor = namedtuple("Neighbor", ('score', 'shift', 'scan_id', 'weight'))
 
 
 class SpectrumAlignmentGraph(object):
-    """A graph of spectra that can find similar pairs of shifted spectra from
+    """
+    A graph of spectra that can find similar pairs of shifted spectra from
     the population, constructing a support network for each spectrum.
 
     Attributes

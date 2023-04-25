@@ -40,7 +40,8 @@ def debug_printer(obj, *message):
 
 
 class CallInterval(object):
-    """Call a function every `interval` seconds from
+    """
+    Call a function every `interval` seconds from
     a separate thread.
 
     Attributes
@@ -80,7 +81,8 @@ class CallInterval(object):
 
 
 class MessageSpooler(object):
-    """An IPC-based logging helper
+    """
+    An IPC-based logging helper
 
     Attributes
     ----------
@@ -98,6 +100,7 @@ class MessageSpooler(object):
         The internal listener thread that will consume
         message_queue work items
     """
+
     def __init__(self, handler):
         self.handler = handler
         self.message_queue = multiprocessing.Queue()
@@ -123,7 +126,8 @@ class MessageSpooler(object):
 
 
 class MessageSender(object):
-    """A simple callable for pushing objects into an IPC
+    """
+    A simple callable for pushing objects into an IPC
     queue.
 
     Attributes
@@ -131,6 +135,7 @@ class MessageSender(object):
     queue : multiprocessing.Queue
         The Inter-Process Communication queue
     """
+
     def __init__(self, queue):
         self.queue = queue
 
