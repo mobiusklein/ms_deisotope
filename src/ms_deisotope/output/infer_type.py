@@ -61,8 +61,9 @@ for tp in [MzMLSerializer, MzMLbSerializer, MGFSerializer]:
         serializers[ext] = tp
 
 
-def get_writer(filename, **kwargs):
-    """Open a writer for a provided filename, inferring the format from
+def get_writer(filename: str, *args, **kwargs):
+    """
+    Open a writer for a provided filename, inferring the format from
     the file extension.
 
     .. warning::
@@ -74,6 +75,8 @@ def get_writer(filename, **kwargs):
     filename : :class:`str`, :class:`os.PathLike`, or file-like object
         The path to the file to open, or a file-like object with a "name"
         attribute.
+    *args
+        Positional arguments forwarded to the writer
     **kwargs
         Keyword arguments forwarded to the writer
 
@@ -97,7 +100,7 @@ def get_writer(filename, **kwargs):
     serializer_cls = serializers[ext[1:]]
 
     if serializer_cls == MzMLbSerializer:
-        return serializer_cls(filename, **kwargs)
+        return serializer_cls(filename, *args, **kwargs)
 
     if is_gzipped:
         if handle is None:
@@ -109,4 +112,4 @@ def get_writer(filename, **kwargs):
         if handle is None:
             handle = open(filename, 'wb')
 
-    return serializer_cls(handle, **kwargs)
+    return serializer_cls(handle, *args, **kwargs)

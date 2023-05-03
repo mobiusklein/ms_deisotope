@@ -1193,7 +1193,10 @@ class MzMLSerializer(ScanSerializerBase):
         self.writer.__exit__(None, None, None)
         if self.indexer is not None:
             try:
-                name = self.handle.name
+                if isinstance(self.handle, str):
+                    name = self.handle
+                else:
+                    name = self.handle.name
                 try:
                     with open(ExtendedScanIndex.index_file_name(name), 'w') as ixfile:
                         self.indexer.serialize(ixfile)

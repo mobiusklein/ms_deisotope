@@ -133,10 +133,10 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
         envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
     else:
         envelopes = None
-    mz_array = scan_dict['m/z array'].astype(np.float64)
-    intensity_array = scan_dict['intensity array'].astype(np.float64)
-    charge_array = scan_dict['charge array'].astype(np.int8)
-    score_array = scan_dict['deconvolution score array'].astype(np.float64)
+    mz_array = scan_dict['m/z array'].astype(np.float64, copy=False)
+    intensity_array = scan_dict['intensity array'].astype(np.float64, copy=False)
+    charge_array = scan_dict['charge array'].astype(np.int8, copy=False)
+    score_array = scan_dict['deconvolution score array'].astype(np.float64, copy=False)
     n = mz_array.shape[0]
     i = 0
     for i in range(n):
