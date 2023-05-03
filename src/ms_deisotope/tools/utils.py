@@ -197,7 +197,7 @@ class ProgressLogger(object):
         self.file = file
         self.writer = writer
 
-    def update(self, n):
+    def update(self, n, current_item=None):
         self.count += n
         if self.count > self.last_update:
             self._log()
