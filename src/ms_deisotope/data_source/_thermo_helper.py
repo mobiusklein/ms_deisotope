@@ -1,4 +1,5 @@
-"""Helper types and functions shared between the COM
+"""
+Helper types and functions shared between the COM
 and .NET Thermo Reader implementations.
 """
 
@@ -76,7 +77,8 @@ if TYPE_CHECKING:
 
 
 class FilterString(str):
-    """A string type that includes parsing of filter string fields
+    """
+    A string type that includes parsing of filter string fields
     exposing a :meth:`get` method to read specific fields.
 
     Attributes
@@ -102,7 +104,8 @@ class FilterString(str):
 
 
 def filter_string_parser(line):
-    """Parse instrument information from Thermo's filter string
+    """
+    Parse instrument information from Thermo's filter string
 
     Parameters
     ----------
@@ -337,7 +340,8 @@ class _InstrumentMethod(object):
 
 
 def method_parser(method_text: str):
-    """Parse a Thermo method defined in text.
+    """
+    Parse a Thermo method defined in text.
 
     Parameters
     ----------
@@ -424,7 +428,8 @@ def method_parser(method_text: str):
 
 
 class ThermoRawScanPtr(Base):
-    """A spectrum identity wrapper that encapsulates the scan number for uniquely identifying
+    """
+    A spectrum identity wrapper that encapsulates the scan number for uniquely identifying
     each spectrum and provides some caches for expensive-to-parse attributes not cached
     already by :class:`~.Scan`.
 

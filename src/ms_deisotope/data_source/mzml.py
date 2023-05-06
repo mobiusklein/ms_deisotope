@@ -1,21 +1,25 @@
-"""mzML is a standard rich XML-format for raw mass spectrometry data storage.
+"""
+mzML is a standard rich XML-format for raw mass spectrometry data storage.
 This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
 
 The parser is based on :mod:`pyteomics.mzml`.
 """
 import io
-from typing import Any, Dict, List, Tuple
 import warnings
 import zlib
 import re
 import hashlib
 
+from typing import Any, Dict, List, Tuple
+
 from six import string_types as basestring
 
 import numpy as np
+
 from pyteomics import mzml
 from pyteomics.xml import unitfloat
+
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -31,12 +35,12 @@ from .metadata.instrument_components import (
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
+from .metadata import software
 from .metadata.sample import Sample
 from .metadata.scan_traits import FAIMS_compensation_voltage
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
-from ms_deisotope.data_source.metadata import software
 
 
 def _open_if_not_file(obj, mode='rt', encoding='utf8'):
@@ -118,7 +122,8 @@ except ImportError:
     pass
 
 class MzMLDataInterface(ScanDataSource):
-    """Provides implementations of all of the methods needed to implement the
+    """
+    Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
     """
 
@@ -126,7 +131,8 @@ class MzMLDataInterface(ScanDataSource):
         return scan.get("name", [])
 
     def _scan_arrays(self, scan):
-        """Returns raw data arrays for m/z and intensity
+        """
+        Returns raw data arrays for m/z and intensity
 
         Parameters
         ----------
@@ -172,7 +178,8 @@ class MzMLDataInterface(ScanDataSource):
         return pinfo_dict
 
     def _precursor_information(self, scan):
-        """Returns information about the precursor ion,
+        """
+        Returns information about the precursor ion,
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
@@ -223,7 +230,8 @@ class MzMLDataInterface(ScanDataSource):
         return precursor
 
     def _scan_title(self, scan):
-        """Returns a verbose name for this scan, if one
+        """
+        Returns a verbose name for this scan, if one
         were stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
@@ -244,7 +252,8 @@ class MzMLDataInterface(ScanDataSource):
             return scan["id"]
 
     def _scan_id(self, scan):
-        """Returns the scan's id string, a unique
+        """
+        Returns the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
 
@@ -261,7 +270,8 @@ class MzMLDataInterface(ScanDataSource):
         return scan["id"]
 
     def _scan_index(self, scan):
-        """Returns the base 0 offset from the start
+        """
+        Returns the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
 
@@ -282,7 +292,8 @@ class MzMLDataInterface(ScanDataSource):
         return scan['index']
 
     def _ms_level(self, scan):
-        """Returns the degree of exponential fragmentation
+        """
+        Returns the degree of exponential fragmentation
         used to produce this scan.
 
         1 refers to a survey scan of unfragmented ions, 2
@@ -302,7 +313,8 @@ class MzMLDataInterface(ScanDataSource):
         return int(scan['ms level'])
 
     def _scan_time(self, scan):
-        """Returns the time in minutes from the start of data
+        """
+        Returns the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
         Parameters
@@ -323,7 +335,8 @@ class MzMLDataInterface(ScanDataSource):
             return 0.0
 
     def _is_profile(self, scan):
-        """Returns whether the scan contains profile data (`True`)
+        """
+        Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
         Parameters
@@ -339,7 +352,8 @@ class MzMLDataInterface(ScanDataSource):
         return "profile spectrum" in scan or "profile spectrum" in self._stray_cvs(scan)
 
     def _polarity(self, scan):
-        """Returns whether this scan was acquired in positive mode (+1)
+        """
+        Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
         Parameters
@@ -358,7 +372,8 @@ class MzMLDataInterface(ScanDataSource):
             return -1
 
     def _activation(self, scan):
-        """Returns information about the activation method used to
+        """
+        Returns information about the activation method used to
         produce this scan, if any.
 
         Returns `None` for MS1 scans
@@ -512,7 +527,8 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return by_id
 
     def file_description(self):
-        """Read the file metadata and provenance from the ``<fileDescription>`` tag
+        """
+        Read the file metadata and provenance from the ``<fileDescription>`` tag
         if it is present.
 
         Returns
@@ -577,7 +593,8 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return config
 
     def instrument_configuration(self) -> List[InstrumentInformation]:
-        """Read the instrument configurations settings from the
+        """
+        Read the instrument configurations settings from the
         ``<instrumentConfigurationList>``
 
         Returns
@@ -625,7 +642,8 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return processing_list
 
     def samples(self) -> List[Sample]:
-        """Describe the sample(s) used to generate the mass spectrometry
+        """
+        Describe the sample(s) used to generate the mass spectrometry
         data contained in this file.
 
         Returns
@@ -648,7 +666,8 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
 
 
 def checksum_mzml_stream(stream: io.IOBase) -> Tuple[bytes, bytes]:
-    """Calculate the SHA1 checksum of an indexed mzML file for the purposes
+    """
+    Calculate the SHA1 checksum of an indexed mzML file for the purposes
     of validating the checksum at the end of the file.
 
     Parameters
@@ -693,8 +712,7 @@ def checksum_mzml_stream(stream: io.IOBase) -> Tuple[bytes, bytes]:
 
 
 def read_file_checksum(stream: io.IOBase) -> bytes:
-    """Read the stored file checksum of an indexedmzML file.
-    """
+    """Read the stored file checksum of an indexedmzML file."""
     stream.seek(-5000, 2)
     chunk = stream.read(5001)
     target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
@@ -703,7 +721,8 @@ def read_file_checksum(stream: io.IOBase) -> bytes:
 
 
 class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
-    """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
+    """
+    Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
     random access.
 
     Attributes

@@ -1,7 +1,8 @@
 # cython: embedsignature=True
 
 cimport cython
-from cpython.list cimport PyList_Append, PyList_GET_ITEM, PyList_GET_SIZE
+from cpython cimport Py_INCREF
+from cpython.list cimport PyList_Append, PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
 
 from libc.math cimport sqrt
 
@@ -271,6 +272,8 @@ cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
     return base_peak
 
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 cpdef double correlation(cython.floating[:] x, cython.floating[:] y):
     cdef:
         size_t i, n

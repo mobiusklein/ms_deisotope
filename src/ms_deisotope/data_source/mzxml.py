@@ -1,4 +1,5 @@
-"""**mzXML** is a standard XML-format for raw mass spectrometry data storage created
+"""
+**mzXML** is a standard XML-format for raw mass spectrometry data storage created
 by the Institute for Systems Biology, intended to be replaced with **mzML**.
 This module provides :class:`MzXMLLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
@@ -30,7 +31,8 @@ scan_number_only_id_format = file_information.id_format("MS:1000776")
 
 class _MzXMLMetadataLoader(ScanFileMetadataBase):
     def file_description(self):
-        """Read the file provenance from the ``<parentFile>`` tags
+        """
+        Read the file provenance from the ``<parentFile>`` tags
         if any are present.
 
         This returns no information about the file's contents as this
@@ -54,7 +56,8 @@ class _MzXMLMetadataLoader(ScanFileMetadataBase):
         return fi
 
     def instrument_configuration(self):
-        """Read the instrument configurations settings from the
+        """
+        Read the instrument configurations settings from the
         ``<msInstrument>`` elements.
 
         Returns
@@ -149,11 +152,14 @@ class _MzXMLMetadataLoader(ScanFileMetadataBase):
 
 
 class MzXMLDataInterface(ScanDataSource):
-    """Provides implementations of all of the methods needed to implement the
+    """
+    Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzXML files. Not intended for direct instantiation.
     """
+
     def _scan_arrays(self, scan):
-        """Returns raw data arrays for m/z and intensity
+        """
+        Returns raw data arrays for m/z and intensity
 
         Parameters
         ----------
@@ -174,7 +180,8 @@ class MzXMLDataInterface(ScanDataSource):
             return np.array([]), np.array([])
 
     def _precursor_information(self, scan):
-        """Returns information about the precursor ion,
+        """
+        Returns information about the precursor ion,
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
@@ -205,7 +212,8 @@ class MzXMLDataInterface(ScanDataSource):
             return None
 
     def _scan_title(self, scan):
-        """Returns a verbose name for this scan, if one
+        """
+        Returns a verbose name for this scan, if one
         was stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
@@ -223,7 +231,8 @@ class MzXMLDataInterface(ScanDataSource):
         return self._scan_id(scan)
 
     def _scan_id(self, scan):
-        """Returns the scan's id string, a unique
+        """
+        Returns the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
 
@@ -240,7 +249,8 @@ class MzXMLDataInterface(ScanDataSource):
         return scan["num"]
 
     def _scan_index(self, scan):
-        """Returns the base 0 offset from the start
+        """
+        Returns the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
 
@@ -269,7 +279,8 @@ class MzXMLDataInterface(ScanDataSource):
             return -2
 
     def _ms_level(self, scan):
-        """Returns the degree of exponential fragmentation
+        """
+        Returns the degree of exponential fragmentation
         used to produce this scan.
 
         1 refers to a survey scan of unfragmented ions, 2
@@ -289,7 +300,8 @@ class MzXMLDataInterface(ScanDataSource):
         return int(scan['msLevel'])
 
     def _scan_time(self, scan):
-        """Returns the time in minutes from the start of data
+        """
+        Returns the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
         Parameters
@@ -308,7 +320,8 @@ class MzXMLDataInterface(ScanDataSource):
             return None
 
     def _is_profile(self, scan):
-        """Returns whether the scan contains profile data (`True`)
+        """
+        Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
         Parameters
@@ -327,7 +340,8 @@ class MzXMLDataInterface(ScanDataSource):
             return True
 
     def _polarity(self, scan):
-        """Returns whether this scan was acquired in positive mode (+1)
+        """
+        Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
         Parameters
@@ -349,7 +363,8 @@ class MzXMLDataInterface(ScanDataSource):
             return None
 
     def _activation(self, scan):
-        """Returns information about the activation method used to
+        """
+        Returns information about the activation method used to
         produce this scan, if any.
 
         Returns `None` for MS1 scans
@@ -402,7 +417,8 @@ class MzXMLDataInterface(ScanDataSource):
 
 
 class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
-    """Reads scans from mzXML files. Provides both iterative and
+    """
+    Reads scans from mzXML files. Provides both iterative and
     random access.
 
     Attributes

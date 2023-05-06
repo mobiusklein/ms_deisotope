@@ -1,3 +1,14 @@
+"""
+Machinery for guessing what kind of mass spectrometry data file a file is.
+
+This module provides a type :class:`FormatGuesser` which implements the
+guessing process as well as an instance :obj:`MSFileLoader` which handles
+all the raw formats well.
+
+It also is intended to expose the vendor library registration machinery in
+one place to make it more convenient to register external libraries programmatically.
+"""
+
 import os
 import io
 
@@ -16,7 +27,8 @@ PathLikeOrFileToTypeFn = Callable[[
 
 
 class FormatGuesser(object):
-    """Infer which file format a given file path or file-like object.
+    """
+    Infer which file format a given file path or file-like object.
 
     Attributes
     ----------
@@ -61,9 +73,11 @@ class FormatGuesser(object):
         raise ValueError("Cannot determine ScanLoader type from %r" % (file_path, ))
 
     def add_reader_type(self, reader: Union[RandomAccessScanSource, ScanIterator]):
+        """Add a reader type that can just be tied to open the file."""
         self.reader_types.append(reader)
 
     def guess_from_file_extension(self, file_path: PathLikeOrFile, ext_map: Dict[str, Type[Union[RandomAccessScanSource, ScanIterator]]]):
+        """Guess the file type by examining the file extension, discarding compression suffixes."""
         if hasattr(file_path, 'name'):
             file_path = file_path.name
         if file_path.endswith(".gz"):
@@ -74,7 +88,8 @@ class FormatGuesser(object):
         else:
             raise ValueError("Cannot determine opener type from file path")
 
-    def add_file_extension_guesser(self, ext_map):
+    def add_file_extension_guesser(self, ext_map: Dict[str, Type[Union[RandomAccessScanSource, ScanIterator]]]):
+        """Register a new guesser from a file extension to reader type map"""
         def guesser(file_path):
             return self.guess_from_file_extension(file_path, ext_map)
 
@@ -86,6 +101,18 @@ class FormatGuesser(object):
         Create an object that reads scans from any supported data file format.
 
         Provides both iterative and random access.
+
+        Parameters
+        ----------
+        file_path : str or :class:`io.IOBase`
+            The file to be opened.
+        *args, **kwargs
+            Additional parameters passed to the newly constructed
+            reader.
+
+        Returns
+        -------
+        :class:`~.RandomAccessScanSource` or :class:`~.ScanIterator`
         """
         reader_type = self.guess_type(file_path)
         try:
@@ -103,11 +130,16 @@ class FormatGuesser(object):
         return reader_type(fobj, *args, **kwargs)
 
     def __call__(self, file_path: PathLikeOrFile, *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
-        """Proxy for :meth:`open_file`.
+        """
+        Proxy for :meth:`open_file`.
 
         Parameters
         ----------
         file_path : str or :class:`io.IOBase`
+            The file to be opened.
+        *args, **kwargs
+            Additional parameters passed to the newly constructed
+            reader.
 
         Returns
         -------
@@ -131,6 +163,12 @@ guess_type_from_path = MSFileLoader.add_file_extension_guesser({
 
 @register_type_guesser
 def guess_type_from_file_sniffing(file_path):
+    """
+    A file typer guesser that reads the first KB of the file to infer its type.
+
+    Works on mzML, mzXML, and MGF. Handles GZIP compression transparently if
+    the file supports random access.
+    """
     is_random_access_file = is_random_access(file_path)
     if is_random_access_file:
         handle = file_path
@@ -185,6 +223,7 @@ try:
 
 except ImportError:  # pragma: no cover
     def register_thermo_net_dll(*args, **kwargs):
+        """Stub generated to register vendor library when the underlying machinery is unavailable."""
         pass
 
 try:
@@ -197,6 +236,7 @@ try:
 
 except ImportError:  # pragma: no cover
     def register_thermo_dll(*args, **kwargs):
+        """Stub generated to register vendor library when the underlying machinery is unavailable."""
         pass
 
 
@@ -210,6 +250,7 @@ try:
     register_type_guesser(_check_is_agilent_d)
 except ImportError:  # pragma: no cover
     def register_agilent_dll_dir(*args, **kwargs):
+        """Stub generated to register vendor library when the underlying machinery is unavailable."""
         pass
 
 
@@ -222,4 +263,5 @@ try:
     register_type_guesser(_check_mass_lynx_raw)
 except ImportError:
     def register_waters_masslynx_dll(*args, **kwargs):
+        """Stub generated to register vendor library when the underlying machinery is unavailable."""
         pass

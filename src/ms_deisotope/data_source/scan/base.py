@@ -1,4 +1,5 @@
-"""Represent the basic structures of a mass spectrum and its processed contents,
+"""
+Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 """
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
@@ -40,6 +41,9 @@ from ms_deisotope.utils import Constant
 
 if TYPE_CHECKING:
     from ms_deisotope.data_source.scan.loader import ScanDataSource
+    from ms_deisotope.data_source.metadata.activation import ActivationInformation
+    from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation
+    from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanAcquisitionInformation
     from ms_deisotope.qc.isolation import CoIsolation
 
 
@@ -48,7 +52,8 @@ ChargeNotProvided = Constant("ChargeNotProvided")
 
 
 class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
-    """Represents a single MS1 scan and all MSn scans derived from it,
+    """
+    Represents a single MS1 scan and all MSn scans derived from it,
     or a collection of related MSn scans.
 
     Attributes
@@ -108,7 +113,8 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return self._id_map[scan_id]
 
     def annotate_precursors(self, nperrow=4, ax=None):
-        """Plot the spectra in this group as a grid, with the full
+        """
+        Plot the spectra in this group as a grid, with the full
         MS1 spectrum in profile in the top row, and each MSn spectrum's
         precursor ion revealed in a grid panel below, with isolation
         window and selected ion/monoisotopic peak annotated.
@@ -142,7 +148,8 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         p.text(")")
 
     def pack(self):
-        """Build a new :class:`ScanBunch` where each scan in it is returned by calling
+        """
+        Build a new :class:`ScanBunch` where each scan in it is returned by calling
         :meth:`~.Scan.pack`
 
         Returns
@@ -157,7 +164,8 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
-    """Represent the m/z and intensity arrays associated with a raw
+    """
+    Represent the m/z and intensity arrays associated with a raw
     mass spectrum.
 
     Supports scaling and summing, as well as low level m/z search.
@@ -191,7 +199,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return inst
 
     def has_array(self, array_type):
-        """Check if this array set contains an array of the
+        """
+        Check if this array set contains an array of the
         requested type.
 
         This method uses the semantic lookup mechanism to test
@@ -232,7 +241,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return False
 
     def copy(self):
-        """Make a deep copy of this object.
+        """
+        Make a deep copy of this object.
 
         Returns
         -------
@@ -247,7 +257,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return inst
 
     def plot(self, *args, **kwargs):
-        """Draw the profile spectrum described by the
+        """
+        Draw the profile spectrum described by the
         contained arrays.
 
         Parameters
@@ -255,6 +266,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         ax: :class:`matplotlib._axes.Axes`
             The figure axes onto which to draw the plot. If not provided,
             this will default to the current figure interactively.
+        *args
+            Forwarded to :meth:`plot` on ``ax``.
         **kwargs
             All keywords are forwarded to :meth:`plot` on ``ax``.
 
@@ -290,7 +303,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             return self.__class__(*average_signal([self, other])) * 2
 
     def find_mz(self, mz: float) -> int:
-        """Find the nearest index to the query ``mz``
+        """
+        Find the nearest index to the query ``mz``
 
         Parameters
         ----------
@@ -345,7 +359,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return 0
 
     def between_mz(self, low: float, high: float) -> 'RawDataArrays':
-        """Returns a slice of the arrays between ``low`` and ``high``
+        """
+        Returns a slice of the arrays between ``low`` and ``high``
         m/z
 
         Parameters
@@ -367,7 +382,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     @classmethod
     def empty(cls) -> 'RawDataArrays':
-        """Create a new, empty instance.
+        """
+        Create a new, empty instance.
 
         Returns
         -------
@@ -395,8 +411,24 @@ class ScanBase(object):
     peak_set: Optional[PeakSet]
     deconvoluted_peak_set: Optional[DeconvolutedPeakSet]
 
+    scan_time: float
+    id: str
+    title: str
+    index: int
+    ms_level: int
+    polarity: int
+    is_profile: bool
+    annotations: Dict[str, Any]
+
+    activation: 'ActivationInformation'
+    acquisition_information: 'ScanAcquisitionInformation'
+    isolation_window: 'IsolationWindow'
+    instrument_configuration: 'InstrumentInformation'
+    precursor_information: 'PrecursorInformation'
+
     def has_ion_mobility(self) -> bool:
-        """Check whether this scan has drift time information associated with
+        """
+        Check whether this scan has drift time information associated with
         it.
 
         If this scan has been aggregated, it will only check the first scan in
@@ -410,7 +442,8 @@ class ScanBase(object):
 
     @property
     def ion_mobility_type(self):
-        """Fetch the ion mobility type of the scan.
+        """
+        Fetch the ion mobility type of the scan.
 
         Returns
         -------
@@ -425,7 +458,8 @@ class ScanBase(object):
 
     @property
     def drift_time(self) -> Optional[float]:
-        """A convenience method to access the first
+        """
+        A convenience method to access the first
         scan event to retrieve its drift time.
 
         Returns
@@ -445,7 +479,8 @@ class ScanBase(object):
 
     @property
     def tic(self) -> 'TICMethods':
-        """A facade function for calculating the total ion current (TIC) of a spectrum.
+        """
+        A facade function for calculating the total ion current (TIC) of a spectrum.
 
         This exposes a facade object of type :class:`TICMethods` to take care of the different
         ways in which the TIC may be calculated.
@@ -485,7 +520,8 @@ class ScanBase(object):
 
     @property
     def base_peak(self) -> 'BasePeakMethods':
-        """A facade function for calculating the base peak, the most abundant peak,
+        """
+        A facade function for calculating the base peak, the most abundant peak,
         of a spectrum.
 
         This exposes a facade object of type :class:`BasePeakMethods` to take care of
@@ -505,7 +541,8 @@ class ScanBase(object):
 
     @property
     def plot(self) -> 'PlottingMethods':
-        """A facade function for plotting different layers of signal in the scan from raw,
+        """
+        A facade function for plotting different layers of signal in the scan from raw,
         centroided, and deconvoluted representation, as well as limited precursor annotation.
 
         Returns
@@ -516,7 +553,8 @@ class ScanBase(object):
 
     @property
     def peaks(self) -> 'PeakSetMethods':
-        """Automatically locate the most refined representation of the signal from the :class:`Scan`
+        """
+        Automatically locate the most refined representation of the signal from the :class:`Scan`
         object.
 
         Returns
@@ -526,7 +564,8 @@ class ScanBase(object):
         return PeakSetMethods(self)
 
     def copy(self, deep=True) -> 'ScanBase':
-        """Return a deep copy of the :class:`Scan` object
+        """
+        Return a deep copy of the :class:`Scan` object
         wrapping the same reference data.
 
         Returns
@@ -619,7 +658,8 @@ class ScanBase(object):
     # Scan objects shouldn't be hashed.
 
     def bind(self, source: 'ScanDataSource') -> 'ScanBase':
-        """Attach this object and its other referent members
+        """
+        Attach this object and its other referent members
         to ``source``, letting them load information.
         """
         if self.precursor_information is not None:
@@ -627,7 +667,8 @@ class ScanBase(object):
         return self
 
     def unbind(self) -> 'ScanBase':
-        """Detattch this object and its other referent members
+        """
+        Detattch this object and its other referent members
         from their currently bound :attr:`source`.
 
         This may cause errors if more information is requested but is not
@@ -639,7 +680,8 @@ class ScanBase(object):
 
     @property
     def source_file_name(self) -> Optional[str]:
-        """Get the name of the source file this :class:`~.ScanBase` object is bound to
+        """
+        Get the name of the source file this :class:`~.ScanBase` object is bound to
 
         Returns
         -------
@@ -652,7 +694,8 @@ class ScanBase(object):
 
 
 class PrecursorInformation(_IonMobilityMixin):
-    """Store information relating a tandem MS scan to its precursor MS scan.
+    """
+    Store information relating a tandem MS scan to its precursor MS scan.
 
     .. note::
         The attributes prefixed with `extracted_` refer to the quantities estimated
@@ -691,6 +734,7 @@ class PrecursorInformation(_IonMobilityMixin):
         Any object implementing the :class:`ScanIterator` interface to be used to look up
         the precursor scan with :attr:`precursor_scan_id`
     """
+
     mz: float
     intensity: float
     charge: Union[int, Constant]
@@ -811,19 +855,20 @@ class PrecursorInformation(_IonMobilityMixin):
         return not (self == other)
 
     def bind(self, source: 'ScanDataSource') -> 'PrecursorInformation':
-        """Attach this object and its other referent members
+        """
+        Attach this object and its other referent members
         to ``source``, letting them load information.
         """
         self.source = source
         return self
 
     def unbind(self):
-        """Detattch this object the currently bound :attr:`source`.
-        """
+        """Detattch this object the currently bound :attr:`source`."""
         self.source = None
 
     def extract(self, peak: DeconvolutedPeak, override_charge: Optional[int]=None):
-        """Populate the extracted attributes of this object from the attributes
+        """
+        Populate the extracted attributes of this object from the attributes
         of a :class:`~.DeconvolutedPeak` instance.
 
         Parameters
@@ -842,7 +887,8 @@ class PrecursorInformation(_IonMobilityMixin):
         self.defaulted = False
 
     def default(self, orphan: bool=False):
-        """Populate the extracted attributes of this object from the matching
+        """
+        Populate the extracted attributes of this object from the matching
         original attributes.
 
         This usually reflects a failure to find an acceptable deconvolution solution,
@@ -869,7 +915,8 @@ class PrecursorInformation(_IonMobilityMixin):
             self.orphan = True
 
     def update_to_extracted(self):
-        """Override the reference values given by the source with those values
+        """
+        Override the reference values given by the source with those values
         that were extracted from experimental data, if they have been set.
         """
         if self.extracted_neutral_mass is not None:
@@ -881,7 +928,8 @@ class PrecursorInformation(_IonMobilityMixin):
 
     @property
     def neutral_mass(self) -> float:
-        """Calculate the neutral mass of the precursor from the given m/z and charge.
+        """
+        Calculate the neutral mass of the precursor from the given m/z and charge.
 
         Returns
         -------
@@ -895,7 +943,8 @@ class PrecursorInformation(_IonMobilityMixin):
 
     @property
     def extracted_mz(self) -> float:
-        """Recalculate the m/z of the precursor from the fitted neutral mass and charge
+        """
+        Recalculate the m/z of the precursor from the fitted neutral mass and charge
 
         Returns
         -------
@@ -910,7 +959,8 @@ class PrecursorInformation(_IonMobilityMixin):
 
     @property
     def precursor(self) -> Optional[ScanBase]:
-        """The scan in which the precursor ion was isolated.
+        """
+        The scan in which the precursor ion was isolated.
 
         Returns
         -------
@@ -922,7 +972,8 @@ class PrecursorInformation(_IonMobilityMixin):
 
     @property
     def product(self) -> Optional[ScanBase]:
-        """The scan in which the precursor ion was fragmented and daughter ions were observed.
+        """
+        The scan in which the precursor ion was fragmented and daughter ions were observed.
 
         Returns
         -------
@@ -933,7 +984,8 @@ class PrecursorInformation(_IonMobilityMixin):
         return self.source.get_scan_by_id(self.product_scan_id)
 
     def copy(self) -> 'PrecursorInformation':
-        """Make a shallow copy of this object.
+        """
+        Make a shallow copy of this object.
 
         Returns
         -------
@@ -948,7 +1000,8 @@ class PrecursorInformation(_IonMobilityMixin):
         return dup
 
     def clone(self) -> 'PrecursorInformation':
-        """Make a shallow copy of this object.
+        """
+        Make a shallow copy of this object.
 
         .. note::
 
@@ -961,7 +1014,8 @@ class PrecursorInformation(_IonMobilityMixin):
         return self.copy()
 
     def correct_mz(self, error_tolerance: float=2e-5, enforce_isolation_window: bool=False):
-        """Find the peak nearest to :attr:`mz` in :attr:`precursor` and
+        """
+        Find the peak nearest to :attr:`mz` in :attr:`precursor` and
         update :attr:`mz` from it.
 
         .. note::
@@ -1001,7 +1055,8 @@ class PrecursorInformation(_IonMobilityMixin):
                         self.mz = peak.mz
 
     def find_monoisotopic_peak(self, trust_charge_state: bool=True, precursor_scan: ScanBase=None, **kwargs) -> Tuple[float, bool]:
-        """Find the monoisotopic peak for this precursor.
+        """
+        Find the monoisotopic peak for this precursor.
 
         This convenience method carries out a simplified procedure for finding the
         precursor ion's monoisotpic peak and charge state in the precursor scan. It
@@ -1022,6 +1077,8 @@ class PrecursorInformation(_IonMobilityMixin):
         precursor_scan: :class:`~.ScanBase`, optional
             The spectrum to look for the precursor peak in. If not provided,
             :attr:`precursor` will be used.
+        **kwargs
+            Forwarded :func:`~ms_deisotope.deconvolution.api.deconvolute_peaks`
 
         Returns
         -------
@@ -1097,7 +1154,8 @@ class PrecursorInformation(_IonMobilityMixin):
 
 
 class TICMethods(object):
-    """A helper class that will figure out the most refined signal source to
+    """
+    A helper class that will figure out the most refined signal source to
     calculate the total ion current from.
     """
 
@@ -1120,7 +1178,8 @@ class TICMethods(object):
         return self._guess()
 
     def _guess(self) -> float:
-        """Guess which strategy to use to calculate the most refined representation of
+        """
+        Guess which strategy to use to calculate the most refined representation of
         the TIC.
 
         Returns
@@ -1158,7 +1217,8 @@ class TICMethods(object):
                     self.scan, type(self.scan)))
 
     def raw(self) -> float:
-        """Calculate the TIC from the raw intensity signal of the spectrum with no processing.
+        """
+        Calculate the TIC from the raw intensity signal of the spectrum with no processing.
 
         Returns
         -------
@@ -1167,7 +1227,8 @@ class TICMethods(object):
         return self._tic_raw_data_arrays(self.scan.arrays)
 
     def centroided(self) -> float:
-        """Calculate the TIC from the picked peak list of the spectrum.
+        """
+        Calculate the TIC from the picked peak list of the spectrum.
 
         Returns
         -------
@@ -1176,7 +1237,8 @@ class TICMethods(object):
         return self._peak_sequence_tic(self.scan.peak_set)
 
     def deconvoluted(self) -> float:
-        """Calculate the TIC from the deconvoluted peak list of the spectrum.
+        """
+        Calculate the TIC from the deconvoluted peak list of the spectrum.
 
         Returns
         -------
@@ -1186,7 +1248,8 @@ class TICMethods(object):
 
 
 class BasePeakMethods(object):
-    """A helper class that will figure out the most refined signal source to
+    """
+    A helper class that will figure out the most refined signal source to
     calculate the base peak from.
     """
 
@@ -1209,7 +1272,8 @@ class BasePeakMethods(object):
         return self._guess()
 
     def _guess(self) -> float:
-        """Guess which strategy to use to produce the most refined representation
+        """
+        Guess which strategy to use to produce the most refined representation
         of the base peak.
 
         Returns
@@ -1242,7 +1306,8 @@ class BasePeakMethods(object):
                     self.scan, type(self.scan)))
 
     def raw(self) -> float:
-        """Calculate the base peak from the raw intensity signal of the spectrum with no processing.
+        """
+        Calculate the base peak from the raw intensity signal of the spectrum with no processing.
 
         Returns
         -------
@@ -1251,7 +1316,8 @@ class BasePeakMethods(object):
         return self._bp_raw_data_arrays(self.scan.arrays)
 
     def centroided(self) -> float:
-        """Calculate the base peak from the picked peak list of the spectrum.
+        """
+        Calculate the base peak from the picked peak list of the spectrum.
 
         Returns
         -------
@@ -1260,7 +1326,8 @@ class BasePeakMethods(object):
         return self._peak_sequence_bp(self.scan.peak_set)
 
     def deconvoluted(self) -> float:
-        """Calculate the base peak from the deconvoluted peak list of the spectrum.
+        """
+        Calculate the base peak from the deconvoluted peak list of the spectrum.
 
         Returns
         -------
@@ -1270,7 +1337,8 @@ class BasePeakMethods(object):
 
 
 class PeakSetMethods(_SequenceABC):
-    """A facade to simplify determining how to call common peak-set methods
+    """
+    A facade to simplify determining how to call common peak-set methods
     on an object like :class:`~.Scan` which may have multiple tiers of
     representation of the peaks it contains, while still supporting directly
     using real PeakSet-like objects.
@@ -1311,7 +1379,8 @@ class PeakSetMethods(_SequenceABC):
             return isinstance(self.scan, DeconvolutedPeakSet)
 
     def deconvoluted(self):
-        """Get the deconvoluted peak set
+        """
+        Get the deconvoluted peak set
 
         Returns
         -------
@@ -1322,7 +1391,8 @@ class PeakSetMethods(_SequenceABC):
         return None
 
     def centroided(self):
-        """Get the centroided peak set
+        """
+        Get the centroided peak set
 
         Returns
         -------
@@ -1332,7 +1402,8 @@ class PeakSetMethods(_SequenceABC):
             return self._get_centroided()
 
     def raw(self):
-        """Get the raw signal, or lacking that, the simplest representation available.
+        """
+        Get the raw signal, or lacking that, the simplest representation available.
 
         Returns
         -------
@@ -1393,7 +1464,8 @@ class PeakSetMethods(_SequenceABC):
             raise NotImplementedError()
 
     def has_peak(self, m, error_tolerance=2e-5):
-        """Search the most refined representation available for a peak at the
+        """
+        Search the most refined representation available for a peak at the
         given mass dimension coordinates with the specified parts-per-million
         error tolerance.
 
@@ -1439,7 +1511,8 @@ class PeakSetMethods(_SequenceABC):
             raise NotImplementedError()
 
     def all_peaks_for(self, m, error_tolerance=2e-5):
-        """Search the most refined representation available for all peaks at the
+        """
+        Search the most refined representation available for all peaks at the
         given mass dimension coordinates with the specified parts-per-million
         error tolerance.
 
@@ -1484,8 +1557,9 @@ class PeakSetMethods(_SequenceABC):
         else:
             raise NotImplementedError()
 
-    def between(self, lo, hi, **kwargs):
-        """Search the most refined representation available for all peaks at the
+    def between(self, lo: float, hi: float, **kwargs):
+        """
+        Search the most refined representation available for all peaks at the
         between the given low and high mass dimension coordinates.
 
         This method invokes the underlying collection's ``between`` method,
@@ -1576,7 +1650,8 @@ class PeakSetMethods(_SequenceABC):
 
 
 class PlottingMethods(object):
-    """A plotting method facade that knows how to draw different facets of a spectrum.
+    """
+    A plotting method facade that knows how to draw different facets of a spectrum.
 
     When called directly, the behavior is the same as calling :meth:`raw`, :meth:`centroided`,
     and meth:`deconvoluted` with a shared ``ax`` argument and common ``**kwargs``.
@@ -1589,7 +1664,8 @@ class PlottingMethods(object):
         self._plot_api = plot
 
     def raw(self, *args, **kwargs):
-        """Draws un-centroided profile data, visualizing continuous
+        """
+        Draws un-centroided profile data, visualizing continuous
         data points
 
         Parameters
@@ -1601,6 +1677,8 @@ class PlottingMethods(object):
             If `True`, will call :func:`_beautify_axes` on `ax`
         normalize: bool, optional
             if `True`, will normalize the abundance dimension to be between 0 and 100%
+        *args
+            Passed to :func:`~ms_deisotope.plot.draw_raw`
         **kwargs
             Passed to :meth:`matplotlib.Axes.plot`
 
@@ -1615,7 +1693,8 @@ class PlottingMethods(object):
         return self._plot_api.draw_raw(self.scan.arrays, *args, **kwargs)
 
     def centroided(self, *args, **kwargs):
-        """Draws centroided peak data, visualizing peak apexes.
+        """
+        Draws centroided peak data, visualizing peak apexes.
 
         If :attr:`scan.peak_set` is not populated, this will fail.
 
@@ -1628,6 +1707,8 @@ class PlottingMethods(object):
             If `True`, will call :func:`_beautify_axes` on `ax`
         normalize: bool, optional
             if `True`, will normalize the abundance dimension to be between 0 and 100%
+        *args
+            Passed to :func:`~ms_deisotope.plot.draw_peaklist`
         **kwargs
             Passed to :meth:`matplotlib.Axes.plot`
 
@@ -1642,7 +1723,8 @@ class PlottingMethods(object):
         return self._plot_api.draw_peaklist(self.scan.peak_set, *args, **kwargs)
 
     def deconvoluted(self, *args, **kwargs):
-        """Draws deconvoluted peak data, visualizing collapsed envelope monoisotopic peaks.
+        """
+        Draws deconvoluted peak data, visualizing collapsed envelope monoisotopic peaks.
 
         If :attr:`scan.peak_set` is not populated, this will fail.
 
@@ -1655,6 +1737,8 @@ class PlottingMethods(object):
             If `True`, will call :func:`_beautify_axes` on `ax`
         normalize: bool, optional
             if `True`, will normalize the abundance dimension to be between 0 and 100%
+        *args
+            Passed to :func:`~ms_deisotope.plot.draw_peaklist`
         **kwargs
             Passed to :meth:`matplotlib.Axes.plot`
 
@@ -1669,7 +1753,8 @@ class PlottingMethods(object):
         return self._plot_api.draw_peaklist(self.scan.deconvoluted_peak_set, *args, **kwargs)
 
     def annotate_precursor(self, *args, **kwargs):
-        """Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the
+        """
+        Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the
         area around each precursor ion that gave rise to :attr:`scan`
         with monoisotopic peaks and isolation windows marked.
 
@@ -1677,6 +1762,10 @@ class PlottingMethods(object):
         ----------
         ax: :class:`matplotlib._axes.Axes`
             An :class:`~.Axes` object to draw the plot on
+        *args:
+            Forwarded to :func:`~.annotate_scan_single`
+        **kwargs:
+            Forwarded to :func:`~.annotate_scan_single`
 
         Returns
         -------
@@ -1695,7 +1784,8 @@ class PlottingMethods(object):
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
     def label_peaks(self, *args, **kwargs):
-        """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
+        """
+        Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
         of `scan` have been deconvoluted, the most abundant peak will be annotated with
         "<neutral mass> (<charge>)", otherwise just "<m/z>".
 
@@ -1713,6 +1803,10 @@ class PlottingMethods(object):
             Whether or not to always use :attr:`Scan.deconvoluted_peak_set`
         threshold : float, optional
             The intensity threshold under which peaks will be ignored
+        *args:
+            Forwarded to :func:`~.label_peaks`
+        **kwargs:
+            Forwarded to :func:`~.label_peaks`
 
         Returns
         -------
@@ -1724,7 +1818,8 @@ class PlottingMethods(object):
         return self._plot_api.label_peaks(self.scan, *args, **kwargs)
 
     def annotate_isotopic_peaks(self, *args, **kwargs):
-        """Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
+        """
+        Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
         in ``scan``.
 
         Parameters
@@ -1733,6 +1828,10 @@ class PlottingMethods(object):
             An iterable to draw isotopic cluster colors from
         ax: :class:`matplotlib._axes.Axes`
             An :class:`~.Axes` object to draw the plot on
+        *args:
+            Forwarded to :func:`~.annotate_isotopic_peaks`
+        **kwargs:
+            Forwarded to :func:`~.annotate_isotopic_peaks`
 
         Returns
         -------

@@ -1,4 +1,5 @@
-"""Defines proxy objects which appear to be :class:`~.Scan` objects without
+"""
+Defines proxy objects which appear to be :class:`~.Scan` objects without
 issueing any I/O operations until a scan's attributes are requested, and the a
 LRU cache for keeping only recently used full scans in memory. This allows
 a large number of scans to be "loaded" at once without requiring storing all of
@@ -23,7 +24,8 @@ LOAD_METHOD_INDEX = 'index'
 
 
 class ScanProxyContext(object):
-    """A memory-conserving wrapper around an existing :class:`RandomAccessScanSource`
+    """
+    A memory-conserving wrapper around an existing :class:`RandomAccessScanSource`
     object for serving :class:`ScanProxy` objects.
 
     Attributes
@@ -58,7 +60,8 @@ class ScanProxyContext(object):
         return value
 
     def get_scan_by_id(self, scan_id):
-        """Retrieve a real scan by its identifier.
+        """
+        Retrieve a real scan by its identifier.
 
         This method first checks the in-memory cache for the scan identifier
         and returns it if already loaded. If not, the scan is retrieved from
@@ -81,7 +84,8 @@ class ScanProxyContext(object):
         return scan
 
     def get_scan_by_index(self, index):
-        """Retrieve a real scan by its index.
+        """
+        Retrieve a real scan by its index.
 
         This method first checks the in-memory cache for the scan index
         and returns it if already loaded. If not, the scan is retrieved from
@@ -110,11 +114,15 @@ class ScanProxyContext(object):
         self.cache[scan_id] = scan
 
     def __call__(self, scan_id, method=LOAD_METHOD_ID):
-        """Forward call to :meth:`create_scan_proxy`.
+        """
+        Forward call to :meth:`create_scan_proxy`.
 
         Parameters
         ----------
         scan_id: :class:`str`
+            The scan to create a proxy for
+        method : str
+            Label for data loading strategy to use.
 
         Returns
         -------
@@ -127,11 +135,15 @@ class ScanProxyContext(object):
         return self.create_scan_proxy(scan_id, method)
 
     def create_scan_proxy(self, scan_id, method=LOAD_METHOD_ID):
-        """Create a proxy for the scan referenced by scan_id
+        """
+        Create a proxy for the scan referenced by scan_id
 
         Parameters
         ----------
         scan_id: :class:`str`
+            The scan to create a proxy for
+        method : str
+            Label for data loading strategy to use.
 
         Returns
         -------
@@ -143,7 +155,8 @@ class ScanProxyContext(object):
         return proxy
 
     def clear(self):
-        """Clear the reference cache.
+        """
+        Clear the reference cache.
 
         If the scans that were previously held in the cache were not
         strong-referenced anywhere else, any extant proxies which depend
@@ -153,7 +166,8 @@ class ScanProxyContext(object):
 
 
 class proxyproperty(object):
-    """An descriptor that integrates with :class:`ScanProxy` to retrieve attributes
+    """
+    An descriptor that integrates with :class:`ScanProxy` to retrieve attributes
     from a wrapped :class:`~.ScanBase` object referenced by :class:`ScanProxy`,
     potentially loading the scan from disk if it has been purged from the memory
     cache.
@@ -226,7 +240,8 @@ class proxyproperty(object):
 
 
 class ScanProxy(ScanBase):
-    """A proxy for a :class:`~.ScanBase` object, allowing transparent access to the
+    """
+    A proxy for a :class:`~.ScanBase` object, allowing transparent access to the
     scan, potentially loading it from disk through the attached :class:`ScanProxyContext`
     :attrib:`context`.
 
@@ -268,7 +283,8 @@ class ScanProxy(ScanBase):
 
     @property
     def source(self):
-        """The source of the scan data this proxy is bound to.
+        """
+        The source of the scan data this proxy is bound to.
 
         Returns
         -------
@@ -308,7 +324,8 @@ class ScanProxy(ScanBase):
 
     @property
     def scan(self):
-        """The proxied scan.
+        """
+        The proxied scan.
 
         Accessing this property may require loading the scan's data
         from disk and/or triggering a cache eviction.
@@ -317,7 +334,8 @@ class ScanProxy(ScanBase):
         return self._scan
 
     def pick_peaks(self, *args, **kwargs):
-        """Request the proxied scan picked peaks if they are not
+        """
+        Request the proxied scan picked peaks if they are not
         already available and then cache them in memory.
         """
         self._require_scan()
@@ -347,7 +365,8 @@ class ScanProxy(ScanBase):
         return len(self._resolve_sequence())
 
     def has_peak(self, *args, **kwargs):
-        """Query the wrapped scan's peaks using it's :meth:`Scan.has_peak`
+        """
+        Query the wrapped scan's peaks using it's :meth:`Scan.has_peak`
         method. If no peaks are available, this will call :meth:`pick_peaks`
         first to resolve the peak set and then query its peaks instead.
 
@@ -357,6 +376,10 @@ class ScanProxy(ScanBase):
             The m/z to search for
         error_tolerance: float
             The parts per million mass error tolerance to use
+        *args:
+            Forwarded to implementation of :meth:`has_peak`
+        **kwargs:
+            Forwarded to implementation of :meth:`has_peak`
 
         Returns
         -------

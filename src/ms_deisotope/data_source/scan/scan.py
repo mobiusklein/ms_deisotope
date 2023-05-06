@@ -1,4 +1,5 @@
-"""Represent the basic structures of a mass spectrum and its processed contents,
+"""
+Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 """
 from typing import Any, Dict, Iterator, List, Optional, Union, TYPE_CHECKING
@@ -42,7 +43,8 @@ DEFAULT_DX: float = 0.002
 
 
 class Scan(ScanBase):
-    """Container for mass spectral data and associated descriptive information.
+    """
+    Container for mass spectral data and associated descriptive information.
 
     A :class:`Scan` object is a generic object intended to be created by a :class:`ScanDataSource` and describes
     a mass spectrum at each level of processing (Profile --> Peak Fitted --> Deconvoluted). The raw object
@@ -145,13 +147,15 @@ class Scan(ScanBase):
         self.product_scans = product_scans
 
     def clone(self, deep=True) -> 'Scan':
-        """Return a copy of the :class:`Scan` object
+        """
+        Return a copy of the :class:`Scan` object
         wrapping the same reference data, potentially a deep
         one
 
         Parameters
         ----------
         deep: :class:`bool`
+            Make a deep copy of all nested structures.
 
         Returns
         -------
@@ -204,7 +208,8 @@ class Scan(ScanBase):
         self._instrument_configuration = None
 
     def clear(self, full=False):
-        """Releases all associated in-memory data and clears the cached
+        """
+        Releases all associated in-memory data and clears the cached
         attributes.
 
         The data reference attribute :attr:`_data` is retained
@@ -226,7 +231,8 @@ class Scan(ScanBase):
 
     @property
     def ms_level(self) -> int:
-        """The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
+        """
+        The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
         to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
 
         Returns
@@ -243,7 +249,8 @@ class Scan(ScanBase):
 
     @property
     def is_profile(self) -> bool:
-        """Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+        """
+        Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
         pre-centroided.
 
         Returns
@@ -260,7 +267,8 @@ class Scan(ScanBase):
 
     @property
     def polarity(self) -> int:
-        """If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
+        """
+        If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
         mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
 
         Returns
@@ -277,7 +285,8 @@ class Scan(ScanBase):
 
     @property
     def scan_time(self) -> float:
-        """The time the scan was acquired during data acquisition. The unit of time will always
+        """
+        The time the scan was acquired during data acquisition. The unit of time will always
         be minutes.
 
         Returns
@@ -294,7 +303,8 @@ class Scan(ScanBase):
 
     @property
     def arrays(self) -> RawDataArrays:
-        """A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and
+        """
+        A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and
         intensity data points.
 
         These arrays are wrapped in a :class:`~.RawDataArrays` instance, which provides
@@ -326,7 +336,8 @@ class Scan(ScanBase):
 
     @property
     def title(self) -> str:
-        """The human-readable display string for this scan as shown in some external software.
+        """
+        The human-readable display string for this scan as shown in some external software.
 
         Returns
         -------
@@ -342,7 +353,8 @@ class Scan(ScanBase):
 
     @property
     def id(self) -> str:
-        """The within run unique scan identifier.
+        """
+        The within run unique scan identifier.
 
         Returns
         -------
@@ -360,7 +372,8 @@ class Scan(ScanBase):
 
     @property
     def index(self) -> int:
-        """The integer number indicating how many scans were acquired prior to this scan.
+        """
+        The integer number indicating how many scans were acquired prior to this scan.
 
         Returns
         -------
@@ -376,12 +389,14 @@ class Scan(ScanBase):
 
     @property
     def precursor_information(self) -> Optional[PrecursorInformation]:
-        """Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
+        """
+        Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
         the precursor scan.
 
         Returns
         -------
-        :class:`~.PrecursorInformation`"""
+        :class:`~.PrecursorInformation`
+        """
         if self.ms_level < 2:
             return None
         if self._precursor_information is None:
@@ -398,7 +413,8 @@ class Scan(ScanBase):
 
     @property
     def activation(self) -> Optional[ActivationInformation]:
-        """If this scan is an MS^n scan, this attribute will contain information about the process
+        """
+        If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
 
         Returns
@@ -420,7 +436,8 @@ class Scan(ScanBase):
 
     @property
     def isolation_window(self) -> Optional[IsolationWindow]:
-        """Describes the range of m/z that were isolated from a parent scan to create this scan.
+        """
+        Describes the range of m/z that were isolated from a parent scan to create this scan.
 
         Returns
         -------
@@ -455,8 +472,10 @@ class Scan(ScanBase):
 
     @property
     def acquisition_information(self) -> ScanAcquisitionInformation:
-        """Describes the type of event that produced this scan, as well as the scanning method
-        used."""
+        """
+        Describes the type of event that produced this scan, as well as the scanning method
+        used.
+        """
         if self._acquisition_information is None:
             self._acquisition_information = self.source._acquisition_information(
                 self._data)
@@ -544,7 +563,8 @@ class Scan(ScanBase):
         return self.__bool__()
 
     def has_peak(self, *args, **kwargs) -> FittedPeak:
-        """A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
+        """
+        A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
         :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
 
         Parameters
@@ -575,7 +595,8 @@ class Scan(ScanBase):
         return self.peak_set.has_peak(*args, **kwargs)
 
     def pick_peaks(self, *args, **kwargs):
-        """A wrapper around :func:`ms_peak_picker.pick_peaks` which will populate the
+        """
+        A wrapper around :func:`ms_peak_picker.pick_peaks` which will populate the
         :attr:`peak_set` attribute of this scan.
 
         Parameters
@@ -640,7 +661,8 @@ class Scan(ScanBase):
         return self
 
     def deconvolute(self, *args, **kwargs):
-        """A wrapper around :func:`ms_deisotope.deconvolution.deconvolute_peaks`.
+        """
+        A wrapper around :func:`ms_deisotope.deconvolution.deconvolute_peaks`.
 
         The scan must have had its peaks picked before it can be deconvoluted.
 
@@ -704,7 +726,8 @@ class Scan(ScanBase):
         return self
 
     def pack(self, bind=False) -> 'ProcessedScan':
-        """Pack the (dispersed) representation of the data in this :class:`Scan`
+        """
+        Pack the (dispersed) representation of the data in this :class:`Scan`
         into a packed :class:`ProcessedScan` object.
 
         .. note::
@@ -742,7 +765,8 @@ class Scan(ScanBase):
     # signal transformation
 
     def reprofile(self, max_fwhm=0.2, dx=0.005, model_cls=None, override_fwhm=None):
-        """Use the picked peaks in :attr:`peak_set` to create a new
+        """
+        Use the picked peaks in :attr:`peak_set` to create a new
         profile mass spectrum using a peak shape model.
 
         Parameters
@@ -785,7 +809,8 @@ class Scan(ScanBase):
         return scan
 
     def denoise(self, scale=5.0, window_length=2.0, region_width=10):
-        """Create a shallow copy of the scan with a noise reduction
+        """
+        Create a shallow copy of the scan with a noise reduction
         transformation applied.
 
         This method uses the scan filter :class:`ms_peak_picker.scan_filter.FTICRBaselineRemoval`
@@ -817,7 +842,8 @@ class Scan(ScanBase):
                            annotations=self._external_annotations)
 
     def transform(self, filters=None):
-        """Applies a series of :class:`ms_peak_picker.scan_filter.FilterBase`,
+        """
+        Applies a series of :class:`ms_peak_picker.scan_filter.FilterBase`,
         or strings that are recognized by :func:`ms_peak_picker.scan_filter.transform`
 
         Arguments
@@ -841,7 +867,8 @@ class Scan(ScanBase):
                            annotations=self._external_annotations)
 
     def average_with(self, scans, dx=None, weight_sigma=None, num_threads=None):
-        r"""Average together multiple scans' raw data arrays to create a composite intensity
+        r"""
+        Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
         Parameters
@@ -976,7 +1003,8 @@ class Scan(ScanBase):
         return weights
 
     def average(self, index_interval=None, rt_interval=None, dx=None, weight_sigma=None):
-        r"""Average together multiple scans' raw data arrays to create a composite intensity
+        r"""
+        Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
         Only MS1 scans will be averaged with this method
@@ -1045,8 +1073,8 @@ class Scan(ScanBase):
 
 
 class WrappedScan(Scan):
-    """A wrapper around a :class:`Scan` object with one or more attributes overridden.
-    """
+    """A wrapper around a :class:`Scan` object with one or more attributes overridden."""
+
     overridable_keys = [
         "_arrays",
         "_id",
@@ -1064,13 +1092,13 @@ class WrappedScan(Scan):
     ]
 
     def __init__(self, data, source, array_data, product_scans=None, annotations=None, **overrides):
+        self._overrides = overrides
         super(WrappedScan, self).__init__(
             data, source, peak_set=None,
             deconvoluted_peak_set=None,
             annotations=annotations,
             product_scans=product_scans)
         self._arrays = RawDataArrays(*array_data)
-        self._overrides = overrides
         for key, value in overrides.items():
             if not key.startswith("_"):
                 key = "_" + key
@@ -1080,11 +1108,15 @@ class WrappedScan(Scan):
                 warnings.warn("Cannot override attribute %s" % (key,))
 
     def clone(self, deep=True):
+        overrides = self._overrides.copy()
+        for k in self.overridable_keys:
+            overrides[k] = getattr(self, k)
         dup = self.__class__(
             self._data, self.source, self.arrays,
             [s.clone(deep=deep) for s in self.product_scans],
             annotations=self._external_annotations,
-            **self._overrides)
+            **overrides
+        )
         if deep:
             dup.peak_set = self.peak_set.clone() if self.peak_set is not None else None
             dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()\
@@ -1096,7 +1128,8 @@ class WrappedScan(Scan):
 
 
 class AveragedScan(WrappedScan):
-    """An averaged :class:`Scan` object, storing additional information for retrieving
+    """
+    An averaged :class:`Scan` object, storing additional information for retrieving
     the spectra that were averaged together.
 
     Attributes
@@ -1129,7 +1162,8 @@ class AveragedScan(WrappedScan):
 
 
 class ProcessedScan(ScanBase):
-    """Container for mass spectral data and associated descriptive information that has been
+    """
+    Container for mass spectral data and associated descriptive information that has been
     processed and reduced.
 
     A :class:`ProcessedScan` object has been processed and compacted. It does not carry a
@@ -1236,7 +1270,8 @@ class ProcessedScan(ScanBase):
         self.source = source
 
     def clear(self, full=False):
-        """Clear storage-heavy attribute values
+        """
+        Clear storage-heavy attribute values
 
         Parameters
         ----------

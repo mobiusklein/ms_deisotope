@@ -3,6 +3,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [Unreleased]
+
+### Added
+1. More type annotations
+
+### Changed
+1. Arrays used to reconstruct deconvoluted peak sets are not guaranteed to be copied.
+
+### Removed
+
+### Fixed
+1. `WrappedScan` objects now properly propagate overridden attributes when copied.
+2. More docstring formatting was fixed and missing arguments were described
+
+### Security
+
+
 ## [v0.0.46] - 2023-01-22
 
 

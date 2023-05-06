@@ -45,7 +45,8 @@ file_like_object_bases = (io.IOBase, )
 
 
 def test_if_file_has_fast_random_access(file_obj):
-    """Determine whether or not the passed file-like
+    """
+    Determine whether or not the passed file-like
     object supports fast random access.
 
     Parameters
@@ -88,12 +89,14 @@ DefinitelyFastRandomAccess = Constant("DefinitelyFastRandomAccess", True)
 
 
 def test_gzipped(f: Union[BinaryIO, os.PathLike]) -> bool:
-    """Checks the first two bytes of the
+    """
+    Checks the first two bytes of the
     passed file for gzip magic numbers
 
     Parameters
     ----------
     f : file-like or path-like
+        The file to test
 
     Returns
     -------
@@ -109,7 +112,8 @@ def test_gzipped(f: Union[BinaryIO, os.PathLike]) -> bool:
 
 
 def starts_with_gz_magic(bytestring: bytes) -> bool:
-    """Test whether or not a byte string starts with
+    """
+    Test whether or not a byte string starts with
     the GZIP magic bytes.
 
     Parameters
@@ -127,7 +131,8 @@ def starts_with_gz_magic(bytestring: bytes) -> bool:
 ZSTD_MAGIC = b'(\xb5/\xfd'
 
 def starts_with_zstd_magic(bytestring: bytes) -> bool:
-    """Test whether or not a byte string starts with
+    """
+    Test whether or not a byte string starts with
     the ZSTD magic bytes.
 
     Parameters
@@ -143,7 +148,8 @@ def starts_with_zstd_magic(bytestring: bytes) -> bool:
 
 
 def get_opener(f: Union[os.PathLike, str, BinaryIO], buffer_size=None) -> Union[BinaryIO, io.TextIOWrapper]:
-    """Select the file reading type for the given path or stream.
+    """
+    Select the file reading type for the given path or stream.
 
     Detects whether the file is gzip encoded.
     """

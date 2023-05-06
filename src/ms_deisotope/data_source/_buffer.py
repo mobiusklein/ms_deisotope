@@ -5,7 +5,8 @@ DEFAULT_BUFFER_SIZE = 2 ** 18
 
 
 class PreBufferedStreamReader(io.IOBase):
-    """A file-like object that can wrap a non-rewindable (e.g. un-seekable)
+    """
+    A file-like object that can wrap a non-rewindable (e.g. un-seekable)
     file stream like :obj:`sys.stdin` and support seeking over the first **N**
     bytes, but blocking seek operations once the stream has been read beyond
     that point.

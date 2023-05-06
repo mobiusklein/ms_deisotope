@@ -29,7 +29,8 @@ ScanType = TypeVar("ScanType")
 
 
 class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
-    """Internal base class for scan iteration strategies
+    """
+    Internal base class for scan iteration strategies
 
     Attributes
     ----------
@@ -80,7 +81,8 @@ class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
 
     @classmethod
     def from_scan_source(cls, iterator, scan_source, **kwargs):
-        """Create an iterator strategy for `iterator` from `scan_source`
+        """
+        Create an iterator strategy for `iterator` from `scan_source`
 
         Parameters
         ----------
@@ -88,12 +90,15 @@ class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
             The iterator over raw scan data to consume
         scan_source : :class:`~.ScanIterator`
             The data extraction wrapper to provide with an iteration strategy
+        **kwargs
+            Forwarded to :meth:`__init__`
         """
         return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
 class _SingleScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], Iterator[ScanType]):
-    """Iterate over individual scans.
+    """
+    Iterate over individual scans.
 
     The default strategy when MS1 scans are missing.
     """
@@ -117,7 +122,8 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], It
 
 
 class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[ScanType, ScanGroupType], Iterator[ScanGroupType]):
-    """Mimics the interface of :class:`_GroupedScanIteratorImpl` for
+    """
+    Mimics the interface of :class:`_GroupedScanIteratorImpl` for
     scan sequences which only support single scans, or which do not
     guarantee sequential access to precursor/product collections.
     """
@@ -138,7 +144,8 @@ class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[ScanType, ScanGroupTy
 
 
 class _GroupedScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], Iterator[ScanGroupType]):
-    """Iterate over related scan bunches.
+    """
+    Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
     present, even if MSn scans are not.
@@ -433,7 +440,8 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
 
 
 class MSEIterator(_GroupedScanIteratorImpl[ScanType, ScanGroupType]):
-    """A scan iterator implementation for grouping MS^E spectra according
+    """
+    A scan iterator implementation for grouping MS^E spectra according
     to the specified functions.
 
     Attributes

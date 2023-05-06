@@ -197,11 +197,12 @@ class ProgressLogger(object):
         self.file = file
         self.writer = writer
 
-    def update(self, n, current_item=None):
-        self.count += n
+    def update(self, n_steps: int, current_item=None):
+        self.count += n_steps
+        self.current_item = current_item
         if self.count > self.last_update:
             self._log()
-            self.last_update += self.interval * (int(n // self.interval) + 1)
+            self.last_update += self.interval * (int(n_steps // self.interval) + 1)
 
     def _log(self):
         item = self.current_item
@@ -223,8 +224,7 @@ class ProgressLogger(object):
 
     def __iter__(self):
         for item in self.iterable:
-            self.current_item = item
-            self.update(1)
+            self.update(1, current_item=item)
             yield item
 
     def __enter__(self):

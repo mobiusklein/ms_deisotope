@@ -17,7 +17,8 @@ from .common import (
 
 
 class MemoryScanInterface(ScanDataSource):
-    """A dummy :class:`~.ScanDataSource` that stores as much data as
+    """
+    A dummy :class:`~.ScanDataSource` that stores as much data as
     possible on the :class:`~.Scan` instance, with the exception of
     :attr:`~.Scan.index`.
     """
@@ -82,6 +83,8 @@ class MemoryScanInterface(ScanDataSource):
         deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
             Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
             be `None` if deconvolution has not been done.
+        **kwargs:
+            Added to ``annotations``.
         """
         if annotations is None:
             annotations = {}
@@ -108,7 +111,8 @@ class MemoryScanInterface(ScanDataSource):
 
 
     def _scan_arrays(self, scan):
-        """Return raw data arrays for m/z and intensity
+        """
+        Return raw data arrays for m/z and intensity
 
         Parameters
         ----------
@@ -126,7 +130,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _precursor_information(self, scan):
-        """Return information about the precursor ion,
+        """
+        Return information about the precursor ion,
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
@@ -144,7 +149,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _scan_title(self, scan):
-        """Return a verbose name for this scan, if one
+        """
+        Return a verbose name for this scan, if one
         were stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
@@ -162,7 +168,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _scan_id(self, scan):
-        """Return the scan's id string, a unique
+        """
+        Return the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
 
@@ -182,7 +189,8 @@ class MemoryScanInterface(ScanDataSource):
             return None
 
     def _scan_index(self, scan):
-        """Return the base 0 offset from the start
+        """
+        Return the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
 
@@ -203,7 +211,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _ms_level(self, scan):
-        """Return the degree of exponential fragmentation
+        """
+        Return the degree of exponential fragmentation
         used to produce this scan.
 
         1 refers to a survey scan of unfragmented ions, 2
@@ -226,7 +235,8 @@ class MemoryScanInterface(ScanDataSource):
             return None
 
     def _scan_time(self, scan):
-        """Return the time in minutes from the start of data
+        """
+        Return the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
         Parameters
@@ -242,7 +252,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _is_profile(self, scan):
-        """Return whether the scan contains profile data (`True`)
+        """
+        Return whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
         Parameters
@@ -258,7 +269,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _polarity(self, scan):
-        """Return whether this scan was acquired in positive mode (+1)
+        """
+        Return whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
         Parameters
@@ -274,7 +286,8 @@ class MemoryScanInterface(ScanDataSource):
         return None
 
     def _activation(self, scan):
-        """Return information about the activation method used to
+        """
+        Return information about the activation method used to
         produce this scan, if any.
 
         Returns `None` for MS1 scans
@@ -296,7 +309,8 @@ make_scan = MemoryScanInterface.make_scan
 
 
 class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
-    """A :class:`~.RandomAccessScanSource` implementation which contains scan objects
+    """
+    A :class:`~.RandomAccessScanSource` implementation which contains scan objects
     materialized from other sources or which have already been fully specified in memory.
     """
 
