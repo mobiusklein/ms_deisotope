@@ -32,7 +32,7 @@ from ms_deisotope.data_source import (
 from ms_deisotope.data_source.scan import RandomAccessScanSource
 from ms_deisotope.data_source.metadata.file_information import SourceFile
 
-from ms_deisotope.output import ProcessedMzMLDeserializer
+from ms_deisotope.output import ProcessedMSFileLoader
 
 from ms_deisotope.tools import conversion, draw, maintenance
 from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, register_debug_hook, spinner
@@ -189,7 +189,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
     for path in paths:
         click.echo("Indexing %s" % (path, ))
         if deconvoluted:
-            reader = ProcessedMzMLDeserializer(path, use_extended_index=False)
+            reader = ProcessedMSFileLoader(path, use_extended_index=False)
         else:
             reader = MSFileLoader(path)
         try:
@@ -453,7 +453,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
         key_seqs = []
         for path in progbar:
             if deconvoluted:
-                reader = ProcessedMzMLDeserializer(path)
+                reader = ProcessedMSFileLoader(path)
                 reader.parse_envelopes = False
                 index = reader.extended_index
             else:
