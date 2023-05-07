@@ -1,3 +1,8 @@
+"""
+Helper functions and types for CLI tools.
+
+Dependent upon :mod:`click`.
+"""
 import ast
 import itertools
 import json

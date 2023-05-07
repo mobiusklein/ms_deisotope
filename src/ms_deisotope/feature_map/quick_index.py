@@ -1,4 +1,5 @@
-"""Implements the infrastructure to spread indexing tasks over a single
+"""
+Implements the infrastructure to spread indexing tasks over a single
 :class:`~.RandomAccessScanSource` across multiple processes for speed.
 
 The primary function in this module is :func:`index`, which will perform
@@ -26,7 +27,8 @@ _IndexingCallable = Callable[[Tuple[ScanGenerator, int, int]], Tuple[float, Any]
 
 
 def indexing_iterator(reader: ScanGenerator, start: int, end: int, index: ExtendedScanIndex) -> Iterator[ScanBunch]:
-    """A helper function which will iterate over an interval of a :class:`~.RandomAccessScanSource`
+    """
+    A helper function which will iterate over an interval of a :class:`~.RandomAccessScanSource`
     while feeding each yielded :class:`~.ScanBunch` into a provided :class:`~.ExtendedScanIndex`.
 
     Parameters
@@ -62,7 +64,8 @@ def indexing_iterator(reader: ScanGenerator, start: int, end: int, index: Extend
         yield scan_bunch
 
 def index_chunk(reader: ScanGenerator, start: int, end: int) -> Tuple[int, int, ExtendedScanIndex, List]:
-    """The task function for :func:`quick_index`, which will build an
+    """
+    The task function for :func:`quick_index`, which will build an
     :class:`~.ExtendedIndex` and :class:`ScanIntervalTree` from an index
     range over a :class:`~.ScanIterator`
 
@@ -94,7 +97,8 @@ def index_chunk(reader: ScanGenerator, start: int, end: int) -> Tuple[int, int, 
 
 def partition_work(n_items: int, n_workers: int, start_index: int=0,
                    reader: Optional[ScanGenerator]=None) -> List[Tuple[int, int]]:
-    """Given an index range and a number of workers to work on them,
+    """
+    Given an index range and a number of workers to work on them,
     break the index range into approximately evenly sized sub-intervals.
 
     This is a helper function for :func:`run_task_in_chunks` used to
@@ -108,6 +112,8 @@ def partition_work(n_items: int, n_workers: int, start_index: int=0,
         The number of workers to split the work between
     start_index : int, optional
         The starting value of the index range (the default is 0)
+    reader : ScanIterator or RandomAccessScanSource
+        Scan source to read metadata from
 
     Returns
     -------
@@ -166,9 +172,11 @@ def partition_work(n_items: int, n_workers: int, start_index: int=0,
 
 
 class _Indexer(object):
-    """A pickle-able callable object which wraps :func:`index_chunk` for the call signature
+    """
+    A pickle-able callable object which wraps :func:`index_chunk` for the call signature
     used by :func:`run_task_in_chunks`
     """
+
     def __call__(self, payload: Tuple[ScanIterator, float, float]):
         reader, start, end = payload
         try:
@@ -182,7 +190,8 @@ class _Indexer(object):
 
 
 class _TaskWrapper(object):
-    """A simple wrapper for a callable to capture the index range for a chunk created by
+    """
+    A simple wrapper for a callable to capture the index range for a chunk created by
     :func:`run_task_in_chunks`, so that the start index of the chunk is known.
     """
 
@@ -201,13 +210,16 @@ class _TaskWrapper(object):
         self.task = dill.loads(state['task'])
 
     def __call__(self, payload) -> Tuple[float, Any]:
-        _reader, start, _end = payload
+        reader, start, _end = payload
         out = self.task(payload)
+        if reader is not None and hasattr(reader, 'reset'):
+            reader.reset()
         return start, out
 
 
 class _TaskPayload(object):
-    """A wrapper for the input to the distributed task which transmits the :class:`~.RandomAccessScanSource`
+    """
+    A wrapper for the input to the distributed task which transmits the :class:`~.RandomAccessScanSource`
     via :mod:`dill` to make pickling of any wrapped file objects possible.
 
     Mocks a subset of the :class:`~.Sequence` API to allow it to be treated like a :class:`tuple`
@@ -279,7 +291,8 @@ def run_task_in_chunks(reader: ScanGenerator,
                        scan_interval: Tuple[float, float]=None,
                        task: Optional[_IndexingCallable] = None,
                        progress_indicator: Optional[Callable] = None):
-    """Run a :class:`~.Callable` `task` over a :class:`~.ScanIterator` in chunks across multiple processes.
+    """
+    Run a :class:`~.Callable` `task` over a :class:`~.ScanIterator` in chunks across multiple processes.
 
     This function breaks apart a :class:`~.ScanIterator`'s scans over `scan_interval`,
     or the whole sequence if not provided.
@@ -361,7 +374,8 @@ def _make_interval_tree(intervals) -> ScanIntervalTree:
 
 def index(reader: ScanGenerator, n_processes: int=4, scan_interval: Tuple[float, float]=None,
           progress_indicator: Optional[Callable]=None, chunks_per_worker: int=3) -> Tuple[ExtendedScanIndex, ScanIntervalTree]:
-    """Generate a :class:`~.ExtendedScanIndex` and :class:`~.ScanIntervalTree` for
+    """
+    Generate a :class:`~.ExtendedScanIndex` and :class:`~.ScanIntervalTree` for
     `reader` between `scan_interval` start and end points across `n_processes` worker
     processes.
 
@@ -379,6 +393,8 @@ def index(reader: ScanGenerator, n_processes: int=4, scan_interval: Tuple[float,
     progress_indicator : :class:`Callable`, optional
         A callable object which will be used to report progress as chunks finish processing. It must take
         one argument, a :class:`float` which represents the fraction of all work completed.
+    chunks_per_worker : int, optional
+        The number of work items to expect each worker to run. Not guaranteed to actually hold.
 
     Returns
     -------

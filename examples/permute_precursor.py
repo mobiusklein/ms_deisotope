@@ -85,7 +85,7 @@ class PermutePrecursorTask(TaskBase):
                 batch = ScanBunch(precursor, products)
                 self.writer.save_scan_bunch(batch)
                 j = len(products) + 1
-                bar.update(j, precursor if i % 10 == 0 else None)
+                bar.update(j, precursor)
                 i += 1
 
 

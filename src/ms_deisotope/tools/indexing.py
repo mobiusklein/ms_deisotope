@@ -156,7 +156,8 @@ def describe(path, diagnostics=False):
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 def byte_index(paths):
-    """Build an external byte offset index for a MS data file, saving time when opening the file with indexing enabled.
+    """
+    Build an external byte offset index for a MS data file, saving time when opening the file with indexing enabled.
 
     Supported Formats: mzML, mzXML, MGF
     """
@@ -198,7 +199,8 @@ def metadata_index(paths, processes=4, deconvoluted=False):
         except AttributeError:
             pass
         if processes > 1:
-            progbar = progress(label='Building Index', length=100)
+            progbar = progress(label='Building Index', length=100,
+                               color=True, fill_char=click.style('-', 'green'))
             acc = [0]
 
             def update_bar(x):
@@ -217,7 +219,8 @@ def metadata_index(paths, processes=4, deconvoluted=False):
             reader.reset()
             try:
                 n = len(reader)
-                progbar = progress(label='Building Index', length=n)
+                progbar = progress(label='Building Index', length=n,
+                                   color=True, fill_char=click.style('-', 'green'))
             except TypeError:
                 progbar = spinner(title="Building Index")
             with progbar:
@@ -262,7 +265,8 @@ class _MSMSIntervalTask(object):
 @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
 @processes_option
 def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3., output=None):
-    """Construct an interval tree spanning time and m/z domains where MSn spectra were acquired in the LC-MS map.
+    """
+    Construct an interval tree spanning time and m/z domains where MSn spectra were acquired in the LC-MS map.
 
     The interval tree is serialized to JSON.
     """
