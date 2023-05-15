@@ -1,15 +1,23 @@
 from collections import namedtuple
 
+from typing import TYPE_CHECKING
+
 from ms_deisotope.averagine import mass_charge_ratio, peptide as peptide_averagine
-from ms_deisotope.peak_set import Envelope, EnvelopePair
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
+from ms_deisotope.peak_set import DeconvolutedPeak, Envelope, EnvelopePair
 
 
 _CoIsolation = namedtuple(
     "CoIsolation", ("neutral_mass", "intensity", "charge"))
 
 
+if TYPE_CHECKING:
+    from ms_deisotope.data_source.scan.base import ScanBase
+
+
 class CoIsolation(_CoIsolation):
-    """Records the properties of a co-isolating ion associated with a primary ion.
+    """
+    Records the properties of a co-isolating ion associated with a primary ion.
 
     Attributes
     ----------
@@ -25,7 +33,8 @@ class CoIsolation(_CoIsolation):
 
     @property
     def mz(self):
-        """The calculated m/z of the ion
+        """
+        The calculated m/z of the ion
 
         Returns
         -------
@@ -35,7 +44,8 @@ class CoIsolation(_CoIsolation):
 
 
 class PrecursorPurityEstimator(object):
-    """Estimate the contamination of precursor ions.
+    """
+    Estimate the contamination of precursor ions.
 
     Attributes
     ----------
@@ -47,19 +57,26 @@ class PrecursorPurityEstimator(object):
         not available.
     """
 
+    lower_extension: float
+    default_width: float
+
     def __init__(self, lower_extension=1.5, default_width=1.5):
         self.lower_extension = lower_extension
         self.default_width = default_width
 
-    def _find_default_envelope_for_mz(self, scan, mz, charge):
+    def _find_default_envelope_for_mz(self, scan: 'ScanBase', mz: float, charge: int) -> Envelope:
         tid = peptide_averagine.isotopic_cluster(mz, charge=charge)
         eid = [scan.peak_set.has_peak(p.mz) for p in tid]
         eid = [EnvelopePair(p.mz, p.intensity) if p is not None else EnvelopePair(tid[i].mz, 1)
                for i, p in enumerate(eid)]
         return Envelope(eid)
 
-    def precursor_purity(self, scan, precursor_peak, isolation_window=None, precursor_charge=None):
-        """Calculate the purity of an isolation window.
+    def precursor_purity(self, scan: 'ScanBase',
+                         precursor_peak: DeconvolutedPeak,
+                         isolation_window: IsolationWindow=None,
+                         precursor_charge: int=None) -> float:
+        """
+        Calculate the purity of an isolation window.
 
         If the isolation window is not given, :attr:`default_width` will be used.
 
@@ -109,9 +126,13 @@ class PrecursorPurityEstimator(object):
         purity = max(min((assigned / total), 1.0), 0)
         return purity
 
-    def coisolation(self, scan, precursor_peak, isolation_window=None, relative_intensity_threshold=0.1,
-                    ignore_singly_charged=False):
-        """Find any deconvolution solutions which may have partially overlapped the isolation window.
+    def coisolation(self, scan: 'ScanBase',
+                    precursor_peak: DeconvolutedPeak,
+                    isolation_window: IsolationWindow=None,
+                    relative_intensity_threshold: float=0.1,
+                    ignore_singly_charged: bool=False):
+        """
+        Find any deconvolution solutions which may have partially overlapped the isolation window.
 
         If the isolation window is not given, :attr:`default_width` will be used.
 
@@ -171,8 +192,9 @@ class PrecursorPurityEstimator(object):
         ]
         return others
 
-    def __call__(self, scan, precursor_peak, isolation_window):
-        """A convenience wrapper that calls both :meth:`precursor_purity` and
+    def __call__(self, scan: 'ScanBase', precursor_peak: DeconvolutedPeak, isolation_window: IsolationWindow):
+        """
+        A convenience wrapper that calls both :meth:`precursor_purity` and
         :meth:`coisolation`.
 
         Parameters
@@ -203,8 +225,9 @@ class PrecursorPurityEstimator(object):
         return purity, coisolation
 
 
-def isolation_window_valid(scan):
-    """Check if the isolation window and other precursor-related information
+def isolation_window_valid(scan: 'ScanBase'):
+    """
+    Check if the isolation window and other precursor-related information
     of `scan` are valid.
 
     Different vendors periodically report precursor peak m/z values that fall
@@ -252,7 +275,7 @@ def isolation_window_valid(scan):
     return False
 
 
-def is_isolation_window_empty(scan):
+def is_isolation_window_empty(scan: 'ScanBase', precursor: 'ScanBase'=None):
     window = scan.isolation_window
     if window is None:
         if scan.ms_level == 1:
@@ -267,8 +290,9 @@ def is_isolation_window_empty(scan):
         # The vendor or the ScanDataSource populated an empty isolation
         # window, so no analysis is possible
         return False
-    pinfo = scan.precursor_information
-    precursor = pinfo.precursor
+    if precursor is None:
+        pinfo = scan.precursor_information
+        precursor = pinfo.precursor
     if precursor is None:
         return False
     try:

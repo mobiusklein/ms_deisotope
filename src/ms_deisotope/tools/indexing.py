@@ -5,8 +5,8 @@ import os
 import math
 import csv
 import sys
-from collections import Counter
-from typing import List
+
+from typing import List, Counter, Union
 
 import click
 import six
@@ -14,7 +14,7 @@ import six
 import numpy as np
 
 import ms_deisotope
-from ms_deisotope.data_source.scan.scan import Scan
+from ms_deisotope.data_source import Scan, ActivationInformation, PrecursorInformation
 
 from ms_deisotope.task.log_utils import init_logging
 
@@ -30,7 +30,7 @@ from ms_deisotope.qc.signature import TMTReporterExtractor
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
 from ms_deisotope.data_source.scan import RandomAccessScanSource
-from ms_deisotope.data_source.metadata.file_information import SourceFile
+from ms_deisotope.data_source.metadata.file_information import FileInformation, SourceFile
 
 from ms_deisotope.output import ProcessedMSFileLoader
 
@@ -76,27 +76,29 @@ def describe(path, diagnostics=False):
     else:
         click.echo("Format Supports Random Access: False")
     try:
-        finfo = reader.file_description()
+        finfo: FileInformation = reader.file_description()
         click.echo("Contents:")
         for key in finfo.contents:
             click.echo("    %s" % (key, ))
     except AttributeError:
         pass
+
+    ms1_scans = None
     index_file_name = quick_index.ExtendedScanIndex.index_file_name(path)
     # Extra introspection if the extended index is available
     if os.path.exists(index_file_name):
         with open(index_file_name, 'rt') as fh:
-            index = quick_index.ExtendedScanIndex.deserialize(fh)
+            index = quick_index.ExtendedScanIndex.load(fh)
         ms1_scans = len(index.ms1_ids)
         msn_scans = len(index.msn_ids)
         click.echo("MS1 Scans: %d" % (ms1_scans, ))
         click.echo("MSn Scans: %d" % (msn_scans, ))
-        n_defaulted = 0
-        n_orphan = 0
+        n_defaulted: int = 0
+        n_orphan: int = 0
 
-        charges = Counter()
-        first_msn = float('inf')
-        last_msn = 0
+        charges: Counter[Union[str, int]] = Counter()
+        first_msn: float = float('inf')
+        last_msn: float = 0
         for scan_info in index.msn_ids.values():
             n_defaulted += scan_info.get('defaulted', False)
             n_orphan += scan_info.get('orphan', False)
@@ -108,10 +110,14 @@ def describe(path, diagnostics=False):
                 last_msn = rt
         click.echo("First MSn Scan: %0.3f minutes" % (first_msn,))
         click.echo("Last MSn Scan: %0.3f minutes" % (last_msn,))
+
+        missing_charge = charges.pop('ChargeNotProvided', 0)
         for charge, count in sorted(charges.items()):
             if not isinstance(charge, int):
                 continue
             click.echo("Precursors with Charge State %d: %d" % (charge, count))
+        if missing_charge:
+            click.echo("Precursors missing Charge State: %d" % missing_charge)
         if n_defaulted > 0:
             click.echo("Defaulted MSn Scans: %d" % (n_defaulted,))
         if n_orphan > 0:
@@ -120,20 +126,40 @@ def describe(path, diagnostics=False):
         reader.reset()
         scan_ids_with_invalid_isolation_window = []
         scan_ids_with_empty_isolation_window = []
-        activation_counter = Counter()
-        n_ms1 = 0
-        n_msn = 0
-        for precursor, products in reader:
-            if precursor is not None:
-                n_ms1 += 1
-            for product in products:
-                n_msn += 1
-                if not isolation_window_valid(product):
-                    scan_ids_with_invalid_isolation_window.append((precursor.id, product.id))
-                if is_isolation_window_empty(product):
-                    scan_ids_with_empty_isolation_window.append(
-                        (precursor.id, product.id))
-                activation_counter[product.activation] += 1
+        activation_counter: Counter[ActivationInformation] = Counter()
+        n_ms1: int = 0
+        n_msn: int = 0
+        n_missing_precursors: int = 0
+        progbar = progress(iter(reader), label='Checking scans',
+                           length=ms1_scans if ms1_scans is not None else len(reader),
+                           color=True, fill_char=click.style('-', 'green'))
+        with progbar:
+            precursor: Scan
+            products: List[Scan]
+            for precursor, products in progbar:
+                if precursor is not None:
+                    n_ms1 += 1
+                for product in products:
+                    n_msn += 1
+                    if not isolation_window_valid(product):
+                        scan_ids_with_invalid_isolation_window.append((precursor.id, product.id))
+
+                    if product.precursor_information is not None:
+                        if precursor is not None and (product.precursor_information.precursor_scan_id == precursor.id):
+                            if is_isolation_window_empty(product, precursor):
+                                scan_ids_with_empty_isolation_window.append(
+                                    (precursor.id, product.id))
+                    else:
+                        try:
+                            if is_isolation_window_empty(product):
+                                scan_ids_with_empty_isolation_window.append(
+                                    (precursor.id, product.id))
+                        except KeyError:
+                            n_missing_precursors += 1
+                            if n_missing_precursors % 500 == 0:
+                                click.echo("%d missing precursors detected" % (n_missing_precursors, ))
+
+                    activation_counter[product.activation] += 1
 
         click.echo("MS1 Spectra: %d" % (n_ms1, ))
         click.echo("MSn Spectra: %d" % (n_msn, ))
@@ -141,6 +167,7 @@ def describe(path, diagnostics=False):
             len(scan_ids_with_invalid_isolation_window), ))
         click.echo("Empty Isolation Windows: %d" % (
             len(scan_ids_with_empty_isolation_window), ))
+        click.echo("Missing MS1 Spectra: %d" % (n_missing_precursors, ))
 
         click.echo("Activation Methods")
         for activation, count in activation_counter.items():

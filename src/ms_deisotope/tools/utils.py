@@ -12,6 +12,8 @@ import re
 import sys
 import warnings
 
+from typing import Iterator, Generic, TYPE_CHECKING, Union, TypeVar
+
 import click
 
 from brainpy import periodic_table
@@ -21,6 +23,10 @@ from ms_deisotope.averagine import (
     peptide, glycopeptide, heparin, heparan_sulfate)
 
 from ms_deisotope.task.log_utils import fmt_msg
+from ms_deisotope.data_source import ScanBase, ScanBunch
+
+
+T = TypeVar('T')
 
 
 def processes_option(f):
@@ -239,24 +245,24 @@ class ProgressLogger(object):
         pass
 
 
-def progress(*args, **kwargs):
+def progress(iterable: Iterator[T]=None, *args, **kwargs) -> Iterator[T]:
     """
     A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
     TTY and :class:`ProgressLogger` otherwise.
     """
     if sys.stdout.isatty():
-        return click.progressbar(*args, **kwargs)
+        return click.progressbar(iterable=iterable, *args, **kwargs)
     else:
-        return ProgressLogger(*args, **kwargs)
+        return ProgressLogger(iterable=iterable, *args, **kwargs)
 
 
-def progress_iter(*args, **kwargs):
-    prog = progress(*args, **kwargs)
+def progress_iter(iterable: Iterator[T]=None, *args, **kwargs) -> Iterator[T]:
+    prog = progress(iterable, *args, **kwargs)
     with prog:
         yield from prog
 
 
-def type_cast(value):
+def type_cast(value: str) -> Union[str, int, float, list, dict]:
     try:
         return json.loads(value)
     except (TypeError, ValueError):

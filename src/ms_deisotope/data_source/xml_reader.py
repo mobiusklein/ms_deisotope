@@ -1,4 +1,5 @@
-"""A common set of methods that are shared by
+"""
+A common set of methods that are shared by
 all :mod:`pyteomics`-based XML file readers.
 """
 
@@ -16,7 +17,8 @@ from ._compression import get_opener, test_if_file_has_fast_random_access
 
 
 def in_minutes(x):
-    """Convert a time quantity to minutes
+    """
+    Convert a time quantity to minutes
 
     Parameters
     ----------
@@ -46,7 +48,8 @@ def in_minutes(x):
 
 
 class XMLReaderBase(RandomAccessScanSource):
-    """A common implementation of :mod:`pyteomics`-based XML file formats.
+    """
+    A common implementation of :mod:`pyteomics`-based XML file formats.
 
     Attributes
     ----------
@@ -62,7 +65,8 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):
-        """Parse the file given by `path`, generating a byte offset index in
+        """
+        Parse the file given by `path`, generating a byte offset index in
         JSON format and save it to disk for future use.
 
         This method is intended to provide a way to save time during repeated
@@ -85,7 +89,8 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @property
     def index(self):
-        """The byte offset index used to achieve fast random access.
+        """
+        The byte offset index used to achieve fast random access.
 
         Maps :class:`~.ScanBase` IDs to the byte offsets, implying
         the order the scans reside in the file.
@@ -98,8 +103,7 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @property
     def source(self):
-        """The file parser that this reader consumes.
-        """
+        """The file parser that this reader consumes."""
         return self._source
 
     @source.setter
@@ -107,8 +111,7 @@ class XMLReaderBase(RandomAccessScanSource):
         self._source = value
 
     def close(self):
-        """Close the underlying reader.
-        """
+        """Close the underlying reader."""
         if self.source is not None:
             self.source.close()
             self._dispose()
@@ -125,7 +128,8 @@ class XMLReaderBase(RandomAccessScanSource):
         return len(self.index)
 
     def reset(self):
-        """Reset the object, clearing out any existing
+        """
+        Reset the object, clearing out any existing
         state.
 
         This resets the underlying file iterator, then
@@ -165,7 +169,8 @@ class XMLReaderBase(RandomAccessScanSource):
         return self.next()
 
     def get_scan_by_id(self, scan_id):
-        """Retrieve the scan object for the specified scan id.
+        """
+        Retrieve the scan object for the specified scan id.
 
         If the scan object is still bound and in memory somewhere,
         a reference to that same object will be returned. Otherwise,
@@ -203,7 +208,8 @@ class XMLReaderBase(RandomAccessScanSource):
             raise err
 
     def get_scan_by_time(self, time):
-        """Retrieve the scan object for the specified scan time.
+        """
+        Retrieve the scan object for the specified scan time.
 
         This internally calls :meth:`get_scan_by_id` which will
         use its cache.
@@ -255,7 +261,8 @@ class XMLReaderBase(RandomAccessScanSource):
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
 
     def get_scan_by_index(self, index):
-        """Retrieve the scan object for the specified scan index.
+        """
+        Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_id` which will
         use its cache.
@@ -285,7 +292,8 @@ class XMLReaderBase(RandomAccessScanSource):
         raise NotImplementedError()
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
-        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """
+        Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -352,16 +360,19 @@ def _find_section(source, section):
 
 @xml._keepstate
 def get_tag_attributes(source, tag_name, stop_at=None):
-    """Iteratively parse XML stream in ``source`` until encountering ``tag_name``
+    """
+    Iteratively parse XML stream in ``source`` until encountering ``tag_name``
     at which point parsing terminates and return the attributes of the matched
     tag.
 
     Parameters
     ----------
-    source: file-like
+    source : file-like
         A file-like object over an XML document
-    tag_name: str
+    tag_name : str
         The name of the XML tag to parse until
+    stop_at : str, optional
+        The name of the tag to stop parsing at
 
     Returns
     -------
@@ -383,7 +394,8 @@ def get_tag_attributes(source, tag_name, stop_at=None):
 
 @xml._keepstate
 def iterparse_until(source, target_name, quit_name):
-    """Iteratively parse XML stream in ``source``, yielding XML elements
+    """
+    Iteratively parse XML stream in ``source``, yielding XML elements
     matching ``target_name``. If at any point a tag matching ``quit_name``
     is encountered, stop parsing.
 
@@ -391,7 +403,7 @@ def iterparse_until(source, target_name, quit_name):
     ----------
     source: file-like
         A file-like object over an XML document
-    tag_name: str
+    target_name: str
         The name of the XML tag to parse until
     quit_name: str
         The name to stop parsing at.

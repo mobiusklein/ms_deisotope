@@ -135,7 +135,18 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     correct_precursor_mz : bool, optional
         Whether or not to assign the precursor m/z of each product scan to the nearest peak
         m/z in the precursor's peak list. (the default is False, which results in no correction)
-
+    write_index : bool
+        Whether to write an extended index or not.
+    update_metadata : bool
+        Whether to write the file metadata section.
+    writer_type : type
+        The type to use to write spectra. Defaults to :class:`MzMLSerializer`
+    compression : str
+        The name of the compression to use on the mzML file's binary arrays.
+    close : bool
+        Whether to close the file stream or not.
+    **kwargs
+        Ignored
     """
     if writer_type is None:
         writer_type = MzMLSerializer

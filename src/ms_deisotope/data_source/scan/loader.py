@@ -382,7 +382,7 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
         return True
 
     @abc.abstractmethod
-    def next(self) -> Union[ScanType, ScanBunch]:
+    def next(self) -> Union[ScanType, ScanBunch[ScanType]]:
         """
         Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
@@ -393,7 +393,7 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
         """
         raise NotImplementedError()
 
-    def __next__(self) -> Union[ScanType, ScanBunch]:
+    def __next__(self) -> Union[ScanType, ScanBunch[ScanType]]:
         """
         Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
@@ -404,7 +404,7 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
         """
         return self.next()
 
-    def __iter__(self) -> Iterator[Union[ScanType, ScanBunch]]:
+    def __iter__(self) -> Iterator[Union[ScanType, ScanBunch[ScanType]]]:
         return self
 
     def reset(self):

@@ -2,7 +2,7 @@
 Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 """
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, NamedTuple, Generic, TypeVar
 import warnings
 
 from collections import namedtuple
@@ -50,25 +50,26 @@ if TYPE_CHECKING:
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
 
+ScanType = TypeVar("ScanType", bound='ScanBase')
 
-class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
+class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"]), Generic[ScanType]):
     """
     Represents a single MS1 scan and all MSn scans derived from it,
     or a collection of related MSn scans.
 
     Attributes
     ----------
-    precursor: :class:`~.ScanBase`
+    precursor: :class:`~.ScanType`
         A single MS1 scan which may have undergone MSn
     products: list
-        A list of 0 or more :class:`~.ScanBase` objects which were derived
+        A list of 0 or more :class:`~.ScanType` objects which were derived
         from :attr:`precursor` or another element of this list derived
         from it.
     """
 
-    precursor: 'ScanBase'
-    produces: List['ScanBase']
-    _id_map: Dict[str, 'ScanBase']
+    precursor: 'ScanType'
+    products: List['ScanType']
+    _id_map: Dict[str, 'ScanType']
 
     def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
@@ -79,25 +80,26 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
             inst._id_map[scan.id] = scan
         return inst
 
-    def precursor_for(self, scan: 'ScanBase') -> Optional['ScanBase']:
-        """Find the precursor :class:`~.ScanBase` instance
+    def precursor_for(self, scan: 'ScanType') -> Optional['ScanType']:
+        """
+        Find the precursor :class:`~.ScanType` instance
         for the given scan object
 
         Parameters
         ----------
-        scan : :class:`~.ScanBase`
+        scan : :class:`~.ScanType`
             The MSn scan to look for the MSn-1 scan for
 
         Returns
         -------
-        :class:`~.ScanBase`
+        :class:`~.ScanType`
         """
         if scan.precursor_information is not None:
             scan_id = scan.precursor_information.precursor_scan_id
             return self.get_scan_by_id(scan_id)
         return None
 
-    def get_scan_by_id(self, scan_id: str) -> 'ScanBase':
+    def get_scan_by_id(self, scan_id: str) -> 'ScanType':
         """Retrieve the scan object for the specified scan id from this
         group in memory.
 
@@ -111,6 +113,10 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         :class:`~.ScanBase`
         """
         return self._id_map[scan_id]
+
+    def __iter__(self):
+        yield self.precursor
+        yield self.products
 
     def annotate_precursors(self, nperrow=4, ax=None):
         """
@@ -376,6 +382,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         """
         i = self.find_mz(low)
         j = self.find_mz(high) + 1
+        if len(self.mz) == 0:
+            return self.__class__(self.mz[:], self.intensity[:])
         if not (low <= self.mz[i] <= high):
             i += 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
