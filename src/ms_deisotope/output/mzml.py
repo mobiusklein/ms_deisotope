@@ -397,21 +397,11 @@ class MzMLSerializer(ScanSerializerBase):
         return writer.MzMLWriter(handle, close=self._should_close)
 
     def _init_sample(self, sample_name, **kwargs):
-        self.sample_name = sample_name
+        if sample_name is None:
+            sample_name = 'sample_1'
         self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()), **kwargs)
-
-        params = [{"name": "SampleRun-UUID", "value": self.sample_run.uuid}]
-
-        for k, v in self.sample_run.parameters.items():
-            params.append({
-                "name": k, "value": v
-            })
-
-        self.add_sample({
-            "name": self.sample_run.name,
-            "id": "sample_1",
-            "params": params
-        })
+        self.sample_name = sample_name
+        self.add_sample(self.sample_run)
 
     def _initialize_description_lists(self):
         self.file_contents_list = []
@@ -633,8 +623,36 @@ class MzMLSerializer(ScanSerializerBase):
         """
         self.sample_list.append(sample)
 
+    def remove_sample(self, sample_name: str):
+        """
+        Remove a sample from the sample list.
+
+        Parameters
+        ----------
+        sample_name : str or :class:`~.SampleRun`
+            The name of the sample to remove, or the sample run to remove.
+
+        Raises
+        ------
+        ValueError
+            If the sample is not found
+        """
+        if isinstance(sample_name, SampleRun):
+            self.sample_list.remove(SampleRun)
+        else:
+            index = None
+            for i, entry in enumerate(self.sample_list):
+                if entry.name == sample_name:
+                    index = i
+                    break
+            if index is not None:
+                self.sample_list.pop(index)
+            else:
+                raise ValueError(f"{sample_name!r} not found")
+
     def copy_metadata_from(self, reader: ScanFileMetadataBase):
-        """Copy the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`
+        """
+        Copy the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`
         into the metadata section for the output file.
 
         Parameters
@@ -661,6 +679,17 @@ class MzMLSerializer(ScanSerializerBase):
             software_list = []
         for software in software_list:
             self.add_software(software)
+
+        try:
+            samples = reader.samples()
+        except (AttributeError, StopIteration):
+            samples = []
+        if samples:
+            self.remove_sample(self.sample_run.name)
+            self.sample_run = samples[0]
+            self.sample_name = self.sample_run.name
+        for sample in samples:
+            self.add_sample(sample)
 
         try:
             data_processing_list = reader.data_processing()
@@ -713,7 +742,19 @@ class MzMLSerializer(ScanSerializerBase):
         return inst
 
     def _create_sample_list(self):
-        self.writer.sample_list(self.sample_list)
+        samples = []
+        for sample in self.sample_list:
+            params = []
+            for k, v in sample.parameters.items():
+                params.append({
+                    "name": k, "value": v
+                })
+            samples.append({
+                "name": sample.name,
+                "id": sample.id,
+                "params": params
+            })
+        self.writer.sample_list(samples)
 
     def build_processing_method(self, order=1, picked_peaks=True, smoothing=True,
                                 baseline_reduction=True, additional_parameters=tuple(),
@@ -776,7 +817,7 @@ class MzMLSerializer(ScanSerializerBase):
 
         self._run_tag = self.writer.run(
             id=self.sample_name or 1,
-            sample='sample_1')
+            sample=self.sample_run.id)
         self._run_tag.__enter__()
         self._spectrum_list_tag = self.writer.spectrum_list(
             count=self.n_spectra)

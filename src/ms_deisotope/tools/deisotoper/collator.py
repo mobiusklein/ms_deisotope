@@ -1,4 +1,5 @@
-"""Manages keeping scans delivered out-of-order in-order for
+"""
+Manages keeping scans delivered out-of-order in-order for
 writing to disk.
 """
 import time
@@ -21,7 +22,8 @@ T = TypeVar("T", bound=Union[ScanBase, FrameBase])
 
 
 class ScanCollator(TaskBase, Generic[T]):
-    """Collates incoming scan bunches from multiple
+    """
+    Collates incoming scan bunches from multiple
     ScanTransformingProcesses, passing them along in
     the correct order.
 
@@ -60,6 +62,7 @@ class ScanCollator(TaskBase, Generic[T]):
         A mapping from scan index to `Scan` object. Used to serve
         scans through the iterator when their index is called for
     """
+
     _log_received_scans = False
 
     input_queue: multiprocessing.Queue
@@ -115,7 +118,8 @@ class ScanCollator(TaskBase, Generic[T]):
         return False
 
     def store_item(self, item: Union[str, T], index: int):
-        """Stores an incoming work-item for easy
+        """
+        Stores an incoming work-item for easy
         access by its `index` value. If configuration
         requires it, this will also reduce the number
         of peaks in `item`.
@@ -145,7 +149,8 @@ class ScanCollator(TaskBase, Generic[T]):
         return item, index
 
     def consume(self, timeout: int=10) -> bool:
-        """Fetches the next work item from the input
+        """
+        Fetches the next work item from the input
         queue :attr:`queue`, blocking for at most `timeout` seconds.
 
         Parameters
@@ -173,7 +178,8 @@ class ScanCollator(TaskBase, Generic[T]):
             return False
 
     def start_helper_producers(self):
-        """Starts the additional :class:`ScanTransformingProcess` workers
+        """
+        Starts the additional :class:`ScanTransformingProcess` workers
         in :attr:`helper_producers` if they have not been started already.
 
         Should only be invoked once
@@ -187,7 +193,8 @@ class ScanCollator(TaskBase, Generic[T]):
             helper.start()
 
     def produce(self, scan: T) -> T:
-        """Performs any final quality controls on the outgoing
+        """
+        Performs any final quality controls on the outgoing
         :class:`ProcessedScan` object and takes care of any internal
         details.
 
@@ -209,7 +216,8 @@ class ScanCollator(TaskBase, Generic[T]):
         return scan
 
     def count_pending_items(self) -> int:
-        """Count the number of scans that are waiting to be added to the
+        """
+        Count the number of scans that are waiting to be added to the
         write queue.
 
         Returns
@@ -219,7 +227,8 @@ class ScanCollator(TaskBase, Generic[T]):
         return len(self.waiting)
 
     def drain_queue(self) -> int:
-        """Try to read a lot of scans from the incoming result queue.
+        """
+        Try to read a lot of scans from the incoming result queue.
 
         If there are items pending to be sent to the write queue immediately,
         don't read as many.
@@ -241,7 +250,8 @@ class ScanCollator(TaskBase, Generic[T]):
         return i
 
     def print_state(self):
-        """Log the state of the collator, reporting pending items
+        """
+        Log the state of the collator, reporting pending items
         in all output stages.
 
         If a worker process is done, try to join it.

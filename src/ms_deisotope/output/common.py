@@ -2,13 +2,14 @@
 import os
 import io
 
-from typing import Iterator, List, Optional, Tuple, Union, Hashable, Deque
+from typing import Any, Iterator, List, Optional, Tuple, Union, Hashable, Deque
 import warnings
 
 import numpy as np
 
 from six import string_types as basestring
 from ms_deisotope.data_source import ScanBase, Scan, ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation, ProcessedRandomAccessScanSource
+from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.peak_set import DeconvolutedPeak
 
 from ms_deisotope.utils import Base
@@ -133,14 +134,41 @@ class ScanDeserializerBase(object):
 ScanIterator.register(ScanDeserializerBase)
 
 
-class SampleRun(Base):
+class _ParamProp:
+    __slots__ = ('key', )
+
+    key: str
+
+    def __init__(self, key: str):
+        self.key = key
+
+    def __get__(self, inst: Sample, cls):
+        if inst is None:
+            return self
+        if self.key in inst.parameters:
+            return inst.parameters[self.key]
+        else:
+            return None
+
+    def __set__(self, inst: Sample, value: Any):
+        inst.parameters[self.key] = value
+
+    def __delete__(self, inst: Sample):
+        del inst.parameters[self.key]
+
+
+# TODO: Rewrite this as a subclass of :class:`Sample`
+class SampleRun(Sample):
+
+    uuid = _ParamProp('SampleRun-UUID')
+    sample_type = _ParamProp('sample_type')
+    completed = _ParamProp('completed')
 
     def __init__(self, name, uuid, completed=True, sample_type=None, **kwargs):
-        self.name = name
+        super().__init__(id=name, name=name, **kwargs)
         self.uuid = uuid
         self.sample_type = sample_type
         self.completed = completed
-        self.parameters = kwargs
 
 
 class LCMSMSQueryInterfaceMixin(object):

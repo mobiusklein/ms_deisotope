@@ -4,6 +4,18 @@ try:
 except ImportError:
     pass
 
+from .scan import (
+    ScanProxyContext,
+    ScanBase,
+    Scan,
+    ProcessedScan,
+    ScanBunch,
+    PrecursorInformation,
+    ScanDataSource,
+    ScanIterator,
+    RandomAccessScanSource
+)
+
 from typing import Any
 from .infer_type import MSFileLoader
 from .mzml import MzMLLoader
@@ -32,17 +44,6 @@ from .metadata.activation import (
     ActivationInformation, MultipleActivationInformation,
     DissociationMethod, dissociation_methods)
 
-from .scan import (
-    ScanProxyContext,
-    ScanBase,
-    Scan,
-    ProcessedScan,
-    ScanBunch,
-    PrecursorInformation,
-    ScanDataSource,
-    ScanIterator,
-    RandomAccessScanSource
-)
 
 from ._compression import get_opener
 

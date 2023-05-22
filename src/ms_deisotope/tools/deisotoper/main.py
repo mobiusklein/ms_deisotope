@@ -19,7 +19,8 @@ from ms_deisotope.tools.deisotoper import workflow, output
 
 
 def configure_iterator(loader, start_time, end_time):
-    """Configure `loader` to run between the time ranges specified, or
+    """
+    Configure `loader` to run between the time ranges specified, or
     if the `loader` does not support random access, the bounds are set to
     the start and end of the iterator.
 
@@ -81,7 +82,8 @@ def configure_iterator(loader, start_time, end_time):
 
 
 def check_if_profile(loader):
-    """Check if the spectra in `loader` are stored in profile mode,
+    """
+    Check if the spectra in `loader` are stored in profile mode,
     established by querying the next scan bunch.
 
     Parameters
@@ -190,8 +192,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
-    """Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
-    """
+    """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
     init_logging()
     if transform is None:
         transform = []

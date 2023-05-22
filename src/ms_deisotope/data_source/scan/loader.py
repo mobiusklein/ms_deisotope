@@ -21,6 +21,7 @@ from ms_deisotope.data_source.metadata.instrument_components import InstrumentIn
 from ms_deisotope.data_source.metadata.data_transformation import DataProcessingInformation
 from ms_deisotope.data_source.metadata.software import Software
 from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanAcquisitionInformation
+from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.data_source._compression import MaybeFastRandomAccess
 
 from .base import PrecursorInformation, ScanBase, ScanBunch
@@ -781,7 +782,8 @@ class TimeIndex(object):
 
 @add_metaclass(abc.ABCMeta)
 class ScanFileMetadataBase(object):
-    """Objects implementing this interface can describe the original source
+    """
+    Objects implementing this interface can describe the original source
     files, instrument configuration, and data processing parameters used to
     create the current spectral data file.
 
@@ -791,7 +793,8 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def file_description(self):
-        """Describe the file and its components, as well
+        """
+        Describe the file and its components, as well
         as any content types it has.
 
         Returns
@@ -807,7 +810,8 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def instrument_configuration(self) -> List[InstrumentInformation]:
-        """Describe the different instrument components and configurations used
+        """
+        Describe the different instrument components and configurations used
         to acquire scans in this run.
 
         Returns
@@ -818,7 +822,8 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def data_processing(self) -> List[DataProcessingInformation]:
-        """Describe any preprocessing steps applied to the data described by this
+        """
+        Describe any preprocessing steps applied to the data described by this
         instance.
 
         Returns
@@ -828,10 +833,21 @@ class ScanFileMetadataBase(object):
         return []
 
     def software_list(self) -> List[Software]:
-        """Describe any software used on the data described by this instance.
+        """
+        Describe any software used on the data described by this instance.
 
         Returns
         -------
         :class:`list` of :class:`~.Software`
+        """
+        return []
+
+    def samples(self) -> List[Sample]:
+        """
+        Describe the sample or samples represented by this instance.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
         """
         return []

@@ -13,7 +13,7 @@ def main(inpath: os.PathLike, outpath: os.PathLike):
     split_count = 0
     logger.info("Reading spectra from %r", inpath)
     logger.info("Writing spectra to %r", outpath)
-    with MzMLSerializer(outpath, int(len(reader) * 1.5)) as writer:
+    with MzMLSerializer(outpath, int(len(reader) * 1.5), sample_name=reader.sample_run.name) as writer:
         writer.copy_metadata_from(reader)
         for bunch_i, (precursor, products) in enumerate(reader):
             if bunch_i % 1000 == 0 and bunch_i:
