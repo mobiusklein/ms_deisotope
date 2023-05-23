@@ -157,7 +157,6 @@ class _ParamProp:
         del inst.parameters[self.key]
 
 
-# TODO: Rewrite this as a subclass of :class:`Sample`
 class SampleRun(Sample):
 
     uuid = _ParamProp('SampleRun-UUID')
