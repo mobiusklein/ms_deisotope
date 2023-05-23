@@ -20,6 +20,8 @@ import numpy as np
 from pyteomics import mzml
 from pyteomics.xml import unitfloat
 
+from ms_deisotope.utils import LRUDict
+
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -127,6 +129,8 @@ class MzMLDataInterface(ScanDataSource):
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
     """
 
+    _missing_precursor_scan_id_cache: LRUDict
+
     def _stray_cvs(self, scan):
         return scan.get("name", [])
 
@@ -200,20 +204,25 @@ class MzMLDataInterface(ScanDataSource):
         try:
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
-            precursor_scan_id = None
-            # only attempt to scan if there are supposed to be MS1 scans in the file
-            if self._has_ms1_scans() and self._use_index:
-                last_index = self._scan_index(scan) - 1
-                current_level = self._ms_level(scan)
-                i = 0
-                while last_index > 0 and i < 100:
-                    prev_scan = self.get_scan_by_index(last_index)
-                    if prev_scan.ms_level >= current_level:
-                        last_index -= 1
-                    else:
-                        precursor_scan_id = self._scan_id(prev_scan._data)
-                        break
-                    i += 1
+            this_scan_id = self._scan_id(scan)
+            if this_scan_id in self._missing_precursor_scan_id_cache:
+                precursor_scan_id = self._missing_precursor_scan_id_cache[this_scan_id]
+            else:
+                precursor_scan_id = None
+                # only attempt to scan if there are supposed to be MS1 scans in the file
+                if self._has_ms1_scans() and self._use_index:
+                    last_index = self._scan_index(scan) - 1
+                    current_level = self._ms_level(scan)
+                    i = 0
+                    while last_index > 0 and i < 100:
+                        prev_scan = self._get_scan_by_index_raw(last_index)
+                        if self._ms_level(prev_scan) >= current_level:
+                            last_index -= 1
+                        else:
+                            precursor_scan_id = self._scan_id(prev_scan)
+                            break
+                        i += 1
+                    self._missing_precursor_scan_id_cache[this_scan_id] = precursor_scan_id
 
         keys = set(pinfo_dict) - {"selected ion m/z", 'peak intensity', 'charge state'}
 
@@ -759,6 +768,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
             k.id: k for k in self.instrument_configuration()
         }
         self._file_description = self.file_description()
+        self._missing_precursor_scan_id_cache = LRUDict(maxsize=64)
         self.make_iterator()
 
     @property

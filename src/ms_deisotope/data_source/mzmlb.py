@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
+"""
+mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
 This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`
 implementation. It is based upon the mzML XML file format, re-using a subset of the
 features. The original design for mzMLb is described in [Bhamber]_.
@@ -8,7 +9,7 @@ The parser is based on :mod:`pyteomics.mzmlb`. It requires :mod:`h5py` to be ins
 for reading, and :mod:`hdf5plugin` to use the faster, non-zlib-based compressors.
 
 References
-==========
+----------
 .. [Bhamber] Bhamber, R. S., Jankevics, A., Deutsch, E. W., Jones, A. R., & Dowsey, A. W. (2021).
     MzMLb: A Future-Proof Raw Mass Spectrometry Data Format Based on Standards-Compliant
     mzML and Optimized for Speed and Storage Requirements. Journal of Proteome Research,
@@ -44,7 +45,8 @@ class _MzMLbParser(_BaseParser):
 
 
 class MzMLbLoader(_MzMLLoader):
-    """Reads scans from PSI-HUPO mzMLb HDF5 files. Provides both iterative and
+    """
+    Reads scans from PSI-HUPO mzMLb HDF5 files. Provides both iterative and
     random access.
 
     Attributes
@@ -54,6 +56,7 @@ class MzMLbLoader(_MzMLLoader):
     source: pyteomics.mzmlb.MzMLb
         Underlying scan data source
     """
+
     _parser_cls = _MzMLbParser
 
     @property
@@ -62,7 +65,8 @@ class MzMLbLoader(_MzMLLoader):
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):
-        """A stub method. MzMLb does not require an external index.
+        """
+        A stub method. MzMLb does not require an external index.
 
         Parameters
         ----------
@@ -73,7 +77,8 @@ class MzMLbLoader(_MzMLLoader):
 
 
 def is_mzmlb_file(path):
-    """Detect whether or not the file referenced by ``path``
+    """
+    Detect whether or not the file referenced by ``path``
     is a mzMLb file.
 
     Parameters
@@ -101,7 +106,8 @@ def is_mzmlb_file(path):
 
 
 def infer_reader(path):
-    """If the file referenced by ``path`` is a mzMLb
+    """
+    If the file referenced by ``path`` is a mzMLb
     file, return the callable (:class:`MzMLbLoader`) to
     open it, otherwise raise an exception.
 
@@ -126,7 +132,8 @@ def infer_reader(path):
 
 
 def determine_if_available():
-    """Checks whether or not the mzMLb HDF5-based
+    """
+    Checks whether or not the mzMLb HDF5-based
     file reading feature is available.
 
     Returns

@@ -46,7 +46,7 @@ from typing import Any, ContextManager, Dict, List, Tuple, Union, Optional, Orde
 
 from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation, InstrumentModel
 from ms_deisotope.data_source.metadata.activation import ActivationInformation
-from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanEventInformation
 from ms_deisotope.data_source.metadata.file_information import FileContent, FileInformation, SourceFile
 from ms_deisotope.data_source.scan.base import PrecursorInformation, ScanBase, ScanBunch
 from ms_deisotope.data_source.scan.loader import ScanFileMetadataBase
@@ -1165,7 +1165,7 @@ class MzMLSerializer(ScanSerializerBase):
         if filter_string is not None:
             scan_parameters.append({"name": "filter string", "value": filter_string})
         if acquisition_info is not None and len(acquisition_info) > 0:
-            scan_event = acquisition_info[0]
+            scan_event: ScanEventInformation = acquisition_info[0]
             if scan_event.injection_time is not None:
                 scan_parameters.append({
                     "accession": 'MS:1000927', "value": scan_event.injection_time,
