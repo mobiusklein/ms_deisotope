@@ -288,6 +288,14 @@ class XMLReaderBase(RandomAccessScanSource):
                 index, id_str), stacklevel=2)
         return scan
 
+    def _get_scan_by_index_raw(self, index: int):
+        if not self._use_index:
+            raise TypeError(
+                "This method requires the index. Please pass `use_index=True` during initialization")
+        id_str = self.index.from_index(index)
+        scan = self._get_scan_by_id_raw(id_str)
+        return scan
+
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
 
