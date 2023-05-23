@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.48] - 2023-05-22
+
+### Added
+1. More type annotations and documentation.
+
+### Fixed
+1. Avoid excessive hysterical reloading of spectra from mzML files when trying to find
+   precursor scan IDs.
+
 ## [v0.0.47] - 2023-05-08
 
 ### Added
@@ -545,9 +554,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.47...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.48...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.47
+[v0.0.48]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48
+[v0.0.47]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.47
 [v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.46
 [v0.0.45]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.45
 [v0.0.44]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.44
