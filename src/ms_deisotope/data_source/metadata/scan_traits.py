@@ -1,10 +1,10 @@
-"""A module defining types for describing instrument scans and windows,
+"""
+A module defining types for describing instrument scans and windows,
 as well as a :class:`~.Term` subclass for the `scan attribute` family.
 """
 
 from collections import namedtuple
-from collections.abc import MutableSequence
-from typing import Optional
+from typing import List, Optional, MutableSequence, Union
 
 from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
@@ -19,7 +19,8 @@ _IsolationWindowBase = namedtuple(
 
 
 class IsolationWindow(_IsolationWindowBase):
-    r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
+    r"""
+    Describes the m/z interval a precursor ion was isolated from in the precursor scan
 
     An :class:`IsolationWindow` instance is comparable, hashable, and orderable. It is based
     on a :class:`namedtuple`, and supports the same interface and methods as a :class:`tuple`.
@@ -46,7 +47,8 @@ class IsolationWindow(_IsolationWindowBase):
 
     @classmethod
     def make_empty(cls, point):
-        """A helper method for instantiating an empty isolation window centered at
+        """
+        A helper method for instantiating an empty isolation window centered at
         `point`
 
         Parameters
@@ -82,7 +84,8 @@ class IsolationWindow(_IsolationWindowBase):
         return self.spans(x, 0.1)
 
     def spans(self, x, tolerance=0.1):
-        """Test whether `x` is within the interval defined by this window's bounds.
+        """
+        Test whether `x` is within the interval defined by this window's bounds.
 
         This method permits a small amount of error (controlled by `tolerance`) when
         computing the bounds.
@@ -103,7 +106,8 @@ class IsolationWindow(_IsolationWindowBase):
         return (self.lower_bound - tolerance) <= x <= (self.upper_bound + tolerance)
 
     def is_empty(self):
-        """Tests if the window is empty (e.g. its upper bound is equal to its lower bound)
+        """
+        Tests if the window is empty (e.g. its upper bound is equal to its lower bound)
 
         Returns
         -------
@@ -135,8 +139,9 @@ class IsolationWindow(_IsolationWindowBase):
         return self.__class__, (self.lower, self.target, self.upper)
 
 
-class ScanAcquisitionInformation(MutableSequence):
-    """Describes the set distinct scans along the measurable range by
+class ScanAcquisitionInformation(MutableSequence['ScanEventInformation']):
+    """
+    Describes the set distinct scans along the measurable range by
     the instrument that were performed to produce the acquired data
 
     :class:`ScanAcquisitionInformation` objects implement the :class:`MutableSequence`
@@ -152,6 +157,8 @@ class ScanAcquisitionInformation(MutableSequence):
 
     __slots__ = ("combination", "scan_list")
 
+    scan_list: List['ScanEventInformation']
+
     @property
     def __dict__(self):
         return _MappingOverAttributeProxy(self)
@@ -160,17 +167,18 @@ class ScanAcquisitionInformation(MutableSequence):
         self.combination = combination
         self.scan_list = scan_list
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> 'ScanEventInformation':
         return self.scan_list[i]
 
-    def __setitem__(self, i, value):
+    def __setitem__(self, i: int, value: 'ScanEventInformation'):
         self.scan_list[i] = value
 
     def __delitem__(self, i):
         del self.scan_list[i]
 
-    def insert(self, index, value):
-        """Insert an event at a given position
+    def insert(self, index, value: 'ScanEventInformation'):
+        """
+        Insert an event at a given position
 
         Parameters
         ----------
@@ -214,7 +222,8 @@ class _IonMobilityMixin(object):
         return IonMobilityMethods(self)
 
     def has_ion_mobility(self):
-        """Check whether the scan has ion mobility measure.
+        """
+        Check whether the scan has ion mobility measure.
 
         Returns
         -------
@@ -224,7 +233,8 @@ class _IonMobilityMixin(object):
 
     @property
     def drift_time(self):
-        """Fetch the drift time quantity of the scan
+        """
+        Fetch the drift time quantity of the scan
 
         Returns
         -------
@@ -242,7 +252,8 @@ class _IonMobilityMixin(object):
 
     @property
     def ion_mobility_type(self):
-        """Fetch the ion mobility type of the scan.
+        """
+        Fetch the ion mobility type of the scan.
 
         Returns
         -------
@@ -253,7 +264,8 @@ class _IonMobilityMixin(object):
 
 
 class ScanEventInformation(_IonMobilityMixin):
-    """Describe a single instrument scan, one or more of which compose
+    """
+    Describe a single instrument scan, one or more of which compose
     an actual :class:`Scan` object which describes a spectrum.
 
     Attributes
@@ -289,7 +301,8 @@ class ScanEventInformation(_IonMobilityMixin):
 
     @property
     def scan_configuration(self) -> Optional[str]:
-        """Retrieve the scan configuration ID
+        """
+        Retrieve the scan configuration ID
 
         Returns
         -------
@@ -339,7 +352,8 @@ class ScanEventInformation(_IonMobilityMixin):
         return not (self == other)
 
     def total_scan_window(self):
-        """Create a :class:`ScanWindow` spanning from the lowest m/z of the lowest window
+        """
+        Create a :class:`ScanWindow` spanning from the lowest m/z of the lowest window
         to the highest m/z of the highest window.
 
         Returns
@@ -358,7 +372,8 @@ class ScanEventInformation(_IonMobilityMixin):
 
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
-    """Represent a single contiguous m/z interval that was sampled from during a scan.
+    """
+    Represent a single contiguous m/z interval that was sampled from during a scan.
 
     This type supports spanning testing using the :meth:`__contains__` method, and is
     equality comparable and hashable.
@@ -384,7 +399,8 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
         return self.lower <= i <= self.upper
 
     def is_empty(self):
-        """Test whether the window's bounds are both equal to :const:`None`
+        """
+        Test whether the window's bounds are both equal to :const:`None`
         or `0`.
 
         Returns
@@ -413,7 +429,8 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
 
 class ScanAttribute(Term):
-    """Describes a single trait or attribute belonging to a scan,
+    """
+    Describes a single trait or attribute belonging to a scan,
     such as injection time, filter string, or instrument configuration.
     """
 
@@ -567,7 +584,8 @@ ION_MOBILITY_TYPES = {
 
 
 class IonMobilityMethods(object):
-    """Determine the ion mobility measure of a scan event.
+    """
+    Determine the ion mobility measure of a scan event.
 
     This interface attempts to find FAIMS compensation voltage,
     ion mobility drift time, and inverse reduced ion mobility.
@@ -585,7 +603,8 @@ class IonMobilityMethods(object):
         return self.scan_event.traits
 
     def get(self):
-        """Find the first ion mobility trait of the scan.
+        """
+        Find the first ion mobility trait of the scan.
 
         Returns
         -------
@@ -601,7 +620,8 @@ class IonMobilityMethods(object):
         return None
 
     def has_ion_mobility(self):
-        """Check whether the scan has ion mobility measure.
+        """
+        Check whether the scan has ion mobility measure.
 
         Returns
         -------
@@ -610,7 +630,8 @@ class IonMobilityMethods(object):
         return self.get() is not None
 
     def drift_time(self):
-        """Fetch the drift time quantity of the scan
+        """
+        Fetch the drift time quantity of the scan
 
         Returns
         -------
@@ -624,7 +645,8 @@ class IonMobilityMethods(object):
         return value
 
     def add_ion_mobility(self, ion_mobility_type, drift_time):
-        """Set the drift time value for a specific type of ion mobility on
+        """
+        Set the drift time value for a specific type of ion mobility on
         the scan event.
 
         Parameters
@@ -637,7 +659,8 @@ class IonMobilityMethods(object):
         self._get_traits()[ion_mobility_type] = drift_time
 
     def remove_ion_mobility_type(self, ion_mobility_type):
-        """Remove a specific type of ion mobility from the scan.
+        """
+        Remove a specific type of ion mobility from the scan.
 
         Parameters
         ----------
@@ -647,7 +670,8 @@ class IonMobilityMethods(object):
         self._get_traits().pop(ion_mobility_type)
 
     def ion_mobility_type(self):
-        """Fetch the ion mobility type of the scan.
+        """
+        Fetch the ion mobility type of the scan.
 
         Returns
         -------
