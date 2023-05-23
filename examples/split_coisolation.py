@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import List
 
 from ms_deisotope.data_source.scan.scan import ProcessedScan
 from ms_deisotope.output import MzMLSerializer, ProcessedMzMLLoader
@@ -15,6 +16,8 @@ def main(inpath: os.PathLike, outpath: os.PathLike):
     logger.info("Writing spectra to %r", outpath)
     with MzMLSerializer(outpath, int(len(reader) * 1.5), sample_name=reader.sample_run.name) as writer:
         writer.copy_metadata_from(reader)
+        precursor: ProcessedScan
+        products: List[ProcessedScan]
         for bunch_i, (precursor, products) in enumerate(reader):
             if bunch_i % 1000 == 0 and bunch_i:
                 logger.info("... Handled %d/%d spectra (%0.2f%%); Wrote %d spectra (%d split)", precursor.index,

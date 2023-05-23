@@ -44,7 +44,8 @@ def debug_printer(message):
 
 
 def simple_repr(self):  # pragma: no cover
-    """A convenient function for automatically generating a ``__repr__``-like
+    """
+    A convenient function for automatically generating a ``__repr__``-like
     string for arbitrary objects.
 
     Returns
@@ -74,15 +75,18 @@ def simple_repr(self):  # pragma: no cover
 
 
 class Base(object):
-    """A convenience base class for non-critical code to provide types
+    """
+    A convenience base class for non-critical code to provide types
     with automatic :meth:`__repr__` methods using :func:`simple_repr`
     """
+
     __slots__ = ()
     __repr__ = simple_repr
 
 
 class Constant(object):
-    """A convenience type meant to be used to instantiate singletons for signaling
+    """
+    A convenience type meant to be used to instantiate singletons for signaling
     specific states in return values.
 
     Attributes
@@ -90,6 +94,7 @@ class Constant(object):
     name: str
         The name of the constant
     """
+
     def __init__(self, name, is_true=True):
         self.name = name
         self.is_true = is_true
@@ -126,7 +131,8 @@ class Constant(object):
 
 
 class DeconvolutionProcessResult(object):
-    """Hold information from a multi-stage deconvolution process.
+    """
+    Hold information from a multi-stage deconvolution process.
 
     Emulates an interface matching a tuple of (:attr:`peak_set`, :attr:`priorities`)
 
@@ -166,7 +172,8 @@ class DeconvolutionProcessResult(object):
 
 
 class TargetedDeconvolutionResultBase(Base):
-    """Base class to store all of the necessary information to retrieve the optimal
+    """
+    Base class to store all of the necessary information to retrieve the optimal
     solution for a single peak.
 
     Attributes
@@ -174,11 +181,13 @@ class TargetedDeconvolutionResultBase(Base):
     deconvoluter : :class:`~.DeconvoluterBase`
         The deconvoluter to use to look up the result
     """
+
     def __init__(self, deconvoluter, *args, **kwargs):
         self.deconvoluter = deconvoluter
 
     def get(self):
-        """Fetch the optimal solution after the computation has finished.
+        """
+        Fetch the optimal solution after the computation has finished.
 
         Returns
         -------
@@ -188,7 +197,8 @@ class TargetedDeconvolutionResultBase(Base):
 
 
 class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
-    """Stores the necessary information to retrieve the local optimal solution for
+    """
+    Stores the necessary information to retrieve the local optimal solution for
     a single peak for a deconvolution algorithm where the local optimum is the best
     solution.
 
@@ -199,13 +209,15 @@ class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
     solution_peak : :class:`~.DeconvolutedPeak`
         The optimal solution peak
     """
+
     def __init__(self, deconvoluter, solution_peak, query_peak, *args, **kwargs):
         super(TrivialTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
         self.solution_peak = solution_peak
         self.query_peak = query_peak
 
     def get(self):
-        """Fetch the optimal solution after the computation has finished.
+        """
+        Fetch the optimal solution after the computation has finished.
 
         Returns
         -------
@@ -229,7 +241,8 @@ def da2ppm(mass, error_tolerance):
 
 
 def dict_proxy(attribute):
-    """Return a decorator for a class to give it a `dict`-like API proxied
+    """
+    Return a decorator for a class to give it a `dict`-like API proxied
     from one of its attributes
 
     Parameters
@@ -273,7 +286,8 @@ def dict_proxy(attribute):
 
 
 def uid(n=128):
-    """Generate a random "universally unique" ID number with ``n``
+    """
+    Generate a random "universally unique" ID number with ``n``
     bits of entropy.
 
     Parameters
@@ -290,8 +304,7 @@ def uid(n=128):
 
 
 class LRUDict(object):  # pragma: no cover
-    def __init__(self, *args, **kwargs):
-        maxsize = kwargs.pop("maxsize", 24)
+    def __init__(self, *args, maxsize=24, **kwargs):
         self.store = OrderedDict()
         self.maxsize = maxsize
         self.purge()
@@ -352,8 +365,10 @@ def decimal_shift(x):
 
 
 class _MappingOverAttributeProxy(object):
-    """A replacement for __dict__ for unpickling an object which once
-    has __slots__ now but did not before."""
+    """
+    A replacement for __dict__ for unpickling an object which once
+    has __slots__ now but did not before.
+    """
 
     def __init__(self, obj):
         self.obj = obj

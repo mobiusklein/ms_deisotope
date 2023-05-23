@@ -9,7 +9,8 @@ from .metadata.scan_traits import FAIMS_compensation_voltage
 
 
 class ScanIteratorProxyBase(object):
-    """A wrapper around a :class:`~.RandomAccessScanSource` that alters its behavior
+    """
+    A wrapper around a :class:`~.RandomAccessScanSource` that alters its behavior
     in some way, either limiting the range it iterates over, or filtering the items
     it would yield.
 
@@ -27,6 +28,7 @@ class ScanIteratorProxyBase(object):
         that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
         by iteration.
     """
+
     scan_source: ScanIterator
 
     def __init__(self, scan_source, *args, **kwargs):
@@ -34,7 +36,8 @@ class ScanIteratorProxyBase(object):
 
     @property
     def iteration_mode(self):
-        """A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
+        """
+        A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
         that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
         by iteration.
 
@@ -45,7 +48,8 @@ class ScanIteratorProxyBase(object):
         return self.scan_source.iteration_mode
 
     def has_ms1_scans(self):
-        """Checks if this :class:`ScanDataSource` contains MS1 spectra.
+        """
+        Checks if this :class:`ScanDataSource` contains MS1 spectra.
 
         Returns
         -------
@@ -56,7 +60,8 @@ class ScanIteratorProxyBase(object):
         return self.scan_source.has_ms1_scans()
 
     def has_msn_scans(self):
-        """Checks if this :class:`ScanDataSource` contains MSn spectra.
+        """
+        Checks if this :class:`ScanDataSource` contains MSn spectra.
 
         Returns
         -------
@@ -67,7 +72,8 @@ class ScanIteratorProxyBase(object):
         return self.scan_source.has_msn_scans()
 
     def next(self):
-        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """
+        Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
@@ -77,7 +83,8 @@ class ScanIteratorProxyBase(object):
         raise NotImplementedError()
 
     def __next__(self):
-        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """
+        Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
@@ -94,7 +101,8 @@ ScanIterator.register(ScanIteratorProxyBase)
 
 
 class QueryIteratorBase(ScanIteratorProxyBase):
-    """A base class for types which iterate over a subset of a :class:`~.RandomAccessScanSource`.
+    """
+    A base class for types which iterate over a subset of a :class:`~.RandomAccessScanSource`.
 
     Attributes
     ----------
@@ -102,6 +110,7 @@ class QueryIteratorBase(ScanIteratorProxyBase):
         Whether or not to produce grouped or single scans.
 
     """
+
     def __init__(self, scan_source, grouped=True, *args, **kwargs):
         super(QueryIteratorBase, self).__init__(scan_source, *args, **kwargs)
         self.grouped = grouped
@@ -114,7 +123,8 @@ class QueryIteratorBase(ScanIteratorProxyBase):
             return ITERATION_MODE_SINGLE
 
     def make_iterator(self, iterator=None, grouped=False):
-        """Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
+        """
+        Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
         either its default iterator or the provided ``iterator`` argument.
 
         Parameters
@@ -134,7 +144,8 @@ class QueryIteratorBase(ScanIteratorProxyBase):
         self.scan_source.make_iterator()
 
     def reset(self):
-        """Reset the iterator, if possible, and clear any caches.
+        """
+        Reset the iterator, if possible, and clear any caches.
 
         Resets the underlying :class:`~.RandomAccessScanSource`
         """
@@ -143,7 +154,8 @@ class QueryIteratorBase(ScanIteratorProxyBase):
 
 
 class TimeIntervalIterator(QueryIteratorBase):
-    """Query over a retention time interval.
+    """
+    Query over a retention time interval.
 
     Attributes
     ----------
@@ -153,6 +165,7 @@ class TimeIntervalIterator(QueryIteratorBase):
         The time to end the query iterator at
 
     """
+
     def __init__(self, scan_source, start=None, end=None, grouped=True, *args, **kwargs):
         super(TimeIntervalIterator, self).__init__(
             scan_source, grouped, * args, **kwargs)
@@ -191,7 +204,8 @@ class TimeIntervalIterator(QueryIteratorBase):
 
 
 class IndexIntervalIterator(QueryIteratorBase):
-    """Query over a scan index interval.
+    """
+    Query over a scan index interval.
 
     Attributes
     ----------
@@ -240,7 +254,8 @@ class IndexIntervalIterator(QueryIteratorBase):
 
 
 def scan_range(scan_source, time=None, index=None, grouped=True, *args, **kwargs):
-    """Create an iterator proxy over `scan_source` spanning a specified range in time
+    """
+    Create an iterator proxy over `scan_source` spanning a specified range in time
     or index.
 
     If neither `time` nor `index` is provided, `scan_source` is returned unchanged.
@@ -257,6 +272,7 @@ def scan_range(scan_source, time=None, index=None, grouped=True, *args, **kwargs
     grouped : bool, optional
         Whether or not to create a :class:`~.ScanBunch` iterator or a :class:`~.Scan` iterator
     *args:
+        Forwarded to the iterator proxy.
     **kwargs:
         Forwarded to the iterator proxy.
 
@@ -282,21 +298,25 @@ def scan_range(scan_source, time=None, index=None, grouped=True, *args, **kwargs
 
 
 class ScanIteratorFilterBase(ScanIteratorProxyBase):
-    """A base class for types which filter or transform scans produced
-    by a :class:`~.ScanIterator` or :class:`~.RandomAccessScanSource`.
-
     """
+    A base class for types which filter or transform scans produced
+    by a :class:`~.ScanIterator` or :class:`~.RandomAccessScanSource`.
+    """
+
     def __init__(self, scan_source, *args, **kwargs):
         super(ScanIteratorFilterBase, self).__init__(scan_source, *args, **kwargs)
         self._generator = None
 
     def filter_scan_bunch(self, scan_group, **kwargs):
-        """Filter a scan bunch
+        """
+        Filter a scan bunch
 
         Parameters
         ----------
-        scan : :class:`~.ScanBunch`
+        scan_group : :class:`~.ScanBunch`
             The scan bunch to filter
+        **kwargs:
+            Passed to implementation
 
         Yields
         ------
@@ -305,12 +325,15 @@ class ScanIteratorFilterBase(ScanIteratorProxyBase):
         raise NotImplementedError()
 
     def filter_scan(self, scan, **kwargs):
-        """Filter a single scan
+        """
+        Filter a single scan
 
         Parameters
         ----------
         scan : :class:`~.Scan`
             The single scan to filter
+        **kwargs:
+            Passed to implementation
 
         Yields
         ------
@@ -319,7 +342,8 @@ class ScanIteratorFilterBase(ScanIteratorProxyBase):
         raise NotImplementedError()
 
     def filter(self, result, **kwargs):
-        """Filter scans, producing only those that passed the criteria.
+        """
+        Filter scans, producing only those that passed the criteria.
 
         This returns a generator which yields the same type as `result`
 
@@ -330,6 +354,8 @@ class ScanIteratorFilterBase(ScanIteratorProxyBase):
         ----------
         result : :class:`~.Scan` or :class:`~.ScanBunch`
             The scan or bunch to filter.
+        **kwargs:
+            Passed to implementation
 
         Yields
         ------
@@ -372,7 +398,8 @@ class _PredicateFilterIterator(ScanIteratorFilterBase):
 
 
 class PolarityFilter(_PredicateFilterIterator):
-    """A Scan Iterator that filters out scans with a polarity
+    """
+    A Scan Iterator that filters out scans with a polarity
     which do not match :attr:`polarity`
 
     Attributes
@@ -395,7 +422,8 @@ class PolarityFilter(_PredicateFilterIterator):
 
 
 class MSLevelFilter(_PredicateFilterIterator):
-    """A Scan Iterator that filters out scans with MS levels
+    """
+    A Scan Iterator that filters out scans with MS levels
     which do not match :attr:`ms_level`
 
     Attributes
@@ -404,6 +432,7 @@ class MSLevelFilter(_PredicateFilterIterator):
         The MS level to require matching
 
     """
+
     def __init__(self, scan_source, ms_level, *args, **kwargs):
         super(MSLevelFilter, self).__init__(scan_source, *args, **kwargs)
         self.ms_level = ms_level
@@ -417,7 +446,8 @@ class MSLevelFilter(_PredicateFilterIterator):
 
 
 class MassAnalyzerFilter(_PredicateFilterIterator):
-    """A Scan Iterator that filters out scans which were not performed using
+    """
+    A Scan Iterator that filters out scans which were not performed using
     :attr:`mass_analyzer`
 
     Attributes
@@ -425,6 +455,7 @@ class MassAnalyzerFilter(_PredicateFilterIterator):
     mass_analyzer: :class:`~.Component`
         The mass analyzer to match
     """
+
     def __init__(self, scan_source, mass_analyzer, *args, **kwargs):
         super(MassAnalyzerFilter, self).__init__(scan_source, *args, **kwargs)
         from .metadata.instrument_components import analyzer_types, Component
@@ -447,7 +478,8 @@ class MassAnalyzerFilter(_PredicateFilterIterator):
 
 
 class CallableFilter(_PredicateFilterIterator):
-    """A Scan Iterator that filters out scans which do not pass
+    """
+    A Scan Iterator that filters out scans which do not pass
     a user-provided callable
 
     Attributes
