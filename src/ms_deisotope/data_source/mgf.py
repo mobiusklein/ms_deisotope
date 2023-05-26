@@ -18,7 +18,7 @@ from six import string_types as basestring
 from .scan import (
     ScanFileMetadataBase, RandomAccessScanSource, ScanDataSource,
     PrecursorInformation, _FakeGroupedScanIteratorImpl,
-    ChargeNotProvided)
+    ChargeNotProvided, Scan)
 
 from .metadata.file_information import (
     FileInformation, MS_MSn_Spectrum)
@@ -245,7 +245,7 @@ class MGFInterface(ScanDataSource):
         return annots
 
 
-class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
+class MGFLoader(MGFInterface, RandomAccessScanSource[dict, Scan], _MGFMetadata):
     """
     Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative
     and random access.

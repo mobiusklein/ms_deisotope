@@ -11,8 +11,8 @@ from lxml.etree import XMLSyntaxError
 from pyteomics import xml
 from pyteomics.xml import unitfloat
 
-from .common import (
-    RandomAccessScanSource)
+from .scan import RandomAccessScanSource, Scan
+
 from ._compression import get_opener, test_if_file_has_fast_random_access
 
 
@@ -47,7 +47,7 @@ def in_minutes(x):
     return x
 
 
-class XMLReaderBase(RandomAccessScanSource):
+class XMLReaderBase(RandomAccessScanSource[dict, Scan]):
     """
     A common implementation of :mod:`pyteomics`-based XML file formats.
 

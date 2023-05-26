@@ -1,4 +1,5 @@
-"""Represent controlled vocabulary (CV) terms and provides the machinery used
+"""
+Represent controlled vocabulary (CV) terms and provides the machinery used
 for building compile-time collections of CV terms from the PSI-MS controlled
 vocabulary.
 """
@@ -9,7 +10,8 @@ from six import string_types as basestring
 
 
 class Term(object):
-    """Represents a single controlled vocabulary term.
+    """
+    Represents a single controlled vocabulary term.
 
     :class:`Term` objects are comparable and hashable.
 
@@ -94,7 +96,8 @@ class Term(object):
         return hash(self.name)
 
     def is_a(self, term):
-        """Test whether this entity is exactly **term** or a specialization
+        """
+        Test whether this entity is exactly **term** or a specialization
         of **term**
 
         Parameters
@@ -110,7 +113,8 @@ class Term(object):
 
 
 class TermSet(object):
-    """A collection that mocks a list and a dictionary for controlled vocabulary terms
+    """
+    A collection that mocks a list and a dictionary for controlled vocabulary terms
 
     Attributes
     ----------
@@ -148,7 +152,8 @@ class TermSet(object):
         return set(self.by_id.keys()) | set(self.by_name.keys())
 
     def get(self, key, default=None):
-        """Return the value of ``key`` or ``default`` if it is not
+        """
+        Return the value of ``key`` or ``default`` if it is not
         found
 
         Parameters
@@ -235,7 +240,8 @@ def _clean_definition(text):
 
 
 def type_path(term, seed):  # pragma: no cover
-    """Traverse is-a relationships from more specialized to
+    """
+    Traverse is-a relationships from more specialized to
     less specialized until the root term type has been found,
     accumulating types along the way.
 

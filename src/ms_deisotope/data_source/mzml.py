@@ -23,23 +23,36 @@ from pyteomics.xml import unitfloat
 from ms_deisotope.utils import LRUDict
 
 from .common import (
-    PrecursorInformation, ScanDataSource,
-    ChargeNotProvided, ActivationInformation,
-    ScanAcquisitionInformation, ScanEventInformation,
+    ActivationInformation,
+    MultipleActivationInformation,
+    ScanAcquisitionInformation,
+    ScanEventInformation,
     ScanWindow, IsolationWindow,
-    FileInformation, SourceFile, MultipleActivationInformation,
+    FileInformation,
+    SourceFile,
+)
+
+from .scan import (
+    Scan,
+    PrecursorInformation,
+    ScanDataSource,
+    ChargeNotProvided,
     ScanFileMetadataBase)
+
 from .metadata.activation import (
     supplemental_energy, UnknownDissociation)
+
 from .metadata.instrument_components import (
     InstrumentInformation, ComponentGroup, component,
     instrument_models)
+
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata import software
 from .metadata.sample import Sample
 from .metadata.scan_traits import FAIMS_compensation_voltage
+
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)

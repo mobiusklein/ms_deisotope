@@ -1,4 +1,5 @@
-"""Defines types for describing different kinds of mass spectrometry
+"""
+Defines types for describing different kinds of mass spectrometry
 data files and their contents, and a database of controlled vocabulary
 terms for them.
 """
@@ -27,11 +28,11 @@ except NameError:
 
 
 class IDParserBase(object):
-    """A base class for ID parsing and formatting.
-    """
+    """A base class for ID parsing and formatting."""
 
     def parse(self, text):
-        """Parse a string looking for fields defined by this ID format.
+        """
+        Parse a string looking for fields defined by this ID format.
 
         Parameters
         ----------
@@ -46,7 +47,8 @@ class IDParserBase(object):
         raise NotImplementedError()
 
     def format(self, fields):
-        """Format a set of fields as a nativeID string.
+        """
+        Format a set of fields as a nativeID string.
 
         Parameters
         ----------
@@ -60,7 +62,8 @@ class IDParserBase(object):
         raise NotImplementedError()
 
     def __call__(self, text):
-        """Parse a string looking for fields defined by this ID format.
+        """
+        Parse a string looking for fields defined by this ID format.
 
         Parameters
         ----------
@@ -80,7 +83,8 @@ class IDParserBase(object):
 
 
 class IDFormat(Term, IDParserBase):
-    """Describes a named spectrum identifier format, either
+    """
+    Describes a named spectrum identifier format, either
     using a controlled-vocabulary term or user-defined name.
 
     A :class:`IDFormat` is equal to its name and its controlled
@@ -102,7 +106,8 @@ class IDFormat(Term, IDParserBase):
         self.parser = NativeIDParser.from_term(self)
 
     def parse(self, text):
-        """Parse a string looking for fields defined by this term's nativeID
+        """
+        Parse a string looking for fields defined by this term's nativeID
         format
 
         Parameters
@@ -121,7 +126,8 @@ class IDFormat(Term, IDParserBase):
         return self.parser.parse(text)
 
     def format(self, fields):
-        """Format a set of fields as a nativeID string.
+        """
+        Format a set of fields as a nativeID string.
 
         Parameters
         ----------
@@ -139,7 +145,8 @@ class IDFormat(Term, IDParserBase):
 
 
 class FileFormat(Term):
-    """Describes a named mass spectrometry data file format, either
+    """
+    Describes a named mass spectrometry data file format, either
     using a controlled-vocabulary term or user-defined name.
 
     A :class:`FileFormat` is equal to its name and its controlled
@@ -150,7 +157,8 @@ class FileFormat(Term):
 
 
 class FileContent(Term):
-    """Describes a named mass spectrometry data file content type,
+    """
+    Describes a named mass spectrometry data file content type,
     either using a controlled-vocabulary term or user-defined name.
 
     A :class:`FileContent` is equal to its name and its controlled
@@ -161,7 +169,8 @@ class FileContent(Term):
 
 
 class DataAcquisitionAspect(Term):
-    """Describes a named mass spectrometry data acquisition method
+    """
+    Describes a named mass spectrometry data acquisition method
     aspect, either using a controlled-vocabulary term or user-defined
     name.
 
@@ -265,7 +274,8 @@ data_acquisition_aspects = TermSet([
 
 
 class DataAcquisitionMethod(Term):
-    """Describes a named mass spectrometry data acquisition method,
+    """
+    Describes a named mass spectrometry data acquisition method,
     either using a controlled-vocabulary term or user-defined name.
     """
 
@@ -284,7 +294,8 @@ class DataAcquisitionMethod(Term):
         return self.has_aspect('MS:1003219')
 
     def has_aspect(self, aspect: Union[str, DataAcquisitionAspect]) -> bool:
-        """Check if this method has a particular aspect.
+        """
+        Check if this method has a particular aspect.
 
         Parameters
         ----------
@@ -381,7 +392,8 @@ xsd_to_type = {
 
 
 class NativeIDParser(IDParserBase):
-    """A parser for a single nativeID format.
+    """
+    A parser for a single nativeID format.
 
     These may be automatically derived from the CV-param defining them by parsing the
     XSD string included, but no guarantee is available.
@@ -394,7 +406,8 @@ class NativeIDParser(IDParserBase):
 
     @classmethod
     def from_term(cls, term):
-        """Construct a :class:`NativeIDParser` from :class:`IDFormat` term.
+        """
+        Construct a :class:`NativeIDParser` from :class:`IDFormat` term.
 
         Parameters
         ----------
@@ -419,7 +432,8 @@ class NativeIDParser(IDParserBase):
         return None
 
     def parse(self, string):
-        """Parse a string according to this parser's pattern,
+        """
+        Parse a string according to this parser's pattern,
         returning the type-cast fields as a :class:`dict`.
 
         Parameters
@@ -456,7 +470,8 @@ class NativeIDParser(IDParserBase):
         return fields
 
     def format(self, fields):
-        """Format a set of fields as a nativeID string.
+        """
+        Format a set of fields as a nativeID string.
 
         Parameters
         ----------
@@ -474,7 +489,8 @@ class NativeIDParser(IDParserBase):
 
 
 class MultipleIDFormats(Mapping, IDParserBase):
-    """Represent an ambiguous group of multiple nativeID formats.
+    """
+    Represent an ambiguous group of multiple nativeID formats.
 
     Implements the :class:`~collections.abc.Mapping` interface.
 
@@ -1108,7 +1124,8 @@ MS_MSn_Spectrum = content_keys.get('MSn spectrum')
 
 
 def id_format(name):
-    """Translate a given name or identifier into a :class:`IDFormat`
+    """
+    Translate a given name or identifier into a :class:`IDFormat`
     instance.
 
     If no match is found in the database of known :class:`IDFormat`
@@ -1128,7 +1145,8 @@ def id_format(name):
 
 
 def file_format(name):
-    """Translate a given name or identifier into a :class:`FileFormat`
+    """
+    Translate a given name or identifier into a :class:`FileFormat`
     instance.
 
     If no match is found in the database of known :class:`FileFormat`
@@ -1148,7 +1166,8 @@ def file_format(name):
 
 
 def content_key(name):
-    """Translate a given name or identifier into a :class:`FileContent`
+    """
+    Translate a given name or identifier into a :class:`FileContent`
     instance.
 
     If no match is found in the database of known :class:`FileContent`
@@ -1168,7 +1187,8 @@ def content_key(name):
 
 
 class FileInformation(MutableMapping):
-    """Describes the type of data found in this file and the
+    """
+    Describes the type of data found in this file and the
     source files that contributed to it.
 
     Implements the :class:`MutableMapping` Interface
@@ -1194,7 +1214,8 @@ class FileInformation(MutableMapping):
         self._id_format = None
 
     def add_file(self, source, check=True):
-        """Add a new file to :attr:`source_files`
+        """
+        Add a new file to :attr:`source_files`
 
         If ``source`` is a string, it will be interpreted as a path
         and an instance of :class:`SourceFile` will be created using
@@ -1228,7 +1249,8 @@ class FileInformation(MutableMapping):
         self.source_files.append(source)
 
     def add_content(self, key, value=None):
-        """Adds a new key-value pair to :attr:`contents` with
+        """
+        Adds a new key-value pair to :attr:`contents` with
         an optional value
 
         Parameters
@@ -1242,7 +1264,8 @@ class FileInformation(MutableMapping):
         self.contents[key] = value
 
     def remove_content(self, key):
-        """Remove a key from :attr:`content`
+        """
+        Remove a key from :attr:`content`
 
         Parameters
         ----------
@@ -1252,13 +1275,15 @@ class FileInformation(MutableMapping):
         self.contents.pop(key, None)
 
     def get_content(self, key):
-        """Retrieve the value of ``key`` from :attr:`contents`.
+        """
+        Retrieve the value of ``key`` from :attr:`contents`.
 
         This method is aliased to :meth:`__getitem__`
 
         Parameters
         ----------
         key : str or :class:`FileContent`
+            The content key to retrieve
 
         Returns
         -------
@@ -1267,11 +1292,13 @@ class FileInformation(MutableMapping):
         return self.contents[key]
 
     def has_content(self, key):
-        """Check if ``key`` is found in :attr:`content`
+        """
+        Check if ``key`` is found in :attr:`content`
 
         Parameters
         ----------
         key : str or :class:`FileContent`
+            The content key to check
 
         Returns
         -------
@@ -1280,7 +1307,8 @@ class FileInformation(MutableMapping):
         return key in self.contents
 
     def acquisition_methods(self) -> List[DataAcquisitionMethod]:
-        """Retrieve acquisition methods recorded for this data file.
+        """
+        Retrieve acquisition methods recorded for this data file.
 
         Returns
         -------
@@ -1329,7 +1357,8 @@ class FileInformation(MutableMapping):
         return iter(self.contents)
 
     def copy(self):
-        """Create a deep copy of this object
+        """
+        Create a deep copy of this object
 
         Returns
         -------
@@ -1384,7 +1413,8 @@ format_parameter_map = {
 
 
 class SourceFile(object):
-    """Represents a single raw data file which either defines or contributed data to another
+    """
+    Represents a single raw data file which either defines or contributed data to another
     data file, the "reference file"
 
     Attributes
@@ -1425,7 +1455,8 @@ class SourceFile(object):
 
     @classmethod
     def from_path(cls, path):
-        """Construct a new :class:`SourceFile` from a path to a real file on the local
+        """
+        Construct a new :class:`SourceFile` from a path to a real file on the local
         file system.
 
         Parameters

@@ -573,6 +573,10 @@ class Scan(ScanBase):
             The m/z to search for
         error_tolerance: float
             The parts per million mass error tolerance to use
+        *args
+            Forwarded to :meth:`PeakSet.has_peak`
+        **kwargs
+            Forwarded to :meth:`PeakSet.has_peak`
 
         Returns
         -------
@@ -696,6 +700,8 @@ class Scan(ScanBase):
             The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER
         deconvoluter_type : type or callable, optional
             A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`
+        *args
+            Additional arguments passed to :func:`~.deconvoluted_peaks`
         **kwargs
             Additional keywords passed to :func:`~.deconvolute_peaks`
 
@@ -779,6 +785,9 @@ class Scan(ScanBase):
         model_cls : ms_peak_picker.peak_statistics.PeakShapeModel, optional
             The peak shape model to use to generate the profile data from
             the centroided peaks. Defaults a Gaussian model
+        override_fwhm : float, optional
+            An overriding full width at half max value to use in place of
+            the peak attribute values.
 
         Returns
         -------

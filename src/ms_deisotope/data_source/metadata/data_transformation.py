@@ -1,4 +1,5 @@
-"""Defines types for describing mass spectrometry data transformations,
+"""
+Defines types for describing mass spectrometry data transformations,
 data processing sequences, and a database of controlled vocabulary terms
 for them.
 
@@ -22,7 +23,8 @@ DataTransformationOrStr = Union[str, 'DataTransformation']
 
 
 class DataTransformation(Term):
-    """Describes a named data transformation, either using a controlled-vocabulary term or user-defined name.
+    """
+    Describes a named data transformation, either using a controlled-vocabulary term or user-defined name.
 
     A :class:`DataTransformation` is equal to its name and its controlled
     vocabulary identifier.
@@ -268,7 +270,8 @@ data_transformations = TermSet([
 
 
 def data_transformation(name):
-    """Translate a given name or identifier into a :class:`DataTransformation`
+    """
+    Translate a given name or identifier into a :class:`DataTransformation`
     instance.
 
     If no match is found in the database of known :class:`DataTransformation`
@@ -286,7 +289,8 @@ def data_transformation(name):
 
 
 class ProcessingMethod(object):
-    """Describes a single action applied to the associated spectra, composed of one
+    """
+    Describes a single action applied to the associated spectra, composed of one
     or more data transformation operations.
 
     Attributes
@@ -338,7 +342,8 @@ class ProcessingMethod(object):
         return self.operations.pop(operation, None)
 
     def add(self, operation: DataTransformationOrStr, value: Any = ''):
-        """Add a new :class:`DataTransformation` operation to this method.
+        """
+        Add a new :class:`DataTransformation` operation to this method.
 
         Parameters
         ----------
@@ -370,7 +375,8 @@ class ProcessingMethod(object):
                 return default
 
     def update(self, operations):
-        """Add each operation in ``operations`` to this method.
+        """
+        Add each operation in ``operations`` to this method.
 
         Parameters
         ----------
@@ -393,7 +399,8 @@ class ProcessingMethod(object):
 
 
 class DataProcessingInformation(object):
-    """A :class:`Sequence` of :class:`ProcessingMethod` instances, describing the sequence
+    """
+    A :class:`Sequence` of :class:`ProcessingMethod` instances, describing the sequence
     of data transformations applied to the spectra in the data associated with this instance.
 
     Attributes

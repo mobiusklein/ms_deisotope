@@ -1,4 +1,5 @@
-"""Thermo RAW file reading implementation using the pure .NET
+"""
+Thermo RAW file reading implementation using the pure .NET
 RawFileReader library released in 2017.
 
 This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`
@@ -88,7 +89,8 @@ def _open_raw_file(path):
 
 
 def is_thermo_raw_file(path):
-    """Detect whether or not the file referenced by ``path``
+    """
+    Detect whether or not the file referenced by ``path``
     is a Thermo RAW file.
 
     Parameters
@@ -120,7 +122,8 @@ def is_thermo_raw_file(path):
 
 
 def infer_reader(path):
-    """If the file referenced by ``path`` is a Thermo RAW
+    """
+    If the file referenced by ``path`` is a Thermo RAW
     file, return the callable (:class:`ThermoRawLoader`) to
     open it, otherwise raise an exception.
 
@@ -145,7 +148,8 @@ def infer_reader(path):
 
 
 def determine_if_available():
-    """Checks whether or not the .NET-based Thermo
+    """
+    Checks whether or not the .NET-based Thermo
     RAW file reading feature is available.
 
     Returns
@@ -160,7 +164,8 @@ def determine_if_available():
 
 
 def _register_dll(search_paths=None):
-    """Start the Common Language Runtime interop service by importing
+    """
+    Start the Common Language Runtime interop service by importing
     the :mod:`clr` module from Pythonnet, and then populate the global
     names referring to .NET entities, and finally attempt to locate the
     ThermoRawFileReader DLLs by searching alogn ``search_paths``.
@@ -211,7 +216,8 @@ def _register_dll(search_paths=None):
 
 
 def register_dll(search_paths=None):
-    """Register the location of the Thermo RawFileReader DLL bundle with
+    """
+    Register the location of the Thermo RawFileReader DLL bundle with
     the Common Language Runtime interop system and load the .NET symbols
     used by this feature.
 
@@ -234,7 +240,8 @@ def _test_dll_loaded():
 
 
 def _copy_double_array(src):
-    """A quick and dirty implementation of the fourth technique shown in
+    """
+    A quick and dirty implementation of the fourth technique shown in
     https://mail.python.org/pipermail/pythondotnet/2014-May/001525.html for
     copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw
     memory copy.
@@ -257,7 +264,8 @@ def _copy_double_array(src):
 
 
 class RawReaderInterface(ScanDataSource):
-    """:class:`~.ScanDataSource` implementation for Thermo's RawFileReader API.
+    """
+    :class:`~.ScanDataSource` implementation for Thermo's RawFileReader API.
     Not intended for direct instantiation.
     """
 
@@ -519,8 +527,9 @@ def _trailer_float(value):
         return None
 
 
-class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetadataLoader):
-    """Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
+class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPtr, Scan], _RawFileMetadataLoader):
+    """
+    Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
     random access.
     """
 
@@ -616,7 +625,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     @property
     def index(self):
-        """Accesses the scan index
+        """
+        Accesses the scan index
 
         Returns
         -------
@@ -637,8 +647,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             self._source = None
 
     def close(self):
-        """Close the underlying file reader.
-        """
+        """Close the underlying file reader."""
         self._close_handle()
         self._dispose()
 
@@ -677,7 +686,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return scan_number
 
     def samples(self):
-        """Describe the sample(s) used to generate the mass spectrometry
+        """
+        Describe the sample(s) used to generate the mass spectrometry
         data contained in this file.
 
         Returns
@@ -701,7 +711,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return result
 
     def get_scan_by_index(self, index):
-        """Retrieve the scan object for the specified scan index.
+        """
+        Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_id` which will
         use its cache.
@@ -727,7 +738,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             return scan
 
     def get_scan_by_id(self, scan_id):
-        """Retrieve the scan object for the specified scan id.
+        """
+        Retrieve the scan object for the specified scan id.
 
         If the scan object is still bound and in memory somewhere,
         a reference to that same object will be returned. Otherwise,
@@ -754,7 +766,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             return scan
 
     def get_scan_by_time(self, time):
-        """Retrieve the scan object for the specified scan time.
+        """
+        Retrieve the scan object for the specified scan time.
 
         This internally calls :meth:`get_scan_by_id` which will
         use its cache.
@@ -782,7 +795,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             return scan
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
-        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """
+        Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin

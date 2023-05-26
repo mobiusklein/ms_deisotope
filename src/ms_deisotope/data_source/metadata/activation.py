@@ -4,7 +4,8 @@ from .cv import Term, TermSet
 
 
 class ActivationInformation(object):
-    """Describes the dissociation process used to produce an MSn scan.
+    """
+    Describes the dissociation process used to produce an MSn scan.
 
     Attributes
     ----------
@@ -64,7 +65,8 @@ class ActivationInformation(object):
         return hash(str(self))
 
     def is_multiple_dissociation(self):
-        """Determine if multiple dissociation methods were
+        """
+        Determine if multiple dissociation methods were
         used.
 
         Returns
@@ -74,7 +76,8 @@ class ActivationInformation(object):
         return False
 
     def has_supplemental_dissociation(self):
-        """Determine if supplemental activation was used
+        """
+        Determine if supplemental activation was used
 
         Returns
         -------
@@ -114,7 +117,8 @@ class ActivationInformation(object):
 
 
 class MultipleActivationInformation(ActivationInformation):
-    """Describes the dissociation processes used to produce an MSn
+    """
+    Describes the dissociation processes used to produce an MSn
     scan with multiple types of activation.
 
     Attributes
@@ -199,7 +203,8 @@ class DissociationMethod(Term):
     """Controlled vocabulary describing a dissociation process."""
 
     def is_supplemental(self):
-        """Returns whether or not the dissociation process is
+        """
+        Returns whether or not the dissociation process is
         supplemental
 
         Returns

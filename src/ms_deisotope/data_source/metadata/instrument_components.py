@@ -9,7 +9,8 @@ from .cv import Term, TermSet, render_list
 
 
 class Component(Term):
-    """Describes a named component of a mass spectrometer, either
+    """
+    Describes a named component of a mass spectrometer, either
     using a controlled-vocabulary term or user-defined name.
 
     A :class:`Component` is equal to its name and its controlled
@@ -715,7 +716,8 @@ def component(name):
 
 
 class InstrumentModel(Term):
-    """Describes a named model of a mass spectrometer, either
+    """
+    Describes a named model of a mass spectrometer, either
     using a controlled-vocabulary term or user-defined name.
 
     A :class:`InstrumentModel` is equal to its name and its controlled
@@ -2346,7 +2348,8 @@ instrument_models = TermSet([
 
 
 class ComponentGroup(object):
-    """Represent a collection of :class:`Component` objects which are
+    """
+    Represent a collection of :class:`Component` objects which are
     part of a single instrument subsystem.
 
     Attributes
@@ -2383,7 +2386,8 @@ class ComponentGroup(object):
 
 
 class InstrumentInformation(object):
-    """Describes a single configuration of an instrument for acquiring spectra.
+    """
+    Describes a single configuration of an instrument for acquiring spectra.
 
     Parameters
     ----------

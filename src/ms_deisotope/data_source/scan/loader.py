@@ -1,4 +1,5 @@
-"""A collection of common base classes for types that
+"""
+A collection of common base classes for types that
 load data for :class:`~.Scan` objects.
 """
 import abc
@@ -42,7 +43,7 @@ logger.addHandler(logging.NullHandler())
 
 
 DataPtrType = TypeVar("DataPtrType")
-ScanType = TypeVar("ScanType", bound=ScanBase)
+ScanType = TypeVar("ScanType", bound=Union[ScanBase, Scan])
 
 
 @add_metaclass(abc.ABCMeta)
