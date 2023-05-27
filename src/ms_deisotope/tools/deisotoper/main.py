@@ -1,6 +1,8 @@
-"""The main entry point for the `ms-deisotope` command line program.
-"""
+"""The main entry point for the `ms-deisotope` command line program."""
 import os
+import platform
+
+import multiprocessing
 
 import click
 
@@ -9,8 +11,10 @@ import ms_peak_picker
 from ms_peak_picker.scan_filter import parse as parse_filter
 
 import ms_deisotope
+
 from ms_deisotope import MSFileLoader
 from ms_deisotope.data_source import RandomAccessScanSource
+from ms_deisotope.data_source._compression import GzipFile
 from ms_deisotope.task.log_utils import init_logging
 
 from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
@@ -193,6 +197,11 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
+    multiprocessing.freeze_support()
+    if platform.platform() not in ("Windows", "Darwin"):
+        multiprocessing.set_start_method('forkserver')
+    else:
+        multiprocessing.set_start_method('spawn')
     init_logging()
     if transform is None:
         transform = []
@@ -205,7 +214,9 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
             fg='red')
         raise click.Abort("Cannot use both --ignore-msn and --extract-only-tandem-envelopes")
 
-    cache_handler_type, _output_basename, _should_gzip_compress_output_file  = determine_output_format(outfile_path)
+    (cache_handler_type,
+     _output_basename,
+     should_gzip_compress_output_file)  = determine_output_format(outfile_path)
     click.echo("Preprocessing %s" % ms_file)
     minimum_charge = 1 if maximum_charge > 0 else -1
     charge_range = (minimum_charge, maximum_charge)
@@ -318,9 +329,12 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         ms1_deconvolution_args=ms1_deconvolution_args,
         msn_peak_picking_args=msn_peak_picking_args,
         msn_deconvolution_args=msn_deconvolution_args,
-        storage_path=outfile_path, sample_name=name,
-        start_scan_id=start_scan_id, storage_type=cache_handler_type,
-        end_scan_id=end_scan_id, n_processes=processes,
+        storage_path=outfile_path,
+        sample_name=name,
+        start_scan_id=start_scan_id,
+        storage_type=cache_handler_type,
+        end_scan_id=end_scan_id,
+        n_processes=processes,
         extract_only_tandem_envelopes=extract_only_tandem_envelopes,
         ignore_tandem_scans=ignore_msn,
         ms1_averaging=ms1_averaging,
@@ -328,7 +342,9 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         deconvolute=deconvolute,
         verbose=verbose,
         end_scan_time=end_scan_time,
-        start_scan_time=start_scan_time)
+        start_scan_time=start_scan_time,
+        stream_cls=GzipFile if should_gzip_compress_output_file else open
+    )
     consumer.start()
 
 

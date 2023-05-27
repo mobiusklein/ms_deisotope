@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Dict, Any, Optional, Type
+from typing import IO, Callable, Dict, Any, Optional, Type
 
 import ms_deisotope
 from ms_deisotope.data_source.scan.loader import ScanDataSource
@@ -33,9 +33,10 @@ class ScanSink(object):
         except AttributeError:
             return None
 
-    def configure_storage(self, storage_path: PathLike=None, name: Optional[str]=None, source: Optional[ScanDataSource]=None):
+    def configure_storage(self, storage_path: PathLike=None, name: Optional[str]=None, source: Optional[ScanDataSource]=None,
+                          stream_cls: Optional[Callable[[str], IO]] = None):
         self.scan_store = self._scan_store_type.configure_storage(
-            storage_path, name, source)
+            storage_path, name, source, stream_cls=stream_cls)
 
     def configure_iteration(self, *args, **kwargs):
         self.scan_generator.configure_iteration(*args, **kwargs)
@@ -97,14 +98,29 @@ class SampleConsumer(TaskBase):
 
     verbose: bool
 
+    stream_cls: Optional[Callable[[str], IO]]
 
-    def __init__(self, ms_file,
-                 ms1_peak_picking_args=None, msn_peak_picking_args=None, ms1_deconvolution_args=None,
-                 msn_deconvolution_args=None, start_scan_id=None, end_scan_id=None, storage_path=None,
-                 sample_name=None, storage_type=None, n_processes=5,
-                 extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
-                 ms1_averaging=0, default_precursor_ion_selection_window=1.5,
-                 deconvolute=True, verbose=False, start_scan_time=None, end_scan_time=None):
+
+    def __init__(self, ms_file: str,
+                 ms1_peak_picking_args: Optional[dict] = None,
+                 msn_peak_picking_args: Optional[dict] = None,
+                 ms1_deconvolution_args: Optional[dict] = None,
+                 msn_deconvolution_args: Optional[dict] = None,
+                 start_scan_id: Optional[str] = None,
+                 end_scan_id: Optional[str] = None,
+                 storage_path: Optional[str] = None,
+                 sample_name: Optional[str]=None,
+                 storage_type: Optional[Type[ScanStorageHandlerBase]]=None,
+                 n_processes: int=5,
+                 extract_only_tandem_envelopes: bool = False,
+                 ignore_tandem_scans: bool = False,
+                 ms1_averaging: int=0,
+                 default_precursor_ion_selection_window: Optional[float] = 1.5,
+                 deconvolute: bool=True,
+                 verbose: bool=False,
+                 start_scan_time: Optional[float] = None,
+                 end_scan_time: Optional[float] = None,
+                 stream_cls: Optional[Callable[[str], IO]] = None):
 
         if storage_type is None:
             storage_type = ThreadedMzMLScanStorageHandler
@@ -153,7 +169,7 @@ class SampleConsumer(TaskBase):
         self.end_scan_id = end_scan_id
         self.start_scan_time = start_scan_time
         self.end_scan_time = end_scan_time
-
+        self.stream_cls = stream_cls
         self.sample_run = None
 
     @classmethod
@@ -197,7 +213,8 @@ class SampleConsumer(TaskBase):
         self.log("Setting Sink")
         sink = ScanSink(self.scan_generator, self.storage_type)
         self.log("Initializing Storage")
-        sink.configure_storage(self.storage_path, self.sample_name, self.scan_generator)
+        sink.configure_storage(self.storage_path, self.sample_name,
+                               self.scan_generator, stream_cls=self.stream_cls)
 
         self.log("Begin Processing")
         last_scan_time = 0

@@ -1,4 +1,5 @@
-"""Defines the base class for organizing the multiprocessing deconvolution algorithm
+"""
+Defines the base class for organizing the multiprocessing deconvolution algorithm
 encapsulating all behaviors from start to finish.
 """
 import os
@@ -20,7 +21,8 @@ from .process import ScanIDYieldingProcess, DeconvolutingScanTransformingProcess
 
 
 class ScanGeneratorBase(Generic[T]):
-    """The partial base class for the type that generates scan processing tasks.
+    """
+    The partial base class for the type that generates scan processing tasks.
 
     Defines getter and setters for properties expected to be used.
 
@@ -37,6 +39,7 @@ class ScanGeneratorBase(Generic[T]):
     ignore_tandem_scans: bool
         Whether or not to ignore MSn scans.
     """
+
     scan_source: Optional[RandomAccessScanSource]
 
     ms1_averaging: int
@@ -46,7 +49,8 @@ class ScanGeneratorBase(Generic[T]):
     ignore_tandem_scans: bool
 
     def configure_iteration(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None):
-        """Set :attr:`_iterator` to the result of :meth:`make_iterator`
+        """
+        Set :attr:`_iterator` to the result of :meth:`make_iterator`
 
         Parameters
         ----------
@@ -60,7 +64,8 @@ class ScanGeneratorBase(Generic[T]):
         raise NotImplementedError()
 
     def make_iterator(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None) -> Iterator[T]:
-        """Create an :class:`Iterator` object over the scan product stream
+        """
+        Create an :class:`Iterator` object over the scan product stream
 
         Parameters
         ----------

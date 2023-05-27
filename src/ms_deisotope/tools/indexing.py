@@ -1,9 +1,11 @@
 """A collection of little command line utilities for inspecting mass spectrum data."""
 import io
 import logging
+import multiprocessing
 import os
 import math
 import csv
+import platform
 import sys
 
 from typing import List, Counter, Union
@@ -14,7 +16,7 @@ import six
 import numpy as np
 
 import ms_deisotope
-from ms_deisotope.data_source import Scan, ActivationInformation, PrecursorInformation
+from ms_deisotope.data_source import Scan, ActivationInformation
 
 from ms_deisotope.task.log_utils import init_logging
 
@@ -46,6 +48,11 @@ logger = logging.getLogger('ms_deisotope')
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     """Utilities for inspecting and manipulating mass spectrometry data."""
+    multiprocessing.freeze_support()
+    if platform.platform() not in ("Windows", "Darwin"):
+        multiprocessing.set_start_method('forkserver')
+    else:
+        multiprocessing.set_start_method('spawn')
     init_logging()
 
 

@@ -4,6 +4,7 @@ import threading
 import logging
 
 from queue import Queue, Empty as QueueEmptyException
+from typing import IO, Callable, Optional
 
 from ms_deisotope.data_source import MSFileLoader, ScanBunch
 from ms_deisotope.data_source.metadata.file_information import (
@@ -48,7 +49,8 @@ class ScanStorageHandlerBase(TaskBase):
         pass
 
     @classmethod
-    def configure_storage(cls, path=None, name=None, source=None):
+    def configure_storage(cls, path=None, name=None, source=None,
+                          stream_cls: Optional[Callable[[str], IO]] = None):
         return cls()
 
     def accumulate(self, scan):
@@ -173,7 +175,7 @@ class ThreadedScanStorageHandlerMixin(object):
 class MzMLScanStorageHandler(ScanStorageHandlerBase):
     fallback_path = "processed.mzML"
 
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True, stream_cls=None):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True, stream_cls: Optional[Callable[[str], IO]] = None):
         if stream_cls is None:
             stream_cls = open
         if n_spectra is None:
@@ -186,7 +188,7 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
             deconvoluted=deconvoluted,
             stream_cls=stream_cls)
 
-    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls: Callable[[str], IO]):
         self.handle = stream_cls(self.path, 'wb')
         return MzMLSerializer(
             self.handle, n_spectra, sample_name=sample_name,
@@ -199,7 +201,8 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
         self.serializer.add_processing_parameter(name, value)
 
     @classmethod
-    def configure_storage(cls, path=None, name=None, source=None):
+    def configure_storage(cls, path=None, name=None, source=None,
+                          stream_cls: Optional[Callable[[str], IO]] = None):
         if path is not None:
             if name is None:
                 sample_name = os.path.basename(path)
@@ -212,7 +215,8 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
             reader = MSFileLoader(source.scan_source)
             n_spectra = len(reader.index)
             deconvoluting = source.deconvoluting
-            inst = cls(path, sample_name, n_spectra=n_spectra, deconvoluted=deconvoluting)
+            inst = cls(path, sample_name, n_spectra=n_spectra,
+                       deconvoluted=deconvoluting, stream_cls=stream_cls)
             try:
                 description = reader.file_description()
             except AttributeError:
@@ -267,7 +271,8 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
             inst.serializer.add_data_processing(data_processing)
         else:
             n_spectra = 2e5
-            inst = cls(path, sample_name, n_spectra=n_spectra)
+            inst = cls(path, sample_name, n_spectra=n_spectra,
+                       stream_cls=stream_cls)
         # Force marshalling of controlled vocabularies early.
         inst.serializer.writer.param("32-bit float")
         return inst
@@ -290,21 +295,24 @@ class MzMLbScanStorageHandler(MzMLScanStorageHandler):
 
 
 class ThreadedMzMLScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLScanStorageHandler):
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True,
+                 stream_cls: Optional[Callable[[str], IO]]=None):
         super(ThreadedMzMLScanStorageHandler, self).__init__(
-            path, sample_name, n_spectra, deconvoluted=deconvoluted)
+            path, sample_name, n_spectra, deconvoluted=deconvoluted, stream_cls=stream_cls)
 
 
 class ThreadedMzMLbScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLbScanStorageHandler):
     fallback_path = "processed.mzMLb"
 
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True,
+                 stream_cls: Optional[Callable[[str], IO]]=None):
         super(ThreadedMzMLbScanStorageHandler, self).__init__(
-            path, sample_name, n_spectra, deconvoluted=deconvoluted)
+            path, sample_name, n_spectra, deconvoluted=deconvoluted, stream_cls=stream_cls)
 
 
 class MGFScanStorageHandler(ScanStorageHandlerBase):
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True, stream_cls=None):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True,
+                 stream_cls: Optional[Callable[[str], IO]] = None):
         if stream_cls is None:
             stream_cls = open
         super(MGFScanStorageHandler, self).__init__()
@@ -314,7 +322,8 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
             self.handle, n_spectra=n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
 
-    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool,
+                     stream_cls: Callable[[str], IO]):
         self.handle = stream_cls(self.path, 'wb')
         return MGFSerializer(
             self.handle, sample_name=sample_name,
@@ -327,7 +336,8 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
         self.serializer.add_global_parameter(name, value)
 
     @classmethod
-    def configure_storage(cls, path=None, name=None, source=None):
+    def configure_storage(cls, path=None, name=None, source=None,
+                          stream_cls: Optional[Callable[[str], IO]] = None):
         if path is not None:
             if name is None:
                 sample_name = os.path.basename(path)
@@ -338,9 +348,10 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
             sample_name = name if name is not None else ""
         if source is not None:
             deconvoluting = source.deconvoluting
-            inst = cls(path, sample_name, deconvoluted=deconvoluting)
+            inst = cls(path, sample_name, deconvoluted=deconvoluting,
+                       stream_cls=stream_cls)
         else:
-            inst = cls(path, sample_name)
+            inst = cls(path, sample_name, stream_cls=stream_cls)
         return inst
 
     def save_bunch(self, precursor, products):
@@ -352,6 +363,7 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
 
 
 class ThreadedMGFScanStorageHandler(ThreadedScanStorageHandlerMixin, MGFScanStorageHandler):
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True,
+                 stream_cls: Optional[Callable[[str], IO]]=None):
         super(ThreadedMGFScanStorageHandler, self).__init__(
-            path, sample_name, n_spectra, deconvoluted=deconvoluted)
+            path, sample_name, n_spectra, deconvoluted=deconvoluted, stream_cls=stream_cls)

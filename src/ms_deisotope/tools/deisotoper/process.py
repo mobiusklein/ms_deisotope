@@ -82,7 +82,8 @@ class ScanTransmissionMixin(object):
 
 class _ProcessHelper:
     def try_set_process_name(self, name=None):
-        """This helper method may be used to try to change a process's name
+        """
+        This helper method may be used to try to change a process's name
         in order to make discriminating which role a particular process is
         fulfilling. This uses a third-party utility library that may not behave
         the same way on all platforms, and therefore this is done for convenience
@@ -334,7 +335,8 @@ class ScanBunchLoader(object):
 
 
 class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTransmissionMixin, _ProcessHelper):
-    """DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
+    """
+    DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an
     instance of :class:`ms_deisotope.processor.ScanProcessor`, sending the reduced result
     to a shared output queue.
