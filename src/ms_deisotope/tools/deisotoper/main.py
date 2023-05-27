@@ -194,7 +194,6 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
-    configure_mp_context()
     init_logging()
     if transform is None:
         transform = []
