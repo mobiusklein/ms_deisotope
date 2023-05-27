@@ -13,7 +13,7 @@ import re
 import sys
 import warnings
 
-from typing import Iterator, Generic, TYPE_CHECKING, Union, TypeVar
+from typing import Dict, Iterator, Generic, TYPE_CHECKING, Union, TypeVar
 
 import click
 
@@ -30,7 +30,14 @@ from ms_deisotope.data_source import ScanBase, ScanBunch
 T = TypeVar('T')
 
 
-def processes_option(f):
+def processes_option(f) -> click.Option:
+    """
+    A re-usable process number option.
+
+    Returns
+    -------
+    click.Option
+    """
     opt = click.option(
         "-p", "--processes", 'processes', type=click.IntRange(1, multiprocessing.cpu_count()),
         default=min(multiprocessing.cpu_count(), 4), help=('Number of worker processes to use. Defaults to 4 '
@@ -38,21 +45,23 @@ def processes_option(f):
     return opt(f)
 
 
-def validate_element(element):
+def validate_element(element: str) -> bool:
+    """Validate that an element string is known"""
     valid = element in periodic_table
     if not valid:
         raise click.Abort("%r is not a valid element" % element)
     return valid
 
 
-def parse_averagine_formula(formula):
+def parse_averagine_formula(formula: str) -> Averagine:
+    """Parse an formula into an :class:`Averagine` instance"""
     if isinstance(formula, Averagine):
         return formula
     return Averagine({k: float(v) for k, v in re.findall(r"([A-Z][a-z]*)([0-9\.]*)", formula)
                       if float(v or 0) > 0 and validate_element(k)})
 
 
-averagines = {
+averagines: Dict[str, Averagine] = {
     'glycan': n_glycan_averagine,
     'permethylated-glycan': permethylated_glycan,
     'peptide': peptide,
@@ -62,7 +71,14 @@ averagines = {
 }
 
 
-def validate_averagine(averagine_string):
+def validate_averagine(averagine_string: Union[str, Averagine]) -> Averagine:
+    """
+    Validate that the input is an averagine or can be converted into one.
+
+    Returns
+    -------
+    Averagine
+    """
     if isinstance(averagine_string, Averagine):
         return averagine_string
     if averagine_string in averagines:
@@ -72,6 +88,8 @@ def validate_averagine(averagine_string):
 
 
 class AveragineParamType(click.types.StringParamType):
+    """A parameter type that converts to an :class:`Averagine` object."""
+
     name = "MODEL"
 
     models = averagines
@@ -87,6 +105,7 @@ class AveragineParamType(click.types.StringParamType):
 
 
 def register_debug_hook():
+    """A hook to automatically drop into an interactive debugger on an error."""
     import traceback
 
     def info(type, value, tb):
@@ -105,6 +124,7 @@ def register_debug_hook():
 
 
 def envar_to_bool(env_val: str) -> bool:
+    """Coerce a string easily put into an env var into a boolean"""
     env_val = env_val.lower()
     if not env_val:
         return False
@@ -116,6 +136,7 @@ def envar_to_bool(env_val: str) -> bool:
 
 
 def is_debug_mode() -> bool:
+    """Detect if the program is being told to launch in debug mode by the environment"""
     env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
     val = envar_to_bool(env_val)
     if val is not None:
@@ -273,12 +294,19 @@ def type_cast(value: str) -> Union[str, int, float, list, dict]:
             return str(value)
 
 
+_MP_CONFIG = False
+
+
 def configure_mp_context():
+    global _MP_CONFIG
+    if _MP_CONFIG:
+        return
     multiprocessing.freeze_support()
     current_method = multiprocessing.get_start_method()
-    if platform.platform() not in ("Windows", "Darwin"):
+    if platform.system() not in ("Windows", "Darwin"):
         if current_method != 'forkserver':
             multiprocessing.set_start_method('forkserver')
     else:
         if current_method != 'spawn':
             multiprocessing.set_start_method('spawn')
+    _MP_CONFIG = True

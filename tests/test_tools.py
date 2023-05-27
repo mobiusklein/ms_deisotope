@@ -18,6 +18,7 @@ def test_describe():
 
     path = datafile("small.mzML")
     result = runner.invoke(indexing.describe, [path])
+    assert result.exit_code == 0
     lines = result.output.splitlines()
     assert "small.mzML" in lines[0]
     assert lines[1] == "File Format: mzML format"
@@ -31,6 +32,7 @@ def test_mgf():
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
     result = runner.invoke(conversion.mgf, [path, '-'], catch_exceptions=False)
+    assert result.exit_code == 0
     lines = result.output.splitlines()
     count = 0
     for line in lines:
@@ -58,6 +60,7 @@ def test_mzml():
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
     result = runner.invoke(conversion.mzml, ['-p', '-c', path, '-'])
+    assert result.exit_code == 0
     buff = io.BytesIO(result.output.encode("utf-8"))
     reader = MzMLLoader(buff)
     n = len(reader)
@@ -105,6 +108,7 @@ def test_ms_deisotope():
     result = runner.invoke(deisotoper.deisotope, [
         "-b", 0, "-t", 20, "-tn", 10, "-m", 3, "-mn", 1, path, outpath
     ])
+    assert result.exit_code == 0
     result_reader = ProcessedMzMLDeserializer(outpath)
     reference_reader = ProcessedMzMLDeserializer(_compression.get_opener(reference))
     assert len(result_reader) == len(reference_reader)

@@ -110,7 +110,7 @@ def check_if_profile(loader):
     return is_profile
 
 
-def determine_output_format(output_file: str):
+def _determine_output_format(output_file: str):
     base, ext = os.path.splitext(output_file)
     gzip_compress_file = False
     if ext.lower() == '.gz':
@@ -209,7 +209,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
 
     (cache_handler_type,
      _output_basename,
-     should_gzip_compress_output_file)  = determine_output_format(outfile_path)
+     should_gzip_compress_output_file)  = _determine_output_format(outfile_path)
     click.echo("Preprocessing %s" % ms_file)
     minimum_charge = 1 if maximum_charge > 0 else -1
     charge_range = (minimum_charge, maximum_charge)
