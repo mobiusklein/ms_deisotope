@@ -37,7 +37,7 @@ from ms_deisotope.data_source.metadata.file_information import FileInformation, 
 from ms_deisotope.output import ProcessedMSFileLoader
 
 from ms_deisotope.tools import conversion, draw, maintenance
-from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, register_debug_hook, spinner
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, register_debug_hook, spinner, configure_mp_context
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -48,11 +48,7 @@ logger = logging.getLogger('ms_deisotope')
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     """Utilities for inspecting and manipulating mass spectrometry data."""
-    multiprocessing.freeze_support()
-    if platform.platform() not in ("Windows", "Darwin"):
-        multiprocessing.set_start_method('forkserver')
-    else:
-        multiprocessing.set_start_method('spawn')
+    configure_mp_context()
     init_logging()
 
 

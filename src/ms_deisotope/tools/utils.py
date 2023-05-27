@@ -8,6 +8,7 @@ import itertools
 import json
 import multiprocessing
 import os
+import platform
 import re
 import sys
 import warnings
@@ -270,3 +271,14 @@ def type_cast(value: str) -> Union[str, int, float, list, dict]:
             return ast.literal_eval(value)
         except (TypeError, ValueError):
             return str(value)
+
+
+def configure_mp_context():
+    multiprocessing.freeze_support()
+    current_method = multiprocessing.get_start_method()
+    if platform.platform() not in ("Windows", "Darwin"):
+        if current_method != 'forkserver':
+            multiprocessing.set_start_method('forkserver')
+    else:
+        if current_method != 'spawn':
+            multiprocessing.set_start_method('spawn')

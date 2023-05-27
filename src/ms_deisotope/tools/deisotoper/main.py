@@ -1,8 +1,5 @@
 """The main entry point for the `ms-deisotope` command line program."""
 import os
-import platform
-
-import multiprocessing
 
 import click
 
@@ -17,7 +14,7 @@ from ms_deisotope.data_source import RandomAccessScanSource
 from ms_deisotope.data_source._compression import GzipFile
 from ms_deisotope.task.log_utils import init_logging
 
-from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
+from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook, configure_mp_context
 from ms_deisotope.tools.deisotoper import workflow, output
 
 
@@ -197,11 +194,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
-    multiprocessing.freeze_support()
-    if platform.platform() not in ("Windows", "Darwin"):
-        multiprocessing.set_start_method('forkserver')
-    else:
-        multiprocessing.set_start_method('spawn')
+    configure_mp_context()
     init_logging()
     if transform is None:
         transform = []
