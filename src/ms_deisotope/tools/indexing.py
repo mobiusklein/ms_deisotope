@@ -48,7 +48,6 @@ logger = logging.getLogger('ms_deisotope')
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     """Utilities for inspecting and manipulating mass spectrometry data."""
-    configure_mp_context()
     init_logging()
 
 
