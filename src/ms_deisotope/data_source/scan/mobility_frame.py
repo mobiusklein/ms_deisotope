@@ -195,7 +195,8 @@ class _upto_index(object):
 
 
 class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mobility'])):
-    """Represent the m/z, intensity, and ion mobility arrays associated with a raw
+    """
+    Represent the m/z, intensity, and ion mobility arrays associated with a raw
     ion mobility frame of mass spectra.
 
     Thin wrapper around a ``namedtuple``, so this object supports
@@ -233,7 +234,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return self.ion_mobility
 
     def has_array(self, array_type):
-        """Check if this array set contains an array of the
+        """
+        Check if this array set contains an array of the
         requested type.
 
         This method uses the semantic lookup mechanism to test
@@ -286,7 +288,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return inst
 
     def copy(self):
-        """Make a deep copy of this object.
+        """
+        Make a deep copy of this object.
 
         Returns
         -------
@@ -322,7 +325,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
 
     @classmethod
     def stack(cls, scans, ion_mobility_array_type=None):
-        """Combine multiple :class:`~.Scan` objects or (ion mobility, :class:`~.RawDataArrays`)
+        """
+        Combine multiple :class:`~.Scan` objects or (ion mobility, :class:`~.RawDataArrays`)
         pairs into a single :class:`~.RawDataArrays3D`
 
         Parameters
@@ -367,7 +371,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
 
     @classmethod
     def from_arrays(cls, mz_array, intensity_array, ion_mobility_array, ion_mobility_array_type=None, data_arrays=None):
-        """Build a new :class:`~.RawDataArrays3D` from parallel arrays.
+        """
+        Build a new :class:`~.RawDataArrays3D` from parallel arrays.
 
         This will sort all arrays w.r.t. m/z and ion mobility.
 
@@ -414,7 +419,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             self.ion_mobility_array_type, data_arrays)
 
     def unstack(self, include_empty=True):
-        """Convert this 3D array into a list of (ion mobility, :class:`~.RawDataArrays`) pairs
+        """
+        Convert this 3D array into a list of (ion mobility, :class:`~.RawDataArrays`) pairs
 
         Parameters
         ----------
@@ -448,7 +454,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return acc
 
     def grid(self):
-        """Convert this 3D array into an intensity grid with
+        """
+        Convert this 3D array into an intensity grid with
         m/z along the rows and ion mobility along the columns.
 
         Returns
@@ -469,7 +476,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return mz_axis, im_axis, intensity
 
     def find_mz(self, mz):
-        """Find the nearest index to the query ``mz``
+        """
+        Find the nearest index to the query ``mz``
 
         Parameters
         ----------
@@ -524,7 +532,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return 0
 
     def between_mz(self, low, high):
-        """Return a slice of the arrays between ``low`` and ``high`` m/z.
+        """
+        Return a slice of the arrays between ``low`` and ``high`` m/z.
 
         Parameters
         ----------
@@ -622,7 +631,8 @@ class FrameBase(object):
 
 
 class IonMobilityFrame(FrameBase):
-    """A :class:`IonMobilityFrame` represents an single time point acquisition of
+    """
+    A :class:`IonMobilityFrame` represents an single time point acquisition of
     multiple mass spectra across multiple ion mobility drift time points. Because
     of its drift time by m/z structure, it does not have 1-D peak sets, but pseudo-
     :class:`~.LCMSFeatureMap`-like data structures which conserve the over-time

@@ -286,7 +286,7 @@ class MSESampleConsumer(SampleConsumer):
 
         if storage_type is None:
             storage_type = IonMobilityAware3DThreadedMzMLScanStorageHandler
-
+        self.stream_cls = None
         self.ms_file = ms_file
         self.storage_path = storage_path
         self.sample_name = sample_name
@@ -398,8 +398,7 @@ def cli():
 def feature_deconvolution(input_path, output_path, lockmass_config=None, start_time=0, end_time=None, averagine='glycopeptide',
                           minimum_intensity=10.0, lock_mass_function=3, processes: int = 4,
                           isolation_window_width=0.0, denoise=1.0, signal_averaging=2):
-    """Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution.
-    """
+    """Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution."""
     sample_name = os.path.basename(input_path).rsplit(".", 1)[0]
     logging.basicConfig(
         level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -429,10 +428,9 @@ def feature_deconvolution(input_path, output_path, lockmass_config=None, start_t
 
     task = MSESampleConsumer(
         input_path, storage_path=output_path,
-        ms1_peak_picking_args={"error_tolerance": 4e-5,
-                               "minimum_intensity": minimum_intensity / 2, "denoise": denoise},
+        ms1_peak_picking_args={"minimum_intensity": minimum_intensity / 2, "denoise": denoise},
         msn_peak_picking_args={
-            "average_within": signal_averaging, "error_tolerance": 4e-5, "denoise": denoise},
+            "average_within": signal_averaging, "denoise": denoise},
         ms1_deconvolution_args={
             "averagine": averagine,
             "truncate_after": 0.95,
@@ -469,7 +467,8 @@ def feature_deconvolution(input_path, output_path, lockmass_config=None, start_t
 @click.option("-w", "--weight-scaling", type=float, default=1.0,
               help="A weight scaling factor. >1 to incrase the overall abundance of deconvolved peaks")
 def precursor_product_deconvolution(input_path, output_path, edges_per_feature: int=1000, weight_scaling: float=1.0):
-    """Takes a deconvolved LC-IM-MSe run and generate pseudospectra for
+    """
+    Takes a deconvolved LC-IM-MSe run and generate pseudospectra for
     precursor ions using correlated product ion features enclosed in the IM
     and RT dimensions.
     """
@@ -534,7 +533,8 @@ def precursor_product_deconvolution(input_path, output_path, edges_per_feature: 
 @click.argument("input_path", type=click.Path())
 @click.argument("output_path", type=click.Path(writable=True))
 def naive_ion_mobility_overlap_pseudospectra(input_path, output_path):
-    """Generate pseudo-spectra from deconvolved cycles where the precursor ion spans
+    """
+    Generate pseudo-spectra from deconvolved cycles where the precursor ion spans
     some or all of the ion dimension of the product ion's mobility dimension and has
     a larger neutral mass. Makes no use of retention time.
     """

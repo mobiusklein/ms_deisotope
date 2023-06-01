@@ -82,7 +82,8 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
     @property
     def reader(self) -> IonMobilitySourceRandomAccessFrameSource:
-        """The :class:`~.IonMobilitySourceRandomAccessFrameSource` which generates the raw scans that will
+        """
+        The :class:`~.IonMobilitySourceRandomAccessFrameSource` which generates the raw scans that will
         be processed.
 
         Returns

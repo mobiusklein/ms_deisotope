@@ -4,7 +4,7 @@ import re
 import sys
 
 from collections import defaultdict, OrderedDict
-from typing import Iterator
+from typing import Any, Iterator
 
 import numpy as np
 from ms_deisotope.data_source.metadata.data_transformation import DataProcessingInformation, ProcessingMethod
@@ -40,7 +40,8 @@ waters_frame_id_pattern = re.compile(r"function=(\d+) process=(\d+) startScan=(\
 
 
 def is_waters_raw_dir(path):
-    """Detect whether or not the file referenced by ``path``
+    """
+    Detect whether or not the file referenced by ``path``
     is a Waters RAW directory.
 
     Parameters
@@ -66,7 +67,8 @@ def is_waters_raw_dir(path):
 
 
 def infer_reader(path):
-    """If the file referenced by ``path`` is a Waters RAW
+    """
+    If the file referenced by ``path`` is a Waters RAW
     directory, return the callable (:class:`MassLynxRawLoader`) to
     open it, otherwise raise an exception.
 
@@ -431,6 +433,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
             self.source_file)
         self.lockmass_processor = MassLynxLockMassProcessor.MassLynxLockMassProcessor()
         self.lockmass_processor.SetRawData(self.scan_reader)
+        self.lockmass_config = lockmass_config
         self.configure_lockmass(lockmass_config)
         self.index = []
         self.cycle_index = []
@@ -466,6 +469,9 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self.lockmass_processor.SetParameters(params)
         if self.lockmass_processor.CanLockMassCorrect():
             self.lockmass_processor.LockMassCorrect()
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self.lockmass_config, self.default_isolation_width)
 
     def __repr__(self):
         return "MassLynxRawLoader(%r)" % (self.source_file)

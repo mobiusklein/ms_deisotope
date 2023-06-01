@@ -180,6 +180,8 @@ def _loader_creator(specification, **kwargs):
         raise ValueError("Cannot determine how to get a ScanIterator from %r" % (specification,))
 
 
+# NOTE: This simplification step leads to potentially large deviations from the "unthresholded"
+# deconvolution solution. This procedure is too aggressive for real world data.
 def _simplify_peak_set(peaks, bin_width=5.0):
     bin_edges = np.arange(0, peaks[-1].mz + bin_width, bin_width)
     bins = []
@@ -428,7 +430,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         return chosen_envelopes
 
     def _pick_precursor_scan_peaks(self, precursor_scan: Scan, chosen_envelopes: Optional[List[Tuple[float, float]]]=None) -> Union[PeakIndex, PeakSet]:
-        """Pick peaks from the given precursor scan
+        """
+        Pick peaks from the given precursor scan
 
         Parameters
         ----------
@@ -457,7 +460,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         return prec_peaks
 
     def _average_ms1(self, precursor_scan: Scan) -> Union[PeakIndex, PeakSet]:
-        """Average signal from :attr:`self.ms1_averaging` scans from
+        """
+        Average signal from :attr:`self.ms1_averaging` scans from
         before and after ``precursor_scan`` and pick peaks from the
         averaged arrays.
 
@@ -478,7 +482,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         return prec_peaks
 
     def pick_precursor_scan_peaks(self, precursor_scan: Scan) -> Union[PeakIndex, PeakSet]:
-        """Picks peaks for the given ``precursor_scan`` using the
+        """
+        Picks peaks for the given ``precursor_scan`` using the
         appropriate strategy.
 
         If :attr:`ms1_averaging` > 0, then the signal averaging strategy
@@ -487,6 +492,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         Parameters
         ----------
         precursor_scan: Scan
+            The scan to pick peaks from
 
         Returns
         -------
@@ -498,6 +504,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         else:
             prec_peaks = self._pick_precursor_scan_peaks(precursor_scan)
         n_peaks = len(prec_peaks)
+        # NOTE: This simplification step leads to potentially large deviations from the "unthresholded"
+        # deconvolution solution. This procedure is too aggressive for real world data.
         if n_peaks > self.too_many_peaks_threshold:
             self.log("%d peaks found for %r, applying local intensity threshold." % (n_peaks, precursor_scan))
             prec_peaks = _simplify_peak_set(prec_peaks)
