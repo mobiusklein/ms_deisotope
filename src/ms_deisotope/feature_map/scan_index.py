@@ -112,7 +112,8 @@ class MSnRecord(MSRecordBase):
 
 
 class ExtendedScanIndex(object):
-    """An extra index that holds scan-level metadata in memory independent of
+    """
+    An extra index that holds scan-level metadata in memory independent of
     the :class:`~.ScanBase` object itself.
 
     Attributes
@@ -129,6 +130,7 @@ class ExtendedScanIndex(object):
     _mass_search_index : :class:`~.NeutralMassIndex`
         A fast-to-search collection to make :meth:`find_msms_by_precursor_mass` faster
     """
+
     SCHEMA_VERSION: ClassVar[str] = "1.1"
 
     ms1_ids: OrderedDict[str, MS1Record]
@@ -153,8 +155,7 @@ class ExtendedScanIndex(object):
         self._mass_search_index = None
 
     def clear(self):
-        """Discard all information held in memory, analogous to :meth:`dict.clear`.
-        """
+        """Discard all information held in memory, analogous to :meth:`dict.clear`."""
         self.ms1_ids.clear()
         self.msn_ids.clear()
         self._mass_search_index = None
@@ -215,11 +216,13 @@ class ExtendedScanIndex(object):
         return package
 
     def add_scan(self, scan: ScanBase):
-        """Add ``scan`` to the index.
+        """
+        Add ``scan`` to the index.
 
         Parameters
         ----------
         scan: :class:`~.ScanBase`
+            The scan to add to the index
         """
         if scan.ms_level == 1:
             package = {
@@ -237,11 +240,13 @@ class ExtendedScanIndex(object):
             self.msn_ids[scan.id] = MSnRecord(**self._package_precursor_information(scan))
 
     def add_scan_bunch(self, bunch: ScanBunch):
-        """Add each scan object in ``bunch`` to the index.
+        """
+        Add each scan object in ``bunch`` to the index.
 
         Parameters
         ----------
-        scan: :class:`~.ScanBunch`
+        bunch : :class:`~.ScanBunch`
+            The bunch of scans to add.
         """
         if bunch.precursor is not None:
             package = {
@@ -260,11 +265,13 @@ class ExtendedScanIndex(object):
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))
 
     def update_from_reader(self, reader: ScanIterator):
-        """Iterate over ``reader``, accumulating scans in the index.
+        """
+        Iterate over ``reader``, accumulating scans in the index.
 
         Parameters
         ----------
         reader: :class:`~.ScanIterator`
+            The scan iterator to consume scans from
         """
         for bunch in reader:
             if isinstance(bunch, ScanBase):
@@ -273,7 +280,8 @@ class ExtendedScanIndex(object):
                 self.add_scan_bunch(bunch)
 
     def dump(self, handle: io.TextIOBase):
-        """Serialize the index to JSON.
+        """
+        Serialize the index to JSON.
 
         Parameters
         ----------
@@ -289,13 +297,15 @@ class ExtendedScanIndex(object):
 
     serialize = dump
 
-    def merge(self, other):
-        """Combine the indices in ``other`` with those in ``self``,
+    def merge(self, other: 'ExtendedScanIndex'):
+        """
+        Combine the indices in ``other`` with those in ``self``,
         return a copy containing both collections' data.
 
         Parameters
         ----------
         other: :class:`ExtendedScanIndex`
+            Another scan index to combine with this one
 
         Returns
         -------
@@ -308,7 +318,8 @@ class ExtendedScanIndex(object):
 
     @staticmethod
     def index_file_name(name: str) -> str:
-        """Create a standard file name based on source file name ``name``
+        """
+        Create a standard file name based on source file name ``name``
         for storing the index
 
         Parameters
@@ -325,11 +336,13 @@ class ExtendedScanIndex(object):
 
     @classmethod
     def load(cls, handle: io.TextIOBase):
-        """Construct a :class:`ExtendedScanIndex` instance from a file object
+        """
+        Construct a :class:`ExtendedScanIndex` instance from a file object
 
         Parameters
         ----------
-        handle: file-like
+        handle : file-like
+            The file to read from
 
         Returns
         -------
@@ -345,7 +358,8 @@ class ExtendedScanIndex(object):
     deserialize = load
 
     def get_precursor_information(self, bind: Optional[ScanDataSource]=None) -> List[PrecursorInformation]:
-        """Create a list of :class:`~.PrecursorInformation` objects
+        """
+        Create a list of :class:`~.PrecursorInformation` objects
         from :attr:`msn_ids`'s records.
 
         Returns
@@ -382,10 +396,9 @@ class ExtendedScanIndex(object):
         return index
 
     def find_msms_by_precursor_mass(self, neutral_mass: float, mass_error_tolerance: float=1e-5, bind: Optional[ScanDataSource]=None) -> List[PrecursorInformation]:
-        """Find all entries in :attr:`msn_ids` which are within ``mass_error_tolerance`` of
-        ``neutral_mass``.
-
-        This method is slow because it reconstructs the search vector on each call.
+        """
+        Find all entries in :attr:`msn_ids` which are within
+        ``mass_error_tolerance`` of ``neutral_mass``.
 
         Returns
         -------

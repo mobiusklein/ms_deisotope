@@ -2,14 +2,10 @@
 Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 """
-from typing import Any, Dict, Iterator, List, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, Iterator, List, Optional, Union, TYPE_CHECKING, Sequence
 import warnings
 
-from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
-try:
-    from collections.abc import Sequence
-except ImportError:
-    from collections import Sequence
+
 import logging
 import numpy as np
 
@@ -19,6 +15,7 @@ from ms_peak_picker import (
 
 from ms_deisotope.utils import decimal_shift
 from ms_deisotope.deconvolution import deconvolute_peaks
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 
 from ms_deisotope.data_source.metadata.scan_traits import (
     IsolationWindow,
@@ -875,7 +872,8 @@ class Scan(ScanBase):
                            is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
-    def average_with(self, scans, dx=None, weight_sigma=None, num_threads=None):
+    def average_with(self, scans: Sequence['Scan'], dx: Optional[float]=None, weight_sigma: Optional[float]=None,
+                     num_threads: Optional[int]=None):
         r"""
         Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
@@ -1116,7 +1114,7 @@ class WrappedScan(Scan):
             else:
                 warnings.warn("Cannot override attribute %s" % (key,))
 
-    def clone(self, deep=True):
+    def clone(self, deep: bool=True):
         overrides = self._overrides.copy()
         for k in self.overridable_keys:
             overrides[k] = getattr(self, k)
@@ -1153,7 +1151,7 @@ class AveragedScan(WrappedScan):
             product_scans=product_scans, annotations=annotations, **overrides)
         self.scan_indices = scan_indices
 
-    def clone(self, deep=True):
+    def clone(self, deep: bool=True):
         dup = self.__class__(
             self._data, self.source, self.arrays,
             self.scan_indices,
@@ -1301,7 +1299,8 @@ class ProcessedScan(ScanBase):
 
     @property
     def is_profile(self) -> bool:
-        """Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+        """
+        Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
         pre-centroided.
         """
         return False
@@ -1323,8 +1322,9 @@ class ProcessedScan(ScanBase):
     def __len__(self):
         return len(self._resolve_peaks())
 
-    def has_peak(self, mass, error_tolerance=2e-5) -> Optional[Union[DeconvolutedPeak, FittedPeak]]:
-        """A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the
+    def has_peak(self, mass: float, error_tolerance: float=2e-5) -> Optional[Union[DeconvolutedPeak, FittedPeak]]:
+        """
+        A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the
         :class:`~.DeconvolutedPeak` objects picked for this scan. If no deconvoluted
         peaks are available, but centroided peaks are, this method will instead
         behave like :class:`Scan.has_peak`
@@ -1374,13 +1374,15 @@ class ProcessedScan(ScanBase):
         self.source = None
         return self
 
-    def clone(self, deep=True) -> 'ProcessedScan':
-        """Return a copy of the :class:`ProcessedScan` object, potentially a deep
+    def clone(self, deep: bool=True) -> 'ProcessedScan':
+        """
+        Return a copy of the :class:`ProcessedScan` object, potentially a deep
         one
 
         Parameters
         ----------
         deep: :class:`bool`
+            Whether to make a deep copy of derived data like peak sets.
 
         Returns
         -------

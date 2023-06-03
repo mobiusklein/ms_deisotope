@@ -217,8 +217,9 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
     def __iter__(self) -> 'IonMobilityFrameProcessor':
         return self
 
-    def start_from_scan(self, *args, **kwargs) -> 'IonMobilityFrameProcessor':
-        """A wrapper around :meth:`~.IonMobilitySourceRandomAccessFrameSource.start_from_scan` provided by
+    def start_from_frame(self, *args, **kwargs) -> 'IonMobilityFrameProcessor':
+        """
+        A wrapper around :meth:`~.IonMobilitySourceRandomAccessFrameSource.start_from_frame` provided by
         :attr:`reader`, if available.
 
         Returns
@@ -227,9 +228,9 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
         See Also
         --------
-        :meth:`~.IonMobilitySourceRandomAccessFrameSource.start_from_scan`
+        :meth:`~.IonMobilitySourceRandomAccessFrameSource.start_from_frame`
         """
-        self.reader.start_from_scan(*args, **kwargs)
+        self.reader.start_from_frame(*args, **kwargs)
         return self
 
 

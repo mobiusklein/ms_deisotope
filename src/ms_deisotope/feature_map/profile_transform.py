@@ -3,7 +3,8 @@ from .lcms_feature import LCMSFeature
 
 
 def peak_indices(x, min_height=0):
-    """Find the index of local maxima.
+    """
+    Find the index of local maxima.
 
     Parameters
     ----------
