@@ -414,7 +414,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.processing_parameters = []
 
     def add_instrument_configuration(self, configuration: InstrumentInformation):
-        """Add an :class:`~.InstrumentInformation` object to the output document.
+        """
+        Add an :class:`~.InstrumentInformation` object to the output document.
 
         Parameters
         ----------
@@ -460,7 +461,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.instrument_configuration_list.append(config_element)
 
     def add_software(self, software_description: Software):
-        """Add a :class:`~.Software` object to the output document.
+        """
+        Add a :class:`~.Software` object to the output document.
 
         Parameters
         ----------
@@ -470,7 +472,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information: FileInformation):
-        """Add the information of a :class:`~.FileInformation` to the output document.
+        """
+        Add the information of a :class:`~.FileInformation` to the output document.
 
         Parameters
         ----------
@@ -485,7 +488,8 @@ class MzMLSerializer(ScanSerializerBase):
             self.add_source_file(source_file)
 
     def add_file_contents(self, file_contents: Union[str, Mapping, FileContent]):
-        """Add a key to the resulting :obj:`<fileDescription>` of the output document.
+        """
+        Add a key to the resulting :obj:`<fileDescription>` of the output document.
 
         Parameters
         ----------
@@ -526,7 +530,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.pop(i)
 
     def add_source_file(self, source_file: SourceFile):
-        """Add the :class:`~.SourceFile` to the output document.
+        """
+        Add the :class:`~.SourceFile` to the output document.
 
         Parameters
         ----------
@@ -554,7 +559,8 @@ class MzMLSerializer(ScanSerializerBase):
 
     def add_data_processing(self, data_processing_description: Union[data_transformation.DataProcessingInformation,
                                                                      data_transformation.ProcessingMethod]):
-        """Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`.
+        """
+        Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`.
 
         Creates a new :obj:`<dataProcessing>` entry describing one or more :obj:`<processingMethod>`s
         for a single referenced :class:`~.Software` instance.
@@ -602,7 +608,8 @@ class MzMLSerializer(ScanSerializerBase):
             self.data_processing_list.append(data_processing_description)
 
     def add_processing_parameter(self, name: str, value: Optional[Union[str, int, float]]=None):
-        """Add a new processing method to the writer's own :obj:`<dataProcessing>` element.
+        """
+        Add a new processing method to the writer's own :obj:`<dataProcessing>` element.
 
         Parameters
         ----------

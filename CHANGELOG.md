@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+
+## Unreleased
+
+### Changed
+1. The default compressor for `MzMLbSerializer` has been changed to default to the
+   default compressor from `psims` (currently `blosc`).
+
+
 ## [v0.0.48] - 2023-05-22
 
 ### Added

@@ -40,8 +40,10 @@ from psims.mzml.writer import COMPRESSION_ZLIB
 
 try:
     from psims.mzmlb.writer import MzMLbWriter as _MzMLbWriter
+    from psims.mzmlb.writer import DEFAULT_COMPRESSOR
     is_available = True
 except ImportError:
+    DEFAULT_COMPRESSOR = COMPRESSION_ZLIB
     _MzMLbWriter = None
     is_available = False
 
@@ -64,6 +66,8 @@ class MzMLbSerializer(_MzMLSerializer):
 
     _format_conversion_term = "Conversion to mzMLb"
 
+    default_compression = DEFAULT_COMPRESSOR
+
     def _make_writer(self, handle):
         compression = self.compression
         compression_opts = None
@@ -72,7 +76,7 @@ class MzMLbSerializer(_MzMLSerializer):
             compression_opts = 4
         self.compression = 'none'
         return _MzMLbWriter(
-            self.handle,
+            handle,
             close=self._should_close,
             h5_compression=compression,
             h5_compression_options=compression_opts

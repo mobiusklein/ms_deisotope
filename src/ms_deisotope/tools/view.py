@@ -27,6 +27,9 @@ from ms_deisotope.data_source import ScanBunch, ChargeNotProvided
 from ms_deisotope.peak_set import EnvelopePair
 from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks)
 
+from ms_deisotope.task.log_utils import (init_logging, LogUtilsMixin)
+
+
 averagine_label_map = {
     "peptide": ms_deisotope.peptide,
     "glycan": ms_deisotope.glycan,
@@ -64,8 +67,8 @@ class SummaryChromatogramBuilder(object):
 
     def add(self, scan):
         self.time.append(scan.scan_time)
-        self.tic.append(scan.arrays.intensity.sum())
-        self.bpc.append(scan.arrays.intensity.max())
+        self.tic.append(scan.tic())
+        self.bpc.append(scan.base_peak().intensity if len(scan.peaks) else 0)
 
     def reset(self):
         self.tic = array.array('d')
@@ -80,13 +83,14 @@ else:
         pass
 
 
-class SpectrumViewer(_BaseFrame):
+class SpectrumViewer(_BaseFrame, LogUtilsMixin):
     def __init__(self, master, denoise=4, ms1_score_threshold=20.0):
         ttk.Frame.__init__(self, master)
         self.root = master
         self._ms_file_name = None
         self.reader = None
         self.scan = None
+        self.chromatogram_tracker = SummaryChromatogramBuilder()
         self.denoise = denoise
         self.ms1_score_threshold = ms1_score_threshold
         self.draw_isotopic_patterns = True
@@ -104,7 +108,7 @@ class SpectrumViewer(_BaseFrame):
     @ms_file_name.setter
     def ms_file_name(self, value):
         if value not in (None, '') and os.path.exists(value):
-            print("Loading %r" % value)
+            self.log("Loading %r" % value)
             self._ms_file_name = value
             self.reader = ms_deisotope.MSFileLoader(self.ms_file_name)
             self.populate()
@@ -262,28 +266,28 @@ class SpectrumViewer(_BaseFrame):
         if scan.ms_level == 1:
             averaging_level = self.ms1_scan_averaging_var.get()
             if averaging_level > 0:
-                print("Averaging")
+                self.log("Averaging")
                 if scan.arrays.mz.shape[0] > 1 :
                     self.scan = scan = scan.average(averaging_level)
-            print("Denoising")
+            self.log("Denoising")
             self.scan = scan.denoise(self.denoise) if self.denoise else scan
-        print("Processing Peaks")
+        self.log("Processing Peaks")
         self._process_scan()
-        print("Begin Drawing")
+        self.log("Begin Drawing")
         scan = self.scan
         if scan.is_profile:
-            print("Drawing Profile")
+            self.log("Drawing Profile")
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)
             # lock in axis dimensions for profile spectra according to the raw profile
             self.axis.set_xlim(0, max(self.axis.get_xlim()))
         if scan.peak_set:
-            print("Drawing Centroids")
+            self.log("Drawing Centroids")
             draw_peaklist(scan.peak_set, ax=self.axis, alpha=0.5, lw=1, color='grey', linestyle='--')
             if not scan.is_profile:
                 # lock in axis dimensions for centroid spectra according to the picked peaks
                 self.axis.set_xlim(0, max(self.axis.get_xlim()) + 2)
         if scan.deconvoluted_peak_set:
-            print("Drawing Isotopic Envelope")
+            self.log("Drawing Isotopic Envelope")
             draw_peaklist(
                 [i for p in scan.deconvoluted_peak_set for i in p.envelope],
                 ax=self.axis, alpha=0.6, lw=0.5, color='orange')
@@ -427,7 +431,7 @@ class SpectrumViewer(_BaseFrame):
                 ended = True
                 break
             if scan.index % 5000 == 0:
-                print(scan)
+                self.log(scan)
             i = scan.index
             values = [scan.id, "%0.4f" % scan.scan_time, scan.ms_level]
             if scan.ms_level > 1:
@@ -436,6 +440,7 @@ class SpectrumViewer(_BaseFrame):
             else:
                 values.extend(['-', '-', '-'])
             scans.append(values)
+            self.chromatogram_tracker.add(scan)
         i = start
         for values in scans:
             self.treeview.insert('', 'end', values=values, text=i)
@@ -447,6 +452,7 @@ class SpectrumViewer(_BaseFrame):
         if clear:
             self.clear_treeview()
         if self.reader is not None:
+            self.chromatogram_tracker.reset()
             self.reader.make_iterator(grouped=False)
             self.after(10, self._populate_range, 0, 500)
 
@@ -455,6 +461,7 @@ class SpectrumViewer(_BaseFrame):
 @click.argument("filename", type=click.Path(exists=True, readable=True), required=False)
 @click.option("-d", "--denoise", type=float, default=5.0)
 def main(filename=None, denoise=5, ms1_score=20.0, msn_score=10.0, ms1_truncation=0.95, msn_truncation=0.8):
+    init_logging()
     base = Tk()
     base.title("ms_deisotope Spectrum Viewer")
     tk.Grid.rowconfigure(base, 0, weight=1)

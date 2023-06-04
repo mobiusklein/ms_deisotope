@@ -398,7 +398,8 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     @property
     def reader(self) -> ScanIterator:
-        """The :class:`~.ScanIterator` which generates the raw scans that will
+        """
+        The :class:`~.ScanIterator` which generates the raw scans that will
         be processed.
 
         Returns
@@ -513,7 +514,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         return prec_peaks
 
     def pick_product_scan_peaks(self, product_scan: Scan) -> Union[PeakIndex, PeakSet]:
-        """Pick the peaks of product scan
+        """
+        Pick the peaks of product scan
 
         Parameters
         ----------
