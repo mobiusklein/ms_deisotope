@@ -384,3 +384,27 @@ class _MappingOverAttributeProxy(object):
 
     def __repr__(self):
         return "{self.__class__.__name__}({self.obj})".format(self=self)
+
+
+def _typecast(value: str):
+    if not isinstance(value, str):
+        return value
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    lowered = value.lower()
+    if lowered == 'true':
+        return True
+    elif lowered == 'false':
+        return False
+    elif lowered == 'null':
+        return None
+    else:
+        return value
+
+

@@ -2,7 +2,7 @@
 A simple data holder describing a sample which was used to generate
 a mass spectrometry dataset.
 """
-from ms_deisotope.utils import Base, dict_proxy
+from ms_deisotope.utils import Base, dict_proxy, _typecast
 
 
 @dict_proxy("parameters")
@@ -28,4 +28,4 @@ class Sample(Base):
             parameters.update(kwargs)
         self.id = id
         self.name = name
-        self.parameters = parameters
+        self.parameters = {k: _typecast(v) for k, v in parameters.items()}

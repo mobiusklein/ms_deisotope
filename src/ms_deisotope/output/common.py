@@ -12,7 +12,7 @@ from ms_deisotope.data_source import ScanBase, Scan, ScanBunch, ScanIterator, Ch
 from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.peak_set import DeconvolutedPeak
 
-from ms_deisotope.utils import Base
+from ms_deisotope.utils import Base, _typecast
 from ms_deisotope.data_source.common import (
     _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
 from ms_deisotope.data_source._compression import get_opener
@@ -151,7 +151,7 @@ class _ParamProp:
             return None
 
     def __set__(self, inst: Sample, value: Any):
-        inst.parameters[self.key] = value
+        inst.parameters[self.key] = _typecast(value)
 
     def __delete__(self, inst: Sample):
         del inst.parameters[self.key]

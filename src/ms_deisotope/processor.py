@@ -38,7 +38,7 @@ with fewer configurable parameters.
 """
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 import warnings
 
 from six import string_types as basestring
@@ -62,6 +62,10 @@ from .utils import Base, TargetedDeconvolutionResultBase
 from .peak_dependency_network import NoIsotopicClustersError
 from .qc.isolation import PrecursorPurityEstimator
 from .task import LogUtilsMixin
+
+if TYPE_CHECKING:
+    from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
+
 
 logger = logging.getLogger("ms_deisotope.scan_processor")
 logger.addHandler(logging.NullHandler())
@@ -103,6 +107,13 @@ class PriorityTarget(Base):
     isolation_window : :class:`~.IsolationWindow`
         The isolation window for this precursor ion. May be `None`
     """
+
+    peak: FittedPeak
+    info: PrecursorInformation
+    trust_charge_hint: bool
+    precursor_scan_id: Optional[str]
+    product_scan_id: Optional[str]
+    isolation_window: Optional['IsolationWindow']
 
     def __init__(self, peak, info, trust_charge_hint=True, precursor_scan_id=None,
                  product_scan_id=None, isolation_window=None):
@@ -1007,5 +1018,9 @@ class EmptyScanError(ValueError):
     scan_id: str
 
     def __init__(self, msg, scan_id=None):
+        """
+        Initialize this variant of :class:`ValueError` with an optional scan ID
+        in addition.
+        """
         ValueError.__init__(self, msg)
         self.scan_id = scan_id
