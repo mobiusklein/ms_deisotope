@@ -1,12 +1,12 @@
 import array
-from typing import Any, Dict, List, Optional
 import warnings
 import logging
 
 from abc import abstractmethod
 from weakref import WeakValueDictionary
 from itertools import chain
-
+from functools import partialmethod
+from typing import Any, Dict, List, Optional
 from collections import namedtuple, defaultdict
 
 import numpy as np
@@ -26,6 +26,8 @@ from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakS
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
 from .base import PrecursorInformation, RawDataArrays, ScanBase, ScanBunch
+from .loader import ScanDataSource
+
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -151,7 +153,8 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
         raise NotImplementedError()
 
     def initialize_frame_cache(self):
-        """Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
+        """
+        Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
         objects are still in memory using a :class:`weakref.WeakValueDictionary`.
 
         When a frame is requested, if the frame object is found in the cache, the
@@ -161,7 +164,8 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
 
     @property
     def frame_cache(self):
-        """A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        """
+        A :class:`weakref.WeakValueDictionary` mapping used to retrieve
         frames from memory if available before re-reading them from disk.
         """
         return self._frame_cache
@@ -384,6 +388,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             The intensity array
         ion_mobility_array : np.ndarray
             The ion mobility array
+        ion_mobility_array_type : str
+            The type of ion mobility in the source array
         data_arrays : dict
             Any extra data arrays
 
@@ -848,7 +854,8 @@ class IonMobilityFrame(FrameBase):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3,
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2,
+                         average_within=0, average_across=0, dx=0.002, num_threads=3,
                          low_memory=False, minimum_intensity=0.0, denoise=0, **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_map
         scans: List[Scan] = self.scans()
@@ -1208,6 +1215,16 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
         self.loader.reset()
         self.initialize_frame_cache()
         return self
+
+    def _call_scan_source_method(self, data, method):
+        method = getattr(self.loader, method)
+        return method(data)
+
+
+for method in ScanDataSource.__abstractmethods__:
+    setattr(Generic3DIonMobilityFrameSource,
+            method,
+            partialmethod(Generic3DIonMobilityFrameSource._call_scan_source_method, method=method))
 
 
 class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):

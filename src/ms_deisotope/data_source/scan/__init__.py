@@ -20,6 +20,15 @@ from .loader import (
 
 from .proxy import ScanProxyContext
 
+from .mobility_frame import (
+    IonMobilityFrame,
+    ProcessedIonMobilityFrame,
+    IonMobilitySource,
+    Generic3DIonMobilityFrameSource,
+    FramedIonMobilityFrameSource,
+    IonMobilitySourceRandomAccessFrameSource,
+    RawDataArrays3D
+)
 
 __all__ = [
     "ScanBunch", "Scan", "ProcessedScan",
@@ -33,4 +42,10 @@ __all__ = [
 
     "ScanDataSource", "ScanIterator", "RandomAccessScanSource",
     "ScanFileMetadataBase", "ScanProxyContext",
+
+    "IonMobilityFrame", "ProcessedIonMobilityFrame",
+    "IonMobilitySource", "Generic3DIonMobilityFrameSource",
+    "FramedIonMobilityFrameSource",
+    "IonMobilitySourceRandomAccessFrameSource",
+    "RawDataArrays3D",
 ]

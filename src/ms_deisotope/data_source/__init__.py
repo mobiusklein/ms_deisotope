@@ -13,7 +13,13 @@ from .scan import (
     PrecursorInformation,
     ScanDataSource,
     ScanIterator,
-    RandomAccessScanSource
+    RandomAccessScanSource,
+    IonMobilityFrame,
+    ProcessedIonMobilityFrame,
+    Generic3DIonMobilityFrameSource,
+    FramedIonMobilityFrameSource,
+    IonMobilitySource,
+    IonMobilitySourceRandomAccessFrameSource
 )
 
 from typing import Any
@@ -80,4 +86,8 @@ __all__ = [
     "get_opener", "ScanProxyContext", 'scan_from_csv',
     "make_scan", "ScanCollection", "make_scan_collection",
     "ProcessedRandomAccessScanSource",
+
+    "IonMobilityFrame", "ProcessedIonMobilityFrame",
+    "Generic3DIonMobilityFrameSource", "FramedIonMobilityFrameSource",
+    "IonMobilitySource", "IonMobilitySourceRandomAccessFrameSource",
 ]

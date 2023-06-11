@@ -238,12 +238,13 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
             last_ms_levels[ms_level] = idx
 
             fline = self._filter_string(scan._data)
-            analyzer = analyzer_map[fline.data['analyzer']]
-            try:
-                analyzer_confs[analyzer]
-            except KeyError:
-                analyzer_confs[analyzer] = analyzer_counter
-                analyzer_counter += 1
+            if 'analyzer' in fline.data:
+                analyzer = analyzer_map[fline.data['analyzer']]
+                try:
+                    analyzer_confs[analyzer]
+                except KeyError:
+                    analyzer_confs[analyzer] = analyzer_counter
+                    analyzer_counter += 1
         self.reset()
         self._scan_type_index = index
         self._analyzer_to_configuration_index = analyzer_confs
