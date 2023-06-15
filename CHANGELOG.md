@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ## Unreleased
 
+
+## [v0.0.49] - 2023-06-14
+
 ### Changed
 1. The default compressor for `MzMLbSerializer` has been changed to default to the
    default compressor from `psims` (currently `blosc`).
@@ -564,8 +567,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.48...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.49...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49
 [v0.0.48]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48
 [v0.0.47]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.47
 [v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.46
