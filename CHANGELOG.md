@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Fixed
 1. Avoid excessive hysterical reloading of spectra from mzML files when trying to find
    precursor scan IDs.
+2. Fix an outdated placeholder filter in `PeakDependencyNetwork` that caused the first peak
+   in any spectrum to be ignored.
 
 ## [v0.0.47] - 2023-05-08
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""A base class for deconvolution strategies.
-"""
+"""A base class for deconvolution strategies."""
 import operator
 import logging
 

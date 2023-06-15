@@ -213,7 +213,8 @@ except ImportError:
                 self.nodes[peak.index] = PeakNode(peak)
 
         def add_fit_dependence(self, fit_record):
-            """Add the relatoinship between the experimental peaks
+            """
+            Add the relatoinship between the experimental peaks
             in `fit_record` to the graph, expressed as a hyper-edge
             denoted by `fit_record`.
 
@@ -225,10 +226,11 @@ except ImportError:
             Parameters
             ----------
             fit_record: :class:`~.IsotopicFitRecord`
+                The record to to add
             """
             for peak in fit_record.experimental:
                 # Check for null peak
-                if peak.index == 0:
+                if peak.index == 0 and peak.intensity <= 1:
                     continue
                 self.nodes[peak.index].links[fit_record] = fit_record.score
             self.dependencies.add(fit_record)
@@ -245,7 +247,8 @@ except ImportError:
                     return value
 
         def drop_fit_dependence(self, fit_record):
-            """Remove this fit from the graph, deleting all
+            """
+            Remove this fit from the graph, deleting all
             hyper-edges.
             """
             for node in self.nodes_for(fit_record):
@@ -255,7 +258,8 @@ except ImportError:
                     pass
 
         def best_exact_fits(self):
-            """For each distinct group of experimental peaks, retain only
+            """
+            For each distinct group of experimental peaks, retain only
             the best scoring fit using exactly those peaks.
             """
             by_peaks = defaultdict(list)
@@ -342,7 +346,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
 
     @property
     def interval_tree(self):
-        """An :class:`~.IntervalTreeNode` built over all dependency clusters that
+        """
+        An :class:`~.IntervalTreeNode` built over all dependency clusters that
         the :class:`PeakDependenceGraph` has seen over the course of all iterations.
 
         Raises
@@ -415,7 +420,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
                 return cluster
 
     def find_solution_for(self, peak):
-        """Find the best isotopic pattern fit which includes ``peak``
+        """
+        Find the best isotopic pattern fit which includes ``peak``
         or is close enough to ``peak`` that it might have been selected
         instead.
 
@@ -466,7 +472,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
             return self._solution_map[fit]
 
     def _find_best_fit_by_weighted_distance(self, peak, candidates):
-        """Locate the fit that is nearest to ``peak`` in m/z space, weighted by
+        """
+        Locate the fit that is nearest to ``peak`` in m/z space, weighted by
         the score of the fit such that given two fits with the same m/z, the better
         scoring fit is chosen.
 
@@ -496,7 +503,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         return fit
 
     def claimed_nodes(self):
-        """Return all nodes with at least one
+        """
+        Return all nodes with at least one
         fit connecting it.
 
         Returns
@@ -512,7 +520,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         return peaks
 
     def drop_superceded_fits(self):
-        """Drop all fits where there is a better fit
+        """
+        Drop all fits where there is a better fit
         using the first fit's monoisotopic peak at the
         same charge state.
         """
@@ -545,7 +554,8 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         self.dependencies = set(keep)
 
     def drop_gapped_fits(self, n=None):
-        """Discard any fit with more missed peaks than
+        """
+        Discard any fit with more missed peaks than
         :attr:`max_missed_peaks`.
         """
         if n is None:
@@ -586,7 +596,8 @@ PeakDependenceGraph.log_with_logger(logger)
 
 
 class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
-    """Stores the necessary information to retrieve the local optimal solution for
+    """
+    Stores the necessary information to retrieve the local optimal solution for
     a single peak for a deconvolution algorithm from the optimal fit containing
     :attr:`query_peak` in the set of disjoint best fits for the enclosing connected
     component
@@ -598,6 +609,7 @@ class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
     solution_peak : DeconvolutedPeak
         The optimal solution peak
     """
+
     def __init__(self, deconvoluter, peak, *args, **kwargs):
         super(NetworkedTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
         self.query_peak = peak

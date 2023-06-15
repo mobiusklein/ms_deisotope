@@ -27,14 +27,14 @@ def _loader_creator(specification, **kwargs):
         if options:
             kwargs.update(options)
     if isinstance(specification, (basestring, os.PathLike)):
-        return MSFileLoader(specification, **kwargs)
+        specification = MSFileLoader(specification, **kwargs)
     if isinstance(specification, IonMobilitySourceRandomAccessFrameSource):
         return specification
     elif isinstance(specification, ScanIterator):
         return Generic3DIonMobilityFrameSource(specification, **kwargs)
     else:
         raise ValueError(
-            "Cannot determine how to get a ScanIterator from %r" % (specification,))
+            "Cannot determine how to get a frame iterator from %r" % (specification,))
 
 
 class IonMobilityFrameProcessor(Base, LogUtilsMixin):
@@ -216,6 +216,9 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
     def __iter__(self) -> 'IonMobilityFrameProcessor':
         return self
+
+    def reset(self):
+        self.reader.reset()
 
     def start_from_frame(self, *args, **kwargs) -> 'IonMobilityFrameProcessor':
         """

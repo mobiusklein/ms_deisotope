@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Implementations of averagine-based deconvoluters.
+"""
+Implementations of averagine-based deconvoluters.
 
 Averagine-based deconvoluters use an "average monomer" isotopic model
 to interpolate the isotopic patterns for any peak in the experimental

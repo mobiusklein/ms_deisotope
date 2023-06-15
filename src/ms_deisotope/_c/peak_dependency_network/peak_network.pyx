@@ -253,7 +253,7 @@ cdef class PeakDependenceGraphBase(object):
         n = PyList_GET_SIZE(fit_record.experimental)
         for i in range(n):
             peak = <FittedPeak>PyList_GET_ITEM(fit_record.experimental, i)
-            if peak.index == 0:
+            if peak.index == 0 and peak.intensity <= 1:
                 continue
             node = <PeakNode>PyDict_GetItem(self.nodes, peak.index)
             PyDict_SetItem(node.links, fit_record, fit_record.score)
