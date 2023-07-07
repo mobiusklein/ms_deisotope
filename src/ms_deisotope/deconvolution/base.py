@@ -3,10 +3,13 @@
 import operator
 import logging
 
-from ms_peak_picker import FittedPeak
+from typing import List, Dict, Tuple, Optional
+
+from ms_peak_picker import FittedPeak, PeakSet
 
 
-from ms_deisotope.scoring import IsotopicFitRecord
+from ms_deisotope.scoring import IsotopicFitRecord, IsotopicFitterBase
+from ms_deisotope.averagine import TheoreticalIsotopicPattern
 from ms_deisotope.constants import (
     ERROR_TOLERANCE)
 
@@ -53,13 +56,14 @@ class DeconvoluterBase(Base):
         Produce extra logging information
     """
 
-    use_subtraction = False
-    scale_method = 'sum'
-    merge_isobaric_peaks = True
-    minimum_intensity = 5.
-    verbose = False
-    peaklist = None
-    scorer = None
+    use_subtraction: bool = False
+    scale_method: str = 'sum'
+    merge_isobaric_peaks: bool = True
+    minimum_intensity: float = 5.
+    verbose: bool = False
+    peaklist: PeakSet = None
+    scorer: IsotopicFitterBase = None
+    _slice_cache: Dict[Tuple[float, float], PeakSet]
 
     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
                  minimum_intensity=5., *args, **kwargs):
@@ -69,7 +73,7 @@ class DeconvoluterBase(Base):
         self.minimum_intensity = minimum_intensity
         self._slice_cache = {}
 
-    def has_peak(self, mz, error_tolerance):
+    def has_peak(self, mz: float, error_tolerance: float) -> FittedPeak:
         """
         Query :attr:`peaklist` for a peak at `mz` within `error_tolerance` ppm. If a peak
         is not found, this method returns a placeholder peak.
@@ -91,7 +95,7 @@ class DeconvoluterBase(Base):
             return FittedPeak(mz, 1.0, 1.0, -1, 0, 0, 0)
         return peak
 
-    def between(self, m1, m2):
+    def between(self, m1: float, m2: float) -> PeakSet:
         """
         Take a slice from :attr:`peaklist` using it's :meth:`between` method. Caches
         repeated queries in :attr:`_scan_cache`.
@@ -116,7 +120,8 @@ class DeconvoluterBase(Base):
             self._slice_cache[key] = region
             return region
 
-    def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance=ERROR_TOLERANCE):
+    def match_theoretical_isotopic_distribution(self, theoretical_distribution: TheoreticalIsotopicPattern,
+                                                error_tolerance: float=ERROR_TOLERANCE) -> List[FittedPeak]:
         """
         Given a list of theoretical peaks, find their counterparts in :attr:`peaklist` within `error_tolerance`
         ppm error. If no experimental peak is found, a placeholder will be used in its stead.
@@ -137,7 +142,8 @@ class DeconvoluterBase(Base):
             p.mz, error_tolerance) for p in theoretical_distribution]
         return experimental_distribution
 
-    def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
+    def scale_theoretical_distribution(self, theoretical_distribution: TheoreticalIsotopicPattern,
+                                       experimental_distribution: List[FittedPeak]) -> TheoreticalIsotopicPattern:
         """
         Scale up a theoretical isotopic pattern such that its total intensity matches the experimental
         isotopic pattern. This mutates `theoretical_distribution`.
@@ -161,8 +167,11 @@ class DeconvoluterBase(Base):
         """
         theoretical_distribution.scale(
             experimental_distribution, self.scale_method)
+        return theoretical_distribution
 
-    def _evaluate_theoretical_distribution(self, experimental, theoretical, peak, charge):
+    def _evaluate_theoretical_distribution(self, experimental: List[FittedPeak],
+                                           theoretical: TheoreticalIsotopicPattern,
+                                           peak: FittedPeak, charge: int) -> IsotopicFitRecord:
         """
         Evaluate a provided theoretical isotopic pattern fit against a
         set of matched experimental peaks.
@@ -186,7 +195,7 @@ class DeconvoluterBase(Base):
         score = self.scorer(self.peaklist, experimental, theoretical)  # pylint: disable=not-callable
         return IsotopicFitRecord(peak, score, charge, theoretical, experimental)
 
-    def fit_incremental_truncation(self, seed_fit, lower_bound):
+    def fit_incremental_truncation(self, seed_fit: IsotopicFitRecord, lower_bound: float) -> List[IsotopicFitRecord]:
         """
         Fit incrementally truncated versions of the seed fit to check to see if a narrower
         theoretical fit matches the data better.
@@ -212,7 +221,8 @@ class DeconvoluterBase(Base):
             fits.append(fit)
         return fits
 
-    def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
+    def subtraction(self, isotopic_cluster: TheoreticalIsotopicPattern,
+                    error_tolerance: float=ERROR_TOLERANCE):
         """
         Subtract signal attributed to `isotopic_cluster` from the equivalent
         peaks in :attr:`peaklist`, mutating the peaks within.
@@ -251,7 +261,10 @@ class DeconvoluterBase(Base):
         merged_peaks.append(current_peak)
         return merged_peaks
 
-    def _find_next_putative_peak(self, mz, charge, step=1, tolerance=ERROR_TOLERANCE):
+    def _find_next_putative_peak(self, mz: float,
+                                 charge: int,
+                                 step: int=1,
+                                 tolerance: float=ERROR_TOLERANCE) -> List[Tuple[FittedPeak, int]]:
         """
         Recalibrates the current peak location given the position of the **next** putative peak
         in a theoretical isotopic cluster.
@@ -291,7 +304,10 @@ class DeconvoluterBase(Base):
             candidates.append((dummy_peak, charge))
         return candidates
 
-    def _find_previous_putative_peak(self, mz, charge, step=1, tolerance=ERROR_TOLERANCE):
+    def _find_previous_putative_peak(self, mz: float,
+                                     charge: int,
+                                     step: int=1,
+                                     tolerance: float=ERROR_TOLERANCE) -> List[Tuple[FittedPeak, int]]:
         """
         Recalibrates the current peak location given the position of the **previous** putative peak
         in a theoretical isotopic cluster.
@@ -335,7 +351,7 @@ class DeconvoluterBase(Base):
                     self._find_previous_putative_peak(prev_peak_mz, charge, step - 1, tolerance))
         return candidates
 
-    def _check_fit(self, fit):
+    def _check_fit(self, fit: IsotopicFitRecord) -> bool:
         if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
             return False
         if self.scorer.reject(fit):

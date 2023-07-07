@@ -1,7 +1,7 @@
 import operator
 import math
 from collections import namedtuple
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING
+from typing import Any, List, Optional, Sequence, TYPE_CHECKING, Tuple
 
 from brainpy import mass_charge_ratio, neutral_mass as calc_neutral_mass, PROTON
 
@@ -87,7 +87,8 @@ class Envelope(Sequence[EnvelopePair]):
 
 
 class DeconvolutedPeak(Base):
-    """Represent a single deconvoluted peak which represents an aggregated isotopic
+    """
+    Represent a single deconvoluted peak which represents an aggregated isotopic
     pattern collapsed to its monoisotopic peak, with a known charge state
 
     Attributes
@@ -333,12 +334,12 @@ class DeconvolutedPeakSet(Base):
         else:
             return _get_nearest_peak(self.peaks, neutral_mass, use_mz=use_mz)
 
-    def has_peak(self, neutral_mass, tolerance=1e-5, use_mz=False):
+    def has_peak(self, neutral_mass: float, tolerance: float=1e-5, use_mz: bool=False) -> Optional[DeconvolutedPeak]:
         if use_mz:
             return binary_search(self._mz_ordered, neutral_mass, tolerance, mz_getter)
         return binary_search(self.peaks, neutral_mass, tolerance, neutral_mass_getter)
 
-    def all_peaks_for(self, neutral_mass, tolerance=1e-5):
+    def all_peaks_for(self, neutral_mass: float, tolerance: float=1e-5) -> Tuple[DeconvolutedPeak]:
         lo = neutral_mass - neutral_mass * tolerance
         hi = neutral_mass + neutral_mass * tolerance
         lo_peak, lo_err = self.get_nearest_peak(lo)
@@ -362,10 +363,12 @@ class DeconvolutedPeakSet(Base):
     def __iter__(self):
         return iter(self.peaks)
 
-    def clone(self):
+    def clone(self) -> "DeconvolutedPeakSet":
+        """Make a deep copy of this object"""
         return self.__class__(tuple(p.clone() for p in self))
 
-    def copy(self):
+    def copy(self) -> "DeconvolutedPeakSet":
+        """Make a deep copy of this object"""
         return self.clone()
 
     def __eq__(self, other):
@@ -407,13 +410,16 @@ class DeconvolutedPeakSet(Base):
         return dup
 
 
-def merge(peaks_a, *peaks_b, **kwargs):
-    """Combine two :class:`DeconvolutedPeakSet` objects.
+def merge(peaks_a: DeconvolutedPeakSet, *peaks_b: DeconvolutedPeakSet, copy=True):
+    """
+    Combine two :class:`DeconvolutedPeakSet` objects.
 
     Parameters
     ----------
     peaks_a: :class:`DeconvolutedPeakSet`
+        The first peak set to merge
     peaks_b: :class:`DeconvolutedPeakSet`
+        The other peak sets to merge
     copy: bool
         Whether or not to copy the peaks first. If not,
         the two input peak sets should not be used again
@@ -423,7 +429,6 @@ def merge(peaks_a, *peaks_b, **kwargs):
     -------
     :class:`DeconvolutedPeakSet`
     """
-    copy = kwargs.get("copy", True)
     tp = peaks_a.__class__
     if copy:
         peaks = ()
@@ -556,7 +561,8 @@ except ImportError:
 
 
 def window_peak_set(peak_set: DeconvolutedPeakSet, window_size: float=100.0, peaks_per_window: int=10) -> List[List[DeconvolutedPeak]]:
-    """Generate non-overlapping windows over a :class:`~.DeconvolutedPeakSet`, selecting the most
+    """
+    Generate non-overlapping windows over a :class:`~.DeconvolutedPeakSet`, selecting the most
     abundant peaks in each window.
 
     Parameters
@@ -592,13 +598,19 @@ def window_peak_set(peak_set: DeconvolutedPeakSet, window_size: float=100.0, pea
     return windows
 
 
-def decharge(self, include_envelopes=True, charge_carrier=PROTON, new_charge=1):
-    """Transfomr multiply charged deconvoluted peaks into singly charged deconvoluted peaks.
+def decharge(self: DeconvolutedPeakSet,
+             include_envelopes: bool=True,
+             charge_carrier: float=PROTON,
+             new_charge: int=1) -> DeconvolutedPeakSet:
+    """
+    Transfomr multiply charged deconvoluted peaks into singly charged deconvoluted peaks.
 
     This operation returns a copy of the peak set, the input peak set is unchanged.
 
     Parameters
     ----------
+    self : DeconvolutedPeakSet
+        The peak set to decharge
     include_envelopes : bool, optional
         Whether or not to charge-transform the isotopic envelope fitted in :attr:`DeconvolutedPeak.envelope`
         (the default is True)
@@ -637,7 +649,8 @@ def decharge(self, include_envelopes=True, charge_carrier=PROTON, new_charge=1):
 
 
 def envelopes_to_peak_set(self):
-    """Convert a set of deconvoluted peaks with fitted isotopic envelopes into a
+    """
+    Convert a set of deconvoluted peaks with fitted isotopic envelopes into a
     set of centroids representing those envelope peaks.
 
     Returns

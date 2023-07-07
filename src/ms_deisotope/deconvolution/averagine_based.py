@@ -15,10 +15,15 @@ References
     http://doi.org/10.1016/1044-0305(95)00017-8
 """
 
+from typing import List, Set, Tuple
+
+from ms_peak_picker import FittedPeak
+
+from ms_deisotope.peak_set import DeconvolutedPeak
 from ms_deisotope.averagine import PROTON, AveragineCache, peptide, glycopeptide, glycan
 from ms_deisotope.constants import IGNORE_BELOW, TRUNCATE_AFTER, SCALE_METHOD
 
-from ms_deisotope.scoring import penalized_msdeconv
+from ms_deisotope.scoring import IsotopicFitRecord, penalized_msdeconv
 
 from .base import (
     DeconvoluterBase)
@@ -42,8 +47,12 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             use_subtraction, scale_method, merge_isobaric_peaks,
             minimum_intensity, *args, **kwargs)
 
-    def fit_theoretical_distribution(self, peak, error_tolerance, charge, charge_carrier=PROTON, truncate_after=0.8,
-                                     ignore_below=IGNORE_BELOW):
+    def fit_theoretical_distribution(self, peak: FittedPeak,
+                                     error_tolerance: float,
+                                     charge: int,
+                                     charge_carrier: float=PROTON,
+                                     truncate_after: float=0.8,
+                                     ignore_below: float=IGNORE_BELOW) -> IsotopicFitRecord:
         """
         Fit an isotopic pattern seeded at `peak` at `charge` charge.
 
@@ -84,8 +93,11 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             eid, tid, peak, charge)
         return record
 
-    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8,
-                              ignore_below=IGNORE_BELOW):
+    def _fit_peaks_at_charges(self, peak_charge_set: Set[Tuple[FittedPeak, int]],
+                              error_tolerance: float,
+                              charge_carrier: float=PROTON,
+                              truncate_after: float=0.8,
+                              ignore_below: float=IGNORE_BELOW) -> Set[IsotopicFitRecord]:
         """
         Given a set of candidate monoisotopic peaks and charge states, and a PPM error tolerance,
         fit each putative isotopic pattern.
@@ -166,6 +178,10 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
         Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
     """
 
+    averagine: AveragineCache
+    verbose: bool
+    _deconvoluted_peaks: List[DeconvolutedPeak]
+
     def __init__(self, peaklist, averagine=None, scorer=penalized_msdeconv,
                  use_subtraction=True, scale_method=SCALE_METHOD,
                  verbose=False, **kwargs):
@@ -190,8 +206,13 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
     for fitting isotopic patterns using multiple Averagine models.
     """
 
-    def fit_theoretical_distribution(self, peak, error_tolerance, charge, averagine, charge_carrier=PROTON, truncate_after=0.8,
-                                     ignore_below=IGNORE_BELOW):
+    def fit_theoretical_distribution(self, peak: FittedPeak,
+                                     error_tolerance: float,
+                                     charge: int,
+                                     averagine: AveragineCache,
+                                     charge_carrier: float=PROTON,
+                                     truncate_after: float=0.8,
+                                     ignore_below: float=IGNORE_BELOW) -> IsotopicFitRecord:
         """
         Fit an isotopic pattern seeded at `peak` at `charge` charge.
 
@@ -234,8 +255,11 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             eid, tid, peak, charge)
         return record
 
-    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON,
-                              truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+    def _fit_peaks_at_charges(self, peak_charge_set: Set[Tuple[FittedPeak, int]],
+                              error_tolerance: float,
+                              charge_carrier: float=PROTON,
+                              truncate_after: float=TRUNCATE_AFTER,
+                              ignore_below: float=IGNORE_BELOW) -> Set[IsotopicFitRecord]:
         results = []
         for peak, charge in peak_charge_set:
             for averagine in self.averagines:
@@ -290,6 +314,10 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
         for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
         Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
     """
+
+    averagines: List[AveragineCache]
+    verbose: bool
+    _deconvoluted_peaks: List[DeconvolutedPeak]
 
     def __init__(self, peaklist, averagines=None, scorer=penalized_msdeconv,
                  use_subtraction=True, scale_method=SCALE_METHOD,

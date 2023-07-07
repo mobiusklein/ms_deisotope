@@ -1,5 +1,7 @@
 """Deconvolution strategies using a list of compositions."""
 
+from typing import List, Mapping, Optional, Tuple
+
 from ms_deisotope.averagine import (
     PROTON, isotopic_variants,
     TheoreticalIsotopicPattern,
@@ -26,6 +28,9 @@ from .utils import (
     )
 
 
+CompositionType = Mapping[str, int]
+
+
 class CompositionListDeconvoluterBase(DeconvoluterBase):
     """
     A mixin class to provide common features for deconvoluters which process spectra
@@ -38,15 +43,21 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         the :class:`~.Mapping` interface to access their individual elements.
     """
 
+    composition_list: List[CompositionType]
+    incremental_truncation: float
+
     def __init__(self, composition_list, *args, **kwargs):
         self.composition_list = list(composition_list)
         self.incremental_truncation = kwargs.get(
             "incremental_truncation", None)
         super(CompositionListDeconvoluterBase, self).__init__(*args, **kwargs)
 
-    def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=TRUNCATE_AFTER,
-                                              mass_shift=None, charge_carrier=PROTON,
-                                              ignore_below=IGNORE_BELOW):
+    def generate_theoretical_isotopic_cluster(self, composition: CompositionType,
+                                              charge: int,
+                                              truncate_after: float=TRUNCATE_AFTER,
+                                              mass_shift: float=None,
+                                              charge_carrier: float=PROTON,
+                                              ignore_below: float=IGNORE_BELOW) -> TheoreticalIsotopicPattern:
         """
         Generate a theoretical isotopic pattern for ``composition``
 
@@ -84,7 +95,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             tid.shift(tid[0].mz + mass_shift / abs(charge))
         return tid
 
-    def recalibrate_theoretical_mz(self, theoretical_distribution, experimental_mz):
+    def recalibrate_theoretical_mz(self, theoretical_distribution: TheoreticalIsotopicPattern,
+                                   experimental_mz: float) -> TheoreticalIsotopicPattern:
         """
         Recalibrate the m/z of the theoretical isotopic pattern to start from the
         peak matching the experimental monoisotopic m/z
@@ -103,8 +115,13 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         theoretical_distribution.shift(experimental_mz)
         return theoretical_distribution
 
-    def fit_composition_at_charge(self, composition, charge, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON,
-                                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, mass_shift=None):
+    def fit_composition_at_charge(self, composition: CompositionType,
+                                  charge: int,
+                                  error_tolerance: float=ERROR_TOLERANCE,
+                                  charge_carrier: float=PROTON,
+                                  truncate_after: float=TRUNCATE_AFTER,
+                                  ignore_below: float=IGNORE_BELOW,
+                                  mass_shift: float=None) -> IsotopicFitRecord:
         """
         Produce an isotopic fit for `composition` at `charge` against the experimental peak set.
 
@@ -157,7 +174,9 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         fit.missed_peaks = missed_peaks
         return fit
 
-    def _make_deconvoluted_peak_solution(self, fit, composition, charge_carrier):
+    def _make_deconvoluted_peak_solution(self, fit: IsotopicFitRecord,
+                                         composition: CompositionType,
+                                         charge_carrier: float) -> DeconvolutedPeakSolution:
         eid = fit.experimental
         tid = fit.theoretical
         charge = fit.charge
@@ -186,9 +205,13 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             mz=monoisotopic_mz, area=sum(e.area for e in eid))
         return peak
 
-    def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
-                                charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
-                                mass_shift=None):
+    def deconvolute_composition(self, composition: CompositionType,
+                                error_tolerance: float=ERROR_TOLERANCE,
+                                charge_range: Tuple[int, int]=(1, 8),
+                                charge_carrier: float=PROTON,
+                                truncate_after: float=TRUNCATE_AFTER,
+                                ignore_below: float=IGNORE_BELOW,
+                                mass_shift: float=None):
         """
         For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
         and if the fit is satisfactory, add it to the results set.
@@ -288,8 +311,13 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
             use_subtraction=use_subtraction, scale_method=scale_method,
             merge_isobaric_peaks=True, **kwargs)
 
-    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), charge_carrier=PROTON,
-                    truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, mass_shift=None, **kwargs):
+    def deconvolute(self, error_tolerance: float=ERROR_TOLERANCE,
+                    charge_range: Tuple[int, int]=(1, 8),
+                    charge_carrier: float=PROTON,
+                    truncate_after: float=TRUNCATE_AFTER,
+                    ignore_below: float=IGNORE_BELOW,
+                    mass_shift: float=None,
+                    **kwargs) -> DeconvolutedPeakSet:
         """
         Deconvolute the spectrum, extracting isotopic patterns from the composition list.
 
@@ -365,6 +393,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
         Produce extra logging information
     """
 
+    peak_dependency_network: PeakDependenceGraph
+
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
                  verbose=False, use_quick_charge=False, **kwargs):
@@ -398,9 +428,13 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
     def _save_peak_solution(self, solution):
         self._deconvoluted_peaks.append(solution)
 
-    def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
-                                charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
-                                mass_shift=None):
+    def deconvolute_composition(self, composition: CompositionType,
+                                error_tolerance: float=ERROR_TOLERANCE,
+                                charge_range: Tuple[int, int]=(1, 8),
+                                charge_carrier: float=PROTON,
+                                truncate_after: float=TRUNCATE_AFTER,
+                                ignore_below: float=IGNORE_BELOW,
+                                mass_shift: float=None):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(
                 composition, charge, error_tolerance, charge_carrier=charge_carrier,
@@ -418,8 +452,12 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                         self.peak_dependency_network.add_fit_dependence(case)
 
 
-    def populate_graph(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
-                       charge_carrier=PROTON, ignore_below=IGNORE_BELOW, mass_shift=None):
+    def populate_graph(self, error_tolerance: float=ERROR_TOLERANCE,
+                       charge_range: Tuple[int, int]=(1, 8),
+                       truncate_after: float=TRUNCATE_AFTER,
+                       charge_carrier: float=PROTON,
+                       ignore_below: float=IGNORE_BELOW,
+                       mass_shift: float=None):
         """
         For each composition, for each charge state under consideration, fit the theoretical
         isotopic pattern for this composition, and if the fit is satisfactory, add it to the
@@ -450,7 +488,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                                          truncate_after=truncate_after, charge_carrier=charge_carrier,
                                          ignore_below=ignore_below, mass_shift=mass_shift)
 
-    def select_best_disjoint_subgraphs(self, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
+    def select_best_disjoint_subgraphs(self, error_tolerance: float=ERROR_TOLERANCE,
+                                       charge_carrier: float=PROTON):
         """
         Construct connected envelope graphs from :attr:`peak_dependency_network` and
         extract the best disjoint isotopic pattern fits in each envelope graph. This in
@@ -483,9 +522,15 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=MAX_ITERATION,   # pylint: disable=arguments-differ
-                    truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, ignore_below=IGNORE_BELOW,
-                    mass_shift=None, convergence=CONVERGENCE, **kwargs):
+    def deconvolute(self, error_tolerance: float=ERROR_TOLERANCE,
+                    charge_range: Tuple[int, int]=(1, 8),
+                    iterations: int=MAX_ITERATION,   # pylint: disable=arguments-differ
+                    truncate_after: float=TRUNCATE_AFTER,
+                    charge_carrier: float=PROTON,
+                    ignore_below: float=IGNORE_BELOW,
+                    mass_shift: float=None,
+                    convergence: float=CONVERGENCE,
+                    **kwargs) -> DeconvolutedPeakSet:
         """
         Deconvolute the spectrum, extracting isotopic patterns from the composition list.
 

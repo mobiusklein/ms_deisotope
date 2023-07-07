@@ -1,11 +1,18 @@
 from __future__ import print_function
+
 import operator
 import random
+
+from typing import TYPE_CHECKING, List
 
 from datetime import datetime
 from collections import OrderedDict
 
 from six import add_metaclass
+
+if TYPE_CHECKING:
+    from ms_deisotope.deconvolution import DeconvoluterBase
+    from ms_deisotope.peak_set import DeconvolutedPeakSet
 
 
 try:  # pragma: no cover
@@ -148,6 +155,11 @@ class DeconvolutionProcessResult(object):
     priorities : list
         The extracted results from the targeted deconvolution list
     """
+
+    deconvoluter: 'DeconvoluterBase'
+    errors: List[Exception]
+    priorities: List['TargetedDeconvolutionResultBase']
+    peak_set: 'DeconvolutedPeakSet'
 
     def __init__(self, deconvoluter, peak_set, priorities, errors=None):
         self.deconvoluter = deconvoluter

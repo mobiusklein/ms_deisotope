@@ -2,6 +2,8 @@
 
 import logging
 
+from typing import List, Tuple, Union, Sequence, Optional
+
 import numpy as np
 
 from ms_peak_picker import (
@@ -12,6 +14,14 @@ from ms_deisotope.peak_set import DeconvolutedPeak, Envelope
 from ms_deisotope.constants import ERROR_TOLERANCE
 
 
+PeakListTypes = Union[
+    PeakSet,
+    PeakIndex,
+    Sequence[FittedPeak],
+    Sequence[Tuple[float, float]],
+    Sequence[Sequence[float]]
+]
+
 logger = logging.getLogger("ms_deisotope.deconvolution")
 logger.addHandler(logging.NullHandler())
 info = logger.info
@@ -19,7 +29,7 @@ debug = logger.debug
 error = logger.error
 
 
-def _is_parallel_arrays(peaks):
+def _is_parallel_arrays(peaks: PeakListTypes):
     if len(peaks) == 2:
         if isinstance(peaks[0], np.ndarray) and isinstance(peaks[1], np.ndarray) and \
                 len(peaks[0]) == len(peaks[1]):
@@ -27,7 +37,7 @@ def _is_parallel_arrays(peaks):
     return False
 
 
-def prepare_peaklist(peaks):
+def prepare_peaklist(peaks: PeakListTypes):
     """
     Ensure ``peaks`` is a :class:`~.PeakSet` object,
     converting from other compatible types as needed. Additionally, make a deep
@@ -81,7 +91,7 @@ def prepare_peaklist(peaks):
     return peaks
 
 
-def from_fitted_peak(peak, charge=1):
+def from_fitted_peak(peak: FittedPeak, charge: int=1) -> DeconvolutedPeak:
     """
     Convert a :class:`~.FittedPeak` into a :class:`~.DeconvolutedPeak`
     at the specified charge state.
@@ -106,7 +116,7 @@ def from_fitted_peak(peak, charge=1):
     return dpeak
 
 
-def mean(numbers):
+def mean(numbers: Sequence[float]):
     """
     Quick and dirty mean calculation
     without converting to a NumPy array
@@ -128,7 +138,10 @@ def mean(numbers):
     return total / n
 
 
-def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
+def has_previous_peak_at_charge(peak_collection, peak: FittedPeak,
+                                charge: int=2,
+                                step: int=1,
+                                error_tolerance: float=ERROR_TOLERANCE) -> FittedPeak:
     """
     Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
@@ -154,7 +167,10 @@ def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_t
     return peak_collection.has_peak(prev, error_tolerance)
 
 
-def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
+def has_successor_peak_at_charge(peak_collection, peak: FittedPeak,
+                                 charge: int=2,
+                                 step: int=1,
+                                 error_tolerance: float=ERROR_TOLERANCE) -> FittedPeak:
     """
     Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
@@ -180,7 +196,7 @@ def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_
     return peak_collection.has_peak(nxt, error_tolerance)
 
 
-def first_peak(peaks):
+def first_peak(peaks: List[FittedPeak]) -> Optional[FittedPeak]:
     """
     Get the first non-placeholder peak in a list of peaks
 
@@ -198,7 +214,7 @@ def first_peak(peaks):
             return peak
 
 
-def drop_placeholders(peaks):
+def drop_placeholders(peaks: Sequence[FittedPeak]) -> List[FittedPeak]:
     """
     Removes all placeholder peaks from an iterable of peaks
 
@@ -214,7 +230,7 @@ def drop_placeholders(peaks):
     return [peak for peak in peaks if peak.mz > 1 and peak.intensity > 1]
 
 
-def count_placeholders(peaks):
+def count_placeholders(peaks: Sequence[FittedPeak]) -> int:
     """
     Counts the number of placeholder peaks in an iterable
     of FittedPeaks
@@ -236,7 +252,8 @@ def count_placeholders(peaks):
     return i
 
 
-def drop_placeholders_parallel(peaks, otherpeaks):
+def drop_placeholders_parallel(peaks: Sequence[FittedPeak],
+                               otherpeaks: Sequence[FittedPeak]) -> Tuple[List[FittedPeak], List[FittedPeak]]:
     """
     Given two parallel iterables of Peak objects, `peaks` and `otherpeaks`,
     for each position that is not a placeholder in `peaks`, include that Peak object
@@ -267,7 +284,7 @@ def drop_placeholders_parallel(peaks, otherpeaks):
     return new_peaks, new_otherpeaks
 
 
-def quick_charge(peak_set, index, min_charge, max_charge):
+def quick_charge(peak_set: PeakSet, index: int, min_charge: int, max_charge: int) -> np.ndarray:
     """
     An implementation of Hoopman's :title-reference:`QuickCharge` [1] algorithm for quickly capping charge
     state queries
@@ -344,7 +361,7 @@ except ImportError:
     pass
 
 
-def charge_range_(lo, hi, step=None):
+def charge_range_(lo: int, hi: int, step: Optional[int]=None):
     """
     Generate a sequence of successive charge states, automatically deducing
     the polarity of the charge range to infer the step.
@@ -373,6 +390,12 @@ def charge_range_(lo, hi, step=None):
 
 
 class ChargeIterator(object):
+    sign: int
+    lower: int
+    upper: int
+    size: int
+    index: int
+
     def __init__(self, lo, hi):
         self.set_bounds(lo, hi)
         self.make_sequence()

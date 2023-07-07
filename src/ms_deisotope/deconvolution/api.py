@@ -7,6 +7,8 @@ process of constructing a deconvoluter instance, performing deconvolution, and
 extracting targets of interest from the result.
 """
 
+from typing import Dict, List, Optional, Any, Tuple, Type
+
 from ms_peak_picker import FittedPeak
 
 from ms_deisotope.peak_set import merge
@@ -19,20 +21,30 @@ from ms_deisotope.constants import (
 
 from ms_deisotope.averagine import PROTON
 
+from .base import DeconvoluterBase
 from .averagine_based import AveraginePeakDependenceGraphDeconvoluter
-from .utils import logger, prepare_peaklist
+from .utils import logger, prepare_peaklist, PeakListTypes
+from .peak_retention_strategy import PeakRetentionStrategyBase
 
 
-def deconvolute_peaks(peaklist, decon_config=None,
-                      charge_range=(1, 8), error_tolerance=ERROR_TOLERANCE,
-                      priority_list=None, left_search_limit=1, right_search_limit=0,
-                      left_search_limit_for_priorities=None, right_search_limit_for_priorities=None,
-                      verbose_priorities=False, verbose=False, charge_carrier=PROTON,
-                      truncate_after=TRUNCATE_AFTER, iterations=MAX_ITERATION,
-                      deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,
-                      retention_strategy=None,
-                      use_quick_charge=False,
-                      **kwargs):
+def deconvolute_peaks(peaklist: PeakListTypes,
+                      decon_config: Optional[Dict[str, Any]]=None,
+                      charge_range: Tuple[int, int]=(1, 8),
+                      error_tolerance: float=ERROR_TOLERANCE,
+                      priority_list: Optional[List[float]]=None,
+                      left_search_limit: int=1,
+                      right_search_limit: int=0,
+                      left_search_limit_for_priorities: Optional[int]=None,
+                      right_search_limit_for_priorities: Optional[int]=None,
+                      verbose_priorities: bool=False,
+                      verbose: bool=False,
+                      charge_carrier: float=PROTON,
+                      truncate_after: float=TRUNCATE_AFTER,
+                      iterations: int=MAX_ITERATION,
+                      deconvoluter_type: Type[DeconvoluterBase]=AveraginePeakDependenceGraphDeconvoluter,
+                      retention_strategy: Optional[PeakRetentionStrategyBase]=None,
+                      use_quick_charge: bool=False,
+                      **kwargs) -> DeconvolutionProcessResult:
     """
     Deconvolute a centroided mass spectrum.
 
