@@ -66,7 +66,8 @@ class _PROXIScanSource(ScanDataSource):
 
 
 class PROXIServiceClient(_PROXIScanSource):
-    """A :class:`~.ScanDataSource` client that provides random access to individual spectra
+    """
+    A :class:`~.ScanDataSource` client that provides random access to individual spectra
     by USI.
 
     Attributes
@@ -76,6 +77,7 @@ class PROXIServiceClient(_PROXIScanSource):
         be inferred, else if a URL template is given, a new :class:`pyteomics.usi._PROXIBackend`
         is created from it.
     """
+
     def __init__(self, backend='peptide_atlas'):
         self.backend = self._make_backend(backend)
 
@@ -89,7 +91,8 @@ class PROXIServiceClient(_PROXIScanSource):
         return backend
 
     def get_scan_by_id(self, scan_id):
-        """Get a spectrum by USI from the server.
+        """
+        Get a spectrum by USI from the server.
 
         Parameters
         ----------
@@ -106,11 +109,12 @@ class PROXIServiceClient(_PROXIScanSource):
         return self._make_scan(payload)
 
     def get(self, usi):
-        """Get a spectrum by USI from the server.
+        """
+        Get a spectrum by USI from the server.
 
         Parameters
         ----------
-        scan_id : str
+        usi : str
             The USI to fetch.
 
 
@@ -121,11 +125,12 @@ class PROXIServiceClient(_PROXIScanSource):
         return self.get_scan_by_id(usi)
 
     def __call__(self, usi):
-        """Get a spectrum by USI from the server.
+        """
+        Get a spectrum by USI from the server.
 
         Parameters
         ----------
-        scan_id : str
+        usi : str
             The USI to fetch.
 
 
