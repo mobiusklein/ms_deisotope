@@ -256,6 +256,11 @@ def _copy_double_array(src):
     if src is None:
         return np.array([], dtype=np.float64)
     dest = np.empty(len(src), dtype=np.float64)
+
+    # pythonnet 3 changed how IntPtr is created and breaks the __overloads__
+    # method. This version also implements the buffer interface directly so
+    # this logic is no longer required unless we need to explicitly own the
+    # memory for some reason.
     try:
         dst_ptr = IntPtr.__overloads__[Int64](dest.__array_interface__['data'][0])
     except TypeError:
@@ -273,12 +278,29 @@ class RawReaderInterface(ScanDataSource):
     Not intended for direct instantiation.
     """
 
+    # Attempt to take ownership of spectrum data or not. If pythonnet is new
+    # enough, it will allow us to skip the costly copy operation and directly
+    # reference the memory .NET allocated for double arrays. Otherwise, we
+    # default back to copying the data out.
+    _own_scan_data: bool = False
+
     def _scan_arrays(self, scan):
         scan_number = scan.scan_number + 1
         stats = self._source.GetScanStatsForScanNumber(scan_number)
         segscan = self._source.GetSegmentedScanFromScanNumber(scan_number, stats)
-        mzs = _copy_double_array(segscan.Positions)
-        inten = _copy_double_array(segscan.Intensities)
+        if not self._own_scan_data:
+            try:
+                mzs = np.frombuffer(segscan.Positions, np.float64)
+                inten = np.frombuffer(segscan.Intensities, np.float64)
+            except TypeError as _err:
+                # We failed to acquire views over the buffers, so we'll copy
+                # them, and never try borrow the data again
+                self._own_scan_data = True
+                mzs = _copy_double_array(segscan.Positions)
+                inten = _copy_double_array(segscan.Intensities)
+        else:
+            mzs = _copy_double_array(segscan.Positions)
+            inten = _copy_double_array(segscan.Intensities)
         return mzs, inten
 
     def _pick_peaks_vendor(self, scan, *args, **kwargs):
