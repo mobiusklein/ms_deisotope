@@ -256,9 +256,13 @@ def _copy_double_array(src):
     if src is None:
         return np.array([], dtype=np.float64)
     dest = np.empty(len(src), dtype=np.float64)
+    try:
+        dst_ptr = IntPtr.__overloads__[Int64](dest.__array_interface__['data'][0])
+    except TypeError:
+        dst_ptr = IntPtr(dest.__array_interface__['data'][0])
     Marshal.Copy(
         src, 0,
-        IntPtr.__overloads__[Int64](dest.__array_interface__['data'][0]),
+        dst_ptr,
         len(src))
     return dest
 
@@ -308,7 +312,12 @@ class RawReaderInterface(ScanDataSource):
     def _filter_string(self, scan):
         if scan.filter_string is None:
             scan_number = scan.scan_number
-            scan.filter_string = FilterString(self._source.GetFilterForScanNumber(scan_number + 1).Filter)
+            fs = self._source.GetFilterForScanNumber(scan_number + 1)
+            try:
+                fs = fs.Filter
+            except AttributeError:
+                fs = fs.ToString()
+            scan.filter_string = FilterString(fs)
         return scan.filter_string
 
     def _scan_index(self, scan):
@@ -322,7 +331,7 @@ class RawReaderInterface(ScanDataSource):
     def _ms_level(self, scan):
         scan_number = scan.scan_number
         f = self._source.GetFilterForScanNumber(scan_number + 1)
-        return f.MSOrder
+        return int(f.MSOrder)
 
     def _isolation_window(self, scan):
         scan_number = scan.scan_number
@@ -330,7 +339,7 @@ class RawReaderInterface(ScanDataSource):
         width = 0
         trailer = self._trailer_values(scan)
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
-        seq_index = filt.MSOrder - 2
+        seq_index = int(filt.MSOrder) - 2
         try:
             # Fetch the isolation window width from the old location first, which
             # will be correct on old files, where the new API won't be right.
@@ -355,7 +364,7 @@ class RawReaderInterface(ScanDataSource):
     def _precursor_information(self, scan):
         scan_number = scan.scan_number
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
-        precursor_mz = filt.GetMass(filt.MSOrder - 2)
+        precursor_mz = filt.GetMass(int(filt.MSOrder) - 2)
         trailers = self._trailer_values(scan)
         _precursor_mz = float(trailers.get("Monoisotopic M/Z", 0))
         if _precursor_mz > 0:
@@ -643,7 +652,12 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
 
     def _close_handle(self):
         if self._source is not None:
-            self._source.Close()
+            try:
+                self._source.Close()
+            except TypeError:
+                # Some versions of pythonnet finalize before all dependent
+                # objects are destroyed making .NET method calls fail
+                pass
             self._source = None
 
     def close(self):

@@ -229,7 +229,7 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         previous_ms_levels = dict()
         last_ms_levels = dict()
         for scan in self: # pylint: disable=not-an-iterable
-            ms_level = scan.ms_level
+            ms_level = int(scan.ms_level)
             index[ms_level] += 1
             idx = scan.index
             previous_ms_levels[idx] = tuple(
