@@ -4,7 +4,7 @@ psims[all] >= 0.1.44
 six
 numpy
 scipy
-ms_peak_picker >= 0.1.37
+ms_peak_picker >= 0.1.41
 brain-isotopic-distribution >= 1.5.8
 dill
 python-idzip >=0.3.2
