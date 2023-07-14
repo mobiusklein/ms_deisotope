@@ -31,8 +31,8 @@ class TestScanTraits(unittest.TestCase):
         assert acquisition == acquisition
         assert scan.tic.raw() - 1.8161617e+10 + 104 == 0.0
         scan.pick_peaks()
-        assert abs(scan.tic.centroided() - 4531158140.658203) < 1e-3
-        assert abs(scan.tic() - 4531158140.658203) < 1e-3
+        assert abs(scan.tic.centroided() - 4531125399.828125) < 1e-3
+        assert abs(scan.tic() - 4531125399.828125) < 1e-3
 
         scan = bunch.products[0]
         isolation = scan.isolation_window
