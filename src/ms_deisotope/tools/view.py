@@ -68,7 +68,17 @@ class SummaryChromatogramBuilder(object):
     def add(self, scan):
         self.time.append(scan.scan_time)
         self.tic.append(scan.tic())
-        self.bpc.append(scan.base_peak().intensity if len(scan.peaks) else 0)
+        if scan.is_profile:
+            if scan.arrays.mz.size > 0:
+                bp = scan.base_peak().intensity
+            else:
+                bp = 0
+        else:
+            if len(scan.peaks) > 0:
+                bp = scan.base_peak().intensity
+            else:
+                bp = 0
+        self.bpc.append(bp)
 
     def reset(self):
         self.tic = array.array('d')
