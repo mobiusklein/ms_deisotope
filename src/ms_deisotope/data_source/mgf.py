@@ -237,7 +237,10 @@ class MGFInterface(ScanDataSource):
                 continue
             else:
                 try:
-                    value = float(value)
+                    if value[0].isdigit():
+                        value = float(value)
+                    elif value == 'None':
+                        value = None
                 except ValueError:
                     if value == 'None':
                         value = None
