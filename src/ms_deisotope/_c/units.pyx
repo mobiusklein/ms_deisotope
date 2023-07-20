@@ -43,9 +43,7 @@ cdef str _intern_unit_or_cv(str unit_or_cv):
         return <str>ptmp
 
 
-@cython.final
-@cython.no_gc
-cdef class UnitInt(int):
+class UnitInt(int):
     """Represents an integer value with a unit name.
     Behaves identically to a built-in :class:`int` type.
     Attributes
@@ -53,12 +51,10 @@ cdef class UnitInt(int):
     unit_info : :class:`str`
         The name of the unit this value posseses.
     """
-    cdef:
-        public str unit_info
 
     @classmethod
     def create(cls, value, unit_info):
-        cdef UnitInt self = UnitInt(value)
+        cdef object self = UnitInt(value)
         self.unit_info = _intern_unit_or_cv(unit_info)
         return self
 
