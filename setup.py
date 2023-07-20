@@ -150,6 +150,10 @@ def make_extensions():
             Extension(
                 name='ms_deisotope._c.units', sources=["src/ms_deisotope/_c/units.pyx"],
                 include_dirs=[]),
+            OpenMPExtension(
+                name='ms_deisotope._c.alignment', sources=["src/ms_deisotope/_c/alignment.pyx"],
+                language='c++',
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
         ],
         compiler_directives=cython_directives,
         emit_linenums=True,
@@ -211,6 +215,10 @@ def make_extensions():
             Extension(
                 name='ms_deisotope._c.units', sources=["src/ms_deisotope/_c/units.c"],
                 include_dirs=[]),
+            OpenMPExtension(
+                name='ms_deisotope._c.alignment', sources=["src/ms_deisotope/_c/alignment.cpp"],
+                language='c++',
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
         ])
     return extensions
 

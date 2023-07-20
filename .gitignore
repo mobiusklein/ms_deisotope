@@ -1,4 +1,5 @@
 *.c
+*.cpp
 *.pyc
 *.pyd
 *.so

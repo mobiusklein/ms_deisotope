@@ -712,6 +712,8 @@ cdef class DeconvolutedPeakSet:
             int lo_ix, hi_ix
             DeconvolutedPeak lo_peak
             DeconvolutedPeak hi_peak
+        if not self.indexed:
+            self.reindex()
         lo = neutral_mass - neutral_mass * tolerance
         hi = neutral_mass + neutral_mass * tolerance
         lo_peak = binary_search_nearest_neutral_mass(self.peaks, lo, &lo_err)
@@ -1237,7 +1239,8 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             int status
             size_t i, n, s
             DeconvolutedPeak peak
-
+        if not self.indexed:
+            self.reindex()
         n = self._size
         if use_mz:
             status = _binary_search(self.mz_array, neutral_mass, error_tolerance, n, &i)
