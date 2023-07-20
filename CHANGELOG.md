@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## Unreleased
 
 
+## [v0.0.50] - 2023-07-20
+
+### Fixed
+1. `UnitInt` extension converted to pure Python type to cooperate with Cython 3.
+
+
 ## [v0.0.49] - 2023-06-14
 
 ### Changed
@@ -567,8 +573,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.49...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.50...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50
 [v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49
 [v0.0.48]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48
 [v0.0.47]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.47
