@@ -712,6 +712,8 @@ cdef class DeconvolutedPeakSet:
             int lo_ix, hi_ix
             DeconvolutedPeak lo_peak
             DeconvolutedPeak hi_peak
+        if not self.indexed:
+            self.reindex()
         lo = neutral_mass - neutral_mass * tolerance
         hi = neutral_mass + neutral_mass * tolerance
         lo_peak = binary_search_nearest_neutral_mass(self.peaks, lo, &lo_err)
@@ -1150,6 +1152,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         self.mz_array = NULL
         self.interval_index = NULL
         super(DeconvolutedPeakSetIndexed, self).__init__(peaks)
+        self._size = self.get_size()
 
     def __dealloc__(self):
         self._release_buffers()
@@ -1287,9 +1290,9 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         cdef:
             int status
             size_t n, s, start, end
-        n = self._size
         if not self.indexed:
             self.reindex()
+        n = self._size
         if n == 0:
             return ()
         if self.interval_index != NULL:
@@ -1329,6 +1332,11 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             index_cell cell
         cell = self.interval_index.index[i]
         return cell
+
+    cpdef DeconvolutedPeakSet copy(self):
+        cdef DeconvolutedPeakSetIndexed dup = DeconvolutedPeakSet.copy(self)
+        dup._build_index_arrays()
+        return dup
 
 
 
