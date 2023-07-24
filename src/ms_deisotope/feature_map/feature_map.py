@@ -75,7 +75,8 @@ class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
         self.features = sorted(features, key=lambda x: (x.mz, x.start_time))
 
     def search(self, mz: float, error_tolerance: Optional[float]=2e-5) -> Optional[LCMSFeature]:
-        """Search for a single feature within `error_tolerance` of `mz`.
+        """
+        Search for a single feature within `error_tolerance` of `mz`.
 
         Parameters
         ----------
@@ -101,7 +102,8 @@ class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
         return match
 
     def find_all(self, mz: float, error_tolerance: Optional[float]=2e-5) -> List[LCMSFeature]:
-        """Search for all features within `error_tolerance` of `mz`.
+        """
+        Search for all features within `error_tolerance` of `mz`.
 
         Parameters
         ----------
@@ -119,7 +121,6 @@ class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
         --------
         between
         """
-
         bounds = search_sweep(self.features, mz, error_tolerance)
         if bounds is not None:
             lo, hi = bounds
@@ -138,7 +139,8 @@ class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo: float, hi: float, error_tolerance: Optional[float]=2e-5) -> List[LCMSFeature]:
-        """Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        """
+        Search for all features between `lo` and `hi`, allowing `error_tolerance`
         around the edges.
 
         Parameters
@@ -212,7 +214,8 @@ except ImportError:
 
 
 class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
-    """An an algorithm for aggregating features from peaks of similar m/z.
+    """
+    An an algorithm for aggregating features from peaks of similar m/z.
 
     Attributes
     ----------
@@ -223,6 +226,7 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
     error_tolerance : float
         The mass error tolerance between peaks and possible features (in ppm)
     """
+
     error_tolerance: float
     count: int
 
@@ -234,7 +238,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         self.count = 0
 
     def find_insertion_point(self, peak: PeakBase) -> Tuple[int, bool]:
-        """Find the position in `self` where the peak's matching feature
+        """
+        Find the position in `self` where the peak's matching feature
         should be, and whether there was a feature that matched.
 
         Parameters
@@ -254,14 +259,15 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         return index, matched
 
     def find_minimizing_index(self, peak: PeakBase, indices: List[int]) -> int:
-        """Amongst the set of `indices`, find the one that
+        """
+        Amongst the set of `indices`, find the one that
         minimizes the distance to `peak`
 
         Parameters
         ----------
         peak : PeakBase
             The peak to match
-        indicies : Iterable of int
+        indices : Iterable of int
             The feature inidices in `self` to choose between
 
         Returns
@@ -281,7 +287,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         return best_index
 
     def handle_peak(self, peak: PeakBase, scan_time: float):
-        """Add `peak` at `scan_time` to the feature forest.
+        """
+        Add `peak` at `scan_time` to the feature forest.
 
         If `peak` matches an existing feature, insert it into that feature
         with `scan_time`. If no feature is matched, create a new feature wit
@@ -311,7 +318,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         self.count += 1
 
     def insert_feature(self, feature: LCMSFeature, index: int):
-        """Insert `feature` at `index` in :attr:`self.features`
+        """
+        Insert `feature` at `index` in :attr:`self.features`
 
         This method does minimal order-correctness checking.
 
@@ -338,7 +346,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
             self.features.insert(new_index, feature)
 
     def split_sparse(self, delta_rt=1.0, min_size=2):
-        """Split features at gaps and eliminate features short features.
+        """
+        Split features at gaps and eliminate features short features.
 
         This modifies `self` in-place.
 
@@ -368,7 +377,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         return self
 
     def smooth_overlaps(self, error_tolerance=None, time_bridge: float=0.25):
-        """Use a single pass of :func:`smooth_overlaps` to merge features which
+        """
+        Use a single pass of :func:`smooth_overlaps` to merge features which
         are nearby in the m/z dimension and overlap in the time dimension.
 
         This modifies `self` in-place.
@@ -378,6 +388,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         error_tolerance : float, optional
             The mass error tolerance to use when finding similar features to merge.
             Defaults to :attr:`error_tolerance`
+        time_bridge : float, optional
+            The maximum gap in retention time to tolerate
 
         Returns
         -------
@@ -401,7 +413,8 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         return self
 
     def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
-        """Aggregate peaks from `scans` into features in this collection.
+        """
+        Aggregate peaks from `scans` into features in this collection.
 
         After all peaks are added, :meth:`smooth_overlaps` is used to merge
         nearby features.
@@ -472,7 +485,8 @@ class DeconvolutedLCMSFeatureMap(_FeatureCollection, _QueryMixin):
         return [feature for feature in self if feature.spans_in_time(time_point)]
 
     def search(self, mass, error_tolerance=2e-5, use_mz=False):
-        """Search for a single feature within `error_tolerance` of `mass`.
+        """
+        Search for a single feature within `error_tolerance` of `mass`.
 
         By default, this searches in the neutral mass domain, to search in
         the m/z domain, pass `use_mz=True`.
@@ -508,7 +522,8 @@ class DeconvolutedLCMSFeatureMap(_FeatureCollection, _QueryMixin):
         return match
 
     def find_all(self, mass, error_tolerance=2e-5, use_mz=False):
-        """Search for all features within `error_tolerance` of `mass`.
+        """
+        Search for all features within `error_tolerance` of `mass`.
 
         By default, this searches in the neutral mass domain, to search in
         the m/z domain, pass `use_mz=True`.
@@ -552,7 +567,8 @@ class DeconvolutedLCMSFeatureMap(_FeatureCollection, _QueryMixin):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo, hi, error_tolerance=2e-5, use_mz=False):
-        """Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        """
+        Search for all features between `lo` and `hi`, allowing `error_tolerance`
         around the edges.
 
         By default, this searches in the neutral mass domain, to search in
@@ -784,7 +800,8 @@ class LCMSFeatureMerger(_FeatureCollection):
 
 
 def flatten_tree(tree):
-    """Perform a FIFO infix right-to-left traversal of the tree
+    """
+    Perform a FIFO infix right-to-left traversal of the tree
     to flatten an :class:`~.IntervalTreeNode` hierarchy into a
     list.
 
@@ -795,6 +812,7 @@ def flatten_tree(tree):
     Parameters
     ----------
     tree: :class:`~.IntervalTreeNode`
+        The interval tree to flatten
 
     Returns
     -------
@@ -821,7 +839,8 @@ def layered_traversal(nodes):
 
 
 class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
-    """An algorithm for aggregating features from peaks of close mass.
+    """
+    An algorithm for aggregating features from peaks of close mass.
 
     Attributes
     ----------
@@ -843,7 +862,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
 
 
     def find_insertion_point(self, peak: DeconvolutedPeak) -> Tuple[int, bool]:
-        """Find the position in `self` where the peak's matching feature
+        """
+        Find the position in `self` where the peak's matching feature
         should be, and whether there was a feature that matched.
 
         Parameters
@@ -863,14 +883,15 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         return index, matched
 
     def find_minimizing_index(self, peak: DeconvolutedPeak, indices: List[int]) -> int:
-        """Amongst the set of `indices`, find the one that
+        """
+        Amongst the set of `indices`, find the one that
         minimizes the distance to `peak`
 
         Parameters
         ----------
         peak : PeakBase
             The peak to match
-        indicies : Iterable of int
+        indices : Iterable of int
             The feature inidices in `self` to choose between
 
         Returns
@@ -893,7 +914,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         return best_index
 
     def handle_peak(self, peak: DeconvolutedPeak, scan_time: float):
-        """Add `peak` at `scan_time` to the feature forest.
+        """
+        Add `peak` at `scan_time` to the feature forest.
 
         If `peak` matches an existing feature, insert it into that feature
         with `scan_time`. If no feature is matched, create a new feature wit
@@ -930,7 +952,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         self.count += 1
 
     def insert_feature(self, feature: DeconvolutedLCMSFeature, index: int):
-        """Insert `feature` at `index` in :attr:`self.features`
+        """
+        Insert `feature` at `index` in :attr:`self.features`
 
         This method does minimal order-correctness checking.
 
@@ -957,7 +980,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
             self.features.insert(new_index, feature)
 
     def split_sparse(self, delta_rt=1.0, min_size=2):
-        """Split features at gaps and eliminate features short features.
+        """
+        Split features at gaps and eliminate features short features.
 
         This modifies `self` in-place.
 
@@ -984,7 +1008,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         return self
 
     def smooth_overlaps(self, error_tolerance=None):
-        """Use a single pass of :func:`smooth_overlaps_neutral` to merge features which
+        """
+        Use a single pass of :func:`smooth_overlaps_neutral` to merge features which
         are nearby in the neutral mass dimension and overlap in the time dimension.
 
         This modifies `self` in-place.
@@ -1013,7 +1038,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         return self
 
     def aggregate_peaks(self, scans, minimum_mass=160, minimum_intensity=10., maximum_mass=float('inf')):
-        """Aggregate peaks from `scans` into features in this collection.
+        """
+        Aggregate peaks from `scans` into features in this collection.
 
         After all peaks are added, :meth:`smooth_overlaps` is used to merge
         nearby features.
@@ -1159,14 +1185,15 @@ class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
 
 class IonMobilityProfileDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
     def find_minimizing_index(self, peak: IonMobilityProfileDeconvolutedPeakSolution, indices):
-        """Amongst the set of `indices`, find the one that
+        """
+        Amongst the set of `indices`, find the one that
         minimizes the distance to `peak`
 
         Parameters
         ----------
         peak : PeakBase
             The peak to match
-        indicies : Iterable of int
+        indices : Iterable of int
             The feature inidices in `self` to choose between
 
         Returns
@@ -1191,7 +1218,8 @@ class IonMobilityProfileDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureFor
         return best_index
 
     def handle_peak(self, peak, scan_time):
-        """Add `peak` at `scan_time` to the feature forest.
+        """
+        Add `peak` at `scan_time` to the feature forest.
 
         If `peak` matches an existing feature, insert it into that feature
         with `scan_time`. If no feature is matched, create a new feature wit

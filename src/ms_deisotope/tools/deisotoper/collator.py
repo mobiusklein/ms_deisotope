@@ -3,12 +3,11 @@ Manages keeping scans delivered out-of-order in-order for
 writing to disk.
 """
 import time
-from typing import Any, Generic, Set, Tuple, TypeVar, Iterator, Union
+import multiprocessing
 
 from queue import Empty as QueueEmpty
+from typing import Dict, Iterator, List, Union, Any, Generic, Set, Tuple, TypeVar, Iterator, Union
 
-import multiprocessing
-from typing import Dict, Iterator, List, Union
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope.data_source.scan.base import ScanBase
 from ms_deisotope.data_source.scan.mobility_frame import FrameBase
