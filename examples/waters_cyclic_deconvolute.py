@@ -144,7 +144,8 @@ class MSEDeconvolutingFrameTransformingProcess(DeconvolutingScanTransformingProc
 
     def __init__(self, ms_file_path, input_queue, output_queue, no_more_event=None, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None, ms1_deconvolution_args=None, msn_deconvolution_args=None,
-                 ms1_averaging=0, log_handler=None, deconvolute=True, verbose=False, reader_options=None):
+                 ms1_averaging=0, log_handler=None, deconvolute=True, verbose=False,
+                 reader_options=None, scan_packer=None):
         reader_options = reader_options or {}
         self.reader_options = reader_options
         super().__init__(
@@ -156,7 +157,8 @@ class MSEDeconvolutingFrameTransformingProcess(DeconvolutingScanTransformingProc
             log_handler=log_handler,
             deconvolute=deconvolute,
             too_many_peaks_threshold=0,
-            default_precursor_ion_selection_window=0)
+            default_precursor_ion_selection_window=0,
+            scan_packer=scan_packer)
 
     def make_scan_transformer(self, loader: IonMobilitySourceRandomAccessFrameSource = None) -> IonMobilityFrameProcessor:
         self.transformer = IonMobilityFrameProcessor(
@@ -331,19 +333,6 @@ class MSESampleConsumer(SampleConsumer):
         self.sample_run = None
 
 
-class IonMobilityAwareMzMLSerializer(MzMLSerializer):
-    def _prepare_extra_arrays(self, scan, **kwargs):
-        extra_arrays = super(IonMobilityAwareMzMLSerializer,
-                             self)._prepare_extra_arrays(scan, **kwargs)
-        if scan.deconvoluted_peak_set is not None:
-            # This is sensitive to units used? Shouldn't there be a unit key?
-            # Waters uses milliseconds
-            extra_arrays.append(("mean drift time array", [
-                p.drift_time for p in scan.deconvoluted_peak_set
-            ]))
-        return extra_arrays
-
-
 class IonMobilityAware3DThreadedMzMLScanStorageHandler(ThreadedMzMLScanStorageHandler):
     def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
         self.handle = stream_cls(self.path, 'wb')
@@ -351,7 +340,7 @@ class IonMobilityAware3DThreadedMzMLScanStorageHandler(ThreadedMzMLScanStorageHa
             self.handle,
             n_spectra=n_spectra,
             sample_name=sample_name,
-            deconvoluted=True)
+            deconvoluted=deconvoluted)
         return serializer
 
 

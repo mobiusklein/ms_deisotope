@@ -50,7 +50,7 @@ except ImportError:
 from ms_deisotope.data_source.mzmlb import MzMLbLoader
 
 from .common import LCMSMSQueryInterfaceMixin, ScanDeserializerBase, SampleRun
-from .mzml import MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin, _IonMobility3DSerializerBase
+from .mzml import _IonMobility3DPeakPacker, MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin, _IonMobility3DSerializerBase
 
 
 class MzMLbSerializer(_MzMLSerializer):
@@ -82,12 +82,21 @@ class MzMLbSerializer(_MzMLSerializer):
             h5_compression_options=compression_opts
         )
 
+    @classmethod
+    def get_scan_packer_type(cls):
+        return super().get_scan_packer_type()
+
+
 
 class IonMobilityAware3DMzMLbSerializer(_IonMobility3DSerializerBase, MzMLbSerializer):
     default_data_encoding = MzMLbSerializer.default_data_encoding.copy()
     default_data_encoding.update({
         "feature id array": np.int32,
     })
+
+    @classmethod
+    def get_scan_packer_type(cls):
+        return _IonMobility3DPeakPacker
 
 
 class ProcessedMzMLbLoader(PeakSetDeserializingMixin, MzMLbLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):

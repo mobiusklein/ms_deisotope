@@ -19,7 +19,23 @@ from ms_deisotope.data_source._compression import get_opener
 from ms_deisotope.feature_map.scan_index import ExtendedScanIndex
 
 
-class ScanSerializerBase(object):
+class _ScanPackerOverridingMeta(type):
+
+    def __new__(mcs, name, bases, namespace):
+        if "get_scan_packer_type" not in namespace:
+            @classmethod
+            def get_scan_packer_type(cls):
+                """
+                Get a helper class that will pre-serialize parts of a spectrum so it can be
+                transmitted between processes more easily at the cost of abstracting away the
+                object model.
+                """
+                return None
+            namespace['get_scan_packer_type'] = get_scan_packer_type
+        return super().__new__(mcs, name, bases, namespace)
+
+
+class ScanSerializerBase(object, metaclass=_ScanPackerOverridingMeta):
     """
     A common base class for all types which serialize :class:`~.Scan`-like objects to
     disk.
@@ -109,6 +125,15 @@ class ScanSerializerBase(object):
         May be called from :meth:`close`, but before the writing stream
         has actually been closed.
         """
+
+    @classmethod
+    def get_scan_packer_type(cls):
+        """
+        Get a helper class that will pre-serialize parts of a spectrum so it can be
+        transmitted between processes more easily at the cost of abstracting away the
+        object model.
+        """
+        return None
 
 
 class ScanDeserializerBase(object):

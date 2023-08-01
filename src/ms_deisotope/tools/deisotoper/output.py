@@ -42,6 +42,9 @@ class ScanStorageHandlerBase(TaskBase):
                 self.current_precursor, self.current_products)
             self.reset()
 
+    def get_scan_packer_type(self):
+        return None
+
     def register_parameter(self, name, value):
         pass
 
@@ -197,6 +200,9 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
     def _get_sample_run(self):
         return self.serializer.sample_run
 
+    def get_scan_packer_type(self):
+        return self.serializer.get_scan_packer_type()
+
     def register_parameter(self, name, value):
         self.serializer.add_processing_parameter(name, value)
 
@@ -321,6 +327,9 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
         self.serializer = self._make_writer(
             self.handle, n_spectra=n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
+
+    def get_scan_packer_type(self):
+        return self.serializer.get_scan_packer_type()
 
     def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool,
                      stream_cls: Callable[[str], IO]):

@@ -1,4 +1,5 @@
-"""Implementation based upon [1].
+"""
+Implementation based upon [1].
 
 .. warning::
 
@@ -57,7 +58,8 @@ def power_of_2(value):
 
 
 def random_unit_vectors(n_planes, n_dims, random_state=None):
-    """Generate `n_planes` random vectors for locality sensitive hashing
+    """
+    Generate `n_planes` random vectors for locality sensitive hashing
     of binned spectra with `n_dims` bins.
 
     Parameters
@@ -66,6 +68,8 @@ def random_unit_vectors(n_planes, n_dims, random_state=None):
         The number of vectors to generate
     n_dims : int
         The size of each random vector
+    random_state : np.random.RandomState, optional
+        A provided random number generator
 
     Returns
     -------

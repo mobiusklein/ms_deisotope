@@ -987,6 +987,67 @@ class ProcessedIonMobilityFrame(FrameBase):
         self.annotations = annotations
 
 
+class _PreserializingProcessedIonMobilityFrame(ProcessedIonMobilityFrame):
+    def __init__(self, id, precursor_information, ms_level, time, index,
+                 feature_data, start_scan_index=None,
+                 end_scan_index=None, polarity=None, activation=None,
+                 acquisition_information=None, isolation_window=None,
+                 annotations=None, source=None):
+        super().__init__(
+            id, precursor_information, ms_level,
+            time, index, None, None,
+            start_scan_index, end_scan_index, polarity,
+            activation, acquisition_information,
+            isolation_window, annotations, source
+        )
+
+        self.feature_data = feature_data
+
+    @classmethod
+    def pack_from(cls, frame: ProcessedIonMobilityFrame, packer, packer_args) -> '_PreserializingProcessedIonMobilityFrame':
+        """
+        Return a prepacked version :class:`ProcessedScan` object
+
+        Parameters
+        ----------
+        frame: :class:`ProcessedIonMobilityFrame`
+            The frame to pack
+        packer: object
+            The packing protocol to use when packing the peak data
+        packer_args
+            Additional arguments to pass to the scan packer
+
+        Returns
+        -------
+        :class:`Scan`
+        """
+        feature_data = packer(frame, packer_args)
+        return cls(
+            id=frame.id,
+            precursor_information=frame.precursor_information,
+            ms_level=frame.ms_level,
+
+            time=frame.time,
+            index=frame.index,
+            feature_data=feature_data,
+
+            start_scan_index=frame.start_scan_index,
+            end_scan_index=frame.end_scan_index,
+            polarity=frame.polarity,
+
+            activation=frame.activation,
+            acquisition_information=frame.acquisition_information,
+
+            isolation_window=frame.isolation_window,
+            annotations=frame.annotations,
+            source=frame.source
+        )
+
+
+    def preserialized_peak_data(self):
+        return self.feature_data
+
+
 def weighted_centroid(feature):
     total = 0
     normalizer = 0

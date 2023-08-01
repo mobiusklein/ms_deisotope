@@ -16,6 +16,9 @@ from ms_deisotope.processor import MSFileLoader
 from ms_deisotope.feature_map.quick_index import index as build_scan_index
 from ms_deisotope.task import TaskBase
 
+from ms_deisotope.output.mzml import _PeakPacker
+
+
 from .collator import ScanCollator, T
 from .process import ScanIDYieldingProcess, DeconvolutingScanTransformingProcess
 
@@ -165,6 +168,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
     _deconv_helpers: List[DeconvolutingScanTransformingProcess]
 
     _order_manager: ScanCollator[T]
+    _scan_packer: Optional[_PeakPacker]
 
     _input_queue: multiprocessing.Queue
     _output_queue: multiprocessing.Queue
@@ -190,6 +194,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
         self._output_queue = None
         self._deconv_helpers = None
         self._order_manager = None
+        self._scan_packer = None
+        self._scan_packer_type = None
 
         self.number_of_helpers = number_of_helpers
 
@@ -275,7 +281,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
             ms1_averaging=self.ms1_averaging,
             default_precursor_ion_selection_window=self.default_precursor_ion_selection_window,
             deconvolute=self.deconvoluting,
-            verbose=self.verbose)
+            verbose=self.verbose,
+            scan_packer=self._scan_packer)
 
     def _make_collator(self) -> ScanCollator:
         return ScanCollator(
@@ -289,6 +296,17 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
             max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
             ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1,
             output_queue=self._output_queue)
+
+    def _make_scan_packer(self):
+        """
+        This method initializes a helper object that will be shared with workersto pre-serialize
+        scans before they are sent over IPC to save space, and avoid needing to reconstitute whole
+        objects on the other side. If the serializing type changes, then the scan packer may also
+        need to change.
+        """
+        if self._scan_packer_type is not None:
+            self._scan_packer = self._scan_packer_type(
+                deconvoluted=self.deconvoluting)
 
     def _initialize_workers(self, start_scan: Optional[str] = None, end_scan: Optional[str] = None, max_scans: Optional[int] = None):
         try:
@@ -309,6 +327,10 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
         self._scan_yielder_process = self._make_scan_id_yielder(start_scan, end_scan, max_scans)
         self._scan_yielder_process.start()
 
+        try:
+            self._make_scan_packer()
+        except (AttributeError, TypeError):
+            pass
         self._deconv_process = self._make_transforming_process()
 
         self._deconv_helpers = []

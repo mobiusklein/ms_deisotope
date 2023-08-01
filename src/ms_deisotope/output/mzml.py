@@ -49,6 +49,7 @@ from ms_deisotope.data_source.metadata.activation import ActivationInformation
 from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanEventInformation
 from ms_deisotope.data_source.metadata.file_information import FileContent, FileInformation, SourceFile
 from ms_deisotope.data_source.scan.base import PrecursorInformation, ScanBase, ScanBunch
+from ms_deisotope.data_source.scan.scan import _PreserializingProcessedScan
 from ms_deisotope.data_source.scan.loader import ScanFileMetadataBase
 try:
     from collections.abc import Sequence, Mapping
@@ -79,7 +80,10 @@ from ms_deisotope.data_source.common import (
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.metadata.software import (Software)
 from ms_deisotope.data_source.mzml import MzMLLoader
-from ms_deisotope.data_source.scan.mobility_frame import FrameBase, Generic3DIonMobilityFrameSource, RawDataArrays3D, ProcessedIonMobilityFrame
+from ms_deisotope.data_source.scan.mobility_frame import (
+    FrameBase, Generic3DIonMobilityFrameSource,
+    RawDataArrays3D, ProcessedIonMobilityFrame,
+    _PreserializingProcessedIonMobilityFrame)
 
 from ms_deisotope.feature_map import ExtendedScanIndex
 from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature
@@ -193,15 +197,28 @@ class SpectrumDescription(Sequence):
             "value": sum(p.intensity for p in peak_list),
             "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
-        peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
+
+        if len(peak_list) == 0:
+            min_mz = 0.0
+            max_mz = 0.0
+        else:
+            min_mz = float('inf')
+            max_mz = -float('inf')
+            for p in peak_list:
+                mz = p.mz
+                if mz < min_mz:
+                    min_mz = mz
+                if mz > max_mz:
+                    max_mz = mz
+
         try:
             descriptors.append({
                 "name": "lowest observed m/z",
-                "value": peaks_mz_order[0].mz
+                "value": min_mz
             })
             descriptors.append({
                 "name": "highest observed m/z",
-                "value": peaks_mz_order[-1].mz
+                "value": max_mz
             })
         except IndexError:
             pass
@@ -255,7 +272,78 @@ class SpectrumDescription(Sequence):
         return descriptors
 
 
-class MzMLSerializer(ScanSerializerBase):
+class PeakSerializingMixin:
+    deconvoluted: bool
+
+    def _get_peak_data(self, scan: ScanBase, kwargs: Mapping):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+
+        if hasattr(scan, 'preserialized_peak_data'):
+            (centroided, descriptors, mz_array, intensity_array,
+                charge_array, other_arrays) = scan.preserialized_peak_data()
+        else:
+            if deconvoluted:
+                centroided = True
+                peak_data = scan.deconvoluted_peak_set
+            elif scan.peak_set is not None:
+                centroided = True
+                peak_data = scan.peak_set
+            else:
+                centroided = not scan.is_profile
+                peak_data = scan.arrays
+            if deconvoluted:
+                charge_array = [p.charge for p in peak_data]
+            else:
+                charge_array = None
+
+            if centroided:
+                descriptors = SpectrumDescription.from_peak_set(peak_data)
+                mz_array = [p.mz for p in peak_data]
+                intensity_array = [p.intensity for p in peak_data]
+            else:
+                descriptors = SpectrumDescription.from_arrays(peak_data)
+                mz_array = peak_data.mz
+                intensity_array = peak_data.intensity
+
+            other_arrays = self._prepare_extra_arrays(
+                scan, deconvoluted=deconvoluted)
+
+        return (centroided, descriptors, mz_array, intensity_array,
+                charge_array, other_arrays)
+
+    def _prepare_extra_arrays(self, scan: ScanBase, **kwargs):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        extra_arrays = []
+        if deconvoluted:
+            score_array = [
+                peak.score for peak in scan.deconvoluted_peak_set
+            ]
+            extra_arrays.append(("deconvolution score array", score_array))
+            envelope_array = envelopes_to_array(
+                [peak.envelope for peak in scan.deconvoluted_peak_set])
+            extra_arrays.append(("isotopic envelopes array", envelope_array))
+        else:
+            arrays = scan.arrays
+            if isinstance(arrays, RawDataArrays3D):
+                extra_arrays.append(
+                    (arrays.ion_mobility_array_type or "raw ion mobility array", arrays.ion_mobility))
+            if scan.arrays.data_arrays:
+                extra_arrays.extend(sorted(scan.arrays.data_arrays.items()))
+        return extra_arrays
+
+
+class _PeakPacker(PeakSerializingMixin):
+    def __init__(self, deconvoluted: bool):
+        self.deconvoluted = deconvoluted
+
+    def __call__(self, scan, **kwds: Mapping) -> Any:
+        return self.pack(scan, **kwds)
+
+    def pack(self, scan: ScanBase, **kwds) -> _PreserializingProcessedScan:
+        return _PreserializingProcessedScan.pack_from(scan, self._get_peak_data, kwds)
+
+
+class MzMLSerializer(ScanSerializerBase, PeakSerializingMixin):
     """
     Write :mod:`ms_deisotope` data structures to a file in mzML format.
 
@@ -976,25 +1064,6 @@ class MzMLSerializer(ScanSerializerBase):
             }
         return package
 
-    def _prepare_extra_arrays(self, scan: ScanBase, **kwargs):
-        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
-        extra_arrays = []
-        if deconvoluted:
-            score_array = [
-                peak.score for peak in scan.deconvoluted_peak_set
-            ]
-            extra_arrays.append(("deconvolution score array", score_array))
-            envelope_array = envelopes_to_array(
-                [peak.envelope for peak in scan.deconvoluted_peak_set])
-            extra_arrays.append(("isotopic envelopes array", envelope_array))
-        else:
-            arrays = scan.arrays
-            if isinstance(arrays, RawDataArrays3D):
-                extra_arrays.append((arrays.ion_mobility_array_type or "raw ion mobility array", arrays.ion_mobility))
-            if scan.arrays.data_arrays:
-                extra_arrays.extend(sorted(scan.arrays.data_arrays.items()))
-        return extra_arrays
-
     def _get_annotations(self, scan: ScanBase) -> List[Dict[str, Any]]:
         skip = {'filter string', 'base peak intensity', 'base peak m/z', 'lowest observed m/z',
                 'highest observed m/z', 'total ion current', }
@@ -1006,36 +1075,6 @@ class MzMLSerializer(ScanSerializerBase):
                 key: value
             })
         return annotations
-
-    def _get_peak_data(self, scan: ScanBase, kwargs: Mapping):
-        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
-        if deconvoluted:
-            centroided = True
-            peak_data = scan.deconvoluted_peak_set
-        elif scan.peak_set is not None:
-            centroided = True
-            peak_data = scan.peak_set
-        else:
-            centroided = not scan.is_profile
-            peak_data = scan.arrays
-        if deconvoluted:
-            charge_array = [p.charge for p in peak_data]
-        else:
-            charge_array = None
-
-        if centroided:
-            descriptors = SpectrumDescription.from_peak_set(peak_data)
-            mz_array = [p.mz for p in peak_data]
-            intensity_array = [p.intensity for p in peak_data]
-        else:
-            descriptors = SpectrumDescription.from_arrays(peak_data)
-            mz_array = peak_data.mz
-            intensity_array = peak_data.intensity
-
-        other_arrays = self._prepare_extra_arrays(scan, deconvoluted=deconvoluted)
-
-        return (centroided, descriptors, mz_array, intensity_array,
-                charge_array, other_arrays)
 
     def save_scan(self, scan: ScanBase, **kwargs):
         """
@@ -1278,6 +1317,9 @@ class MzMLSerializer(ScanSerializerBase):
             except (AttributeError, ValueError, TypeError, OSError):
                 pass
 
+    @classmethod
+    def get_scan_packer_type(cls):
+        return _PeakPacker
 
 MzMLScanSerializer = MzMLSerializer
 
@@ -1825,52 +1867,67 @@ def deserialize_deconvoluted_features(scan_dict: Dict[str, Union[np.ndarray, Any
     return feature_map
 
 
-class _IonMobility3DSerializerBase:
+class _IonMobility3DSerializerBase(PeakSerializingMixin):
+
+    def _prepare_extra_arrays(self, scan: ScanBase, **kwargs):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        return []
+
     def _get_peak_data(self, scan: FrameBase, kwargs):
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
-        if deconvoluted:
-            centroided = True
-            peak_data = scan.deconvoluted_features
-        elif scan.features:
-            centroided = True
-            peak_data = scan.features
+        if hasattr(scan, 'preserialized_peak_data'):
+            (centroided, descriptors, mz_array, intensity_array,
+                charge_array, other_arrays) = scan.preserialized_peak_data()
         else:
-            centroided = False
-            peak_data = scan.arrays
+            if deconvoluted:
+                centroided = True
+                peak_data = scan.deconvoluted_features
+            elif scan.features:
+                centroided = True
+                peak_data = scan.features
+            else:
+                centroided = False
+                peak_data = scan.arrays
 
-        if centroided:
-            descriptors = SpectrumDescription.from_peak_set(peak_data)
-        else:
-            descriptors = SpectrumDescription.from_arrays(peak_data)
+            if centroided:
+                descriptors = SpectrumDescription.from_peak_set(peak_data)
+            else:
+                descriptors = SpectrumDescription.from_arrays(peak_data)
 
-        if deconvoluted:
-            (mz_array, intensity_array, charge_array, score_array,
-             ion_mobility_array, envelope_array, feature_id_array) = deconvoluted_features_to_3d_arrays(peak_data)
-            other_arrays = [
-                ('raw ion mobility array', ion_mobility_array),
-                ('isotopic envelopes array', envelope_array),
-                ('deconvolution score array', score_array),
-                ('feature id array', feature_id_array),
-            ]
-        elif centroided:
-            (mz_array, intensity_array, ion_mobility_array,
-             feature_id_array) = extracted_features_to_3d_arrays(peak_data)
-            charge_array = None
-            other_arrays = [
-                ('raw ion mobility array', ion_mobility_array),
-                ('feature id array', feature_id_array),
-            ]
-        else:
-            mz_array = peak_data.mz
-            intensity_array = peak_data.intensity
-            charge_array = None
-            ion_mobility_array = peak_data.ion_mobility
-            other_arrays = []
-            if ion_mobility_array is not None:
-                other_arrays.append(
-                    ('raw ion mobility array', ion_mobility_array))
+            if deconvoluted:
+                (mz_array, intensity_array, charge_array, score_array,
+                ion_mobility_array, envelope_array, feature_id_array) = deconvoluted_features_to_3d_arrays(peak_data)
+                other_arrays = [
+                    ('raw ion mobility array', ion_mobility_array),
+                    ('isotopic envelopes array', envelope_array),
+                    ('deconvolution score array', score_array),
+                    ('feature id array', feature_id_array),
+                ]
+            elif centroided:
+                (mz_array, intensity_array, ion_mobility_array,
+                feature_id_array) = extracted_features_to_3d_arrays(peak_data)
+                charge_array = None
+                other_arrays = [
+                    ('raw ion mobility array', ion_mobility_array),
+                    ('feature id array', feature_id_array),
+                ]
+            else:
+                mz_array = peak_data.mz
+                intensity_array = peak_data.intensity
+                charge_array = None
+                ion_mobility_array = peak_data.ion_mobility
+                other_arrays = []
+                if ion_mobility_array is not None:
+                    other_arrays.append(
+                        ('raw ion mobility array', ion_mobility_array))
+            other_arrays.extend(self._prepare_extra_arrays(scan, deconvoluted=deconvoluted))
         return (centroided, descriptors, mz_array, intensity_array,
                 charge_array, other_arrays)
+
+
+class _IonMobility3DPeakPacker(_IonMobility3DSerializerBase, _PeakPacker):
+    def pack(self, scan: ScanBase, **kwds) -> _PreserializingProcessedScan:
+        return _PreserializingProcessedIonMobilityFrame.pack_from(scan, self.pack, kwds)
 
 
 class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSerializer):
@@ -1885,6 +1942,10 @@ class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSeriali
     default_data_encoding.update({
         "feature id array": np.int32,
     })
+
+    @classmethod
+    def get_scan_packer_type(cls):
+        return _IonMobility3DPeakPacker
 
 
 class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):

@@ -21,6 +21,7 @@ from ms_deisotope.processor import (
     NoIsotopicClustersError, EmptyScanError)
 
 from ms_deisotope.task import show_message
+from ms_deisotope.output.mzml import _PeakPacker
 
 try:
     from pyzstd import decompress, compress
@@ -55,6 +56,7 @@ SCAN_STATUS_SKIP = b"skip"
 
 class ScanTransmissionMixin(object):
     output_queue: multiprocessing.JoinableQueue
+    scan_packer: Optional[_PeakPacker] = None
 
     def skip_entry(self, index: int, ms_level: int):
         self.output_queue.put((SCAN_STATUS_SKIP, index, ms_level))
@@ -76,6 +78,8 @@ class ScanTransmissionMixin(object):
                 for peak in scan.deconvoluted_peak_set:
                     if peak.fit is not None:
                         peak.fit = None
+        if self.scan_packer is not None:
+            scan = self.scan_packer(scan)
         self.output_queue.put(
             (CompressedPickleMessage(scan), scan.index, scan.ms_level))
 
@@ -397,7 +401,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  envelope_selector=None, ms1_averaging=0, log_handler=None,
                  deconvolute=True, verbose=False, too_many_peaks_threshold=7000,
-                 default_precursor_ion_selection_window=1.5):
+                 default_precursor_ion_selection_window=1.5,
+                 scan_packer=None):
         if log_handler is None:
             log_handler = show_message
 
@@ -440,6 +445,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
         self.envelope_selector = envelope_selector
         self.ms1_averaging = ms1_averaging
         self.deconvolute = deconvolute
+        self.scan_packer = scan_packer
 
         self.transformer = None
 

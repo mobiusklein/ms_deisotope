@@ -33,10 +33,15 @@ class ScanSink(object):
         except AttributeError:
             return None
 
-    def configure_storage(self, storage_path: PathLike=None, name: Optional[str]=None, source: Optional[ScanDataSource]=None,
+    def configure_storage(self, storage_path: PathLike=None,
+                          name: Optional[str]=None,
+                          source: Optional[ScanDataSource]=None,
                           stream_cls: Optional[Callable[[str], IO]] = None):
         self.scan_store = self._scan_store_type.configure_storage(
             storage_path, name, source, stream_cls=stream_cls)
+        packer_type = self.scan_store.get_scan_packer_type()
+        if source is not None:
+            source._scan_packer_type = packer_type
 
     def configure_iteration(self, *args, **kwargs):
         self.scan_generator.configure_iteration(*args, **kwargs)
@@ -209,12 +214,12 @@ class SampleConsumer(TaskBase):
 
     def run(self):
         self.log("Initializing Generator")
-        self.scan_generator.configure_iteration(self.start_scan_id, self.end_scan_id)
-        self.log("Setting Sink")
         sink = ScanSink(self.scan_generator, self.storage_type)
         self.log("Initializing Storage")
         sink.configure_storage(self.storage_path, self.sample_name,
                                self.scan_generator, stream_cls=self.stream_cls)
+        self.scan_generator.configure_iteration(self.start_scan_id, self.end_scan_id)
+        self.log("Setting Sink")
 
         self.log("Begin Processing")
         last_scan_time = 0

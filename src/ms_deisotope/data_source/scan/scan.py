@@ -1402,3 +1402,59 @@ class ProcessedScan(ScanBase):
             self.isolation_window, self.instrument_configuration,
             list(self.product_scans), self.annotations.copy())
         return dup
+
+
+class _PreserializingProcessedScan(ProcessedScan):
+    def __init__(self, id, title, precursor_information, ms_level, scan_time,
+                 index, peak_data, polarity=None,
+                 activation=None, acquisition_information=None,
+                 isolation_window=None, instrument_configuration=None,
+                 product_scans=None, annotations=None, source=None, **kwargs):
+        super().__init__(
+            id, title, precursor_information, ms_level,
+            scan_time, index, None, None,
+            polarity, activation, acquisition_information,
+            isolation_window, instrument_configuration, product_scans,
+            annotations, source, **kwargs
+        )
+        self.peak_data = peak_data
+
+    @classmethod
+    def pack_from(cls, scan: ProcessedScan, packer, packer_args) -> '_PreserializingProcessedScan':
+        """
+        Return a prepacked version :class:`ProcessedScan` object
+
+        Parameters
+        ----------
+        scan: :class:`ProcessedScan`
+            The scan to
+        packer: object
+            The packing protocol to use when packing the peak data
+        packer_args
+            Additional arguments to pass to the scan packer
+
+        Returns
+        -------
+        :class:`Scan`
+        """
+        peak_data = packer(scan, packer_args)
+        dup = cls(
+            id=scan.id,
+            title=scan.title,
+            precursor_information=scan.precursor_information,
+            ms_level=scan.ms_level,
+            scan_time=scan.scan_time,
+            index=scan.index,
+            peak_data=peak_data,
+            polarity=scan.polarity,
+            activation=scan.activation,
+            acquisition_information=scan.acquisition_information,
+            isolation_window=scan.isolation_window,
+            instrument_configuration=scan.instrument_configuration,
+            product_scans=None,
+            annotations=scan.annotations
+        )
+        return dup
+
+    def preserialized_peak_data(self):
+        return self.peak_data
