@@ -9,7 +9,7 @@ from cpython.list cimport (
     PyList_GET_SIZE, PyList_Append, PyList_SetItem)
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
-from libc.math cimport floor, fabs
+from libc.math cimport floor, fabs, abs as iabs, isinf
 from libc.stdlib cimport malloc, free
 
 from brainpy import PROTON as _PROTON, calculate_mass as _py_calculate_mass
@@ -21,19 +21,6 @@ from ms_peak_picker._c.peak_set cimport FittedPeak
 
 
 from ms_deisotope.constants import (TRUNCATE_AFTER, IGNORE_BELOW)
-
-
-IF int == long:
-    DEF PY_VERSION = 3
-ELSE:
-    DEF PY_VERSION = 2
-IF UNAME_SYSNAME == "Windows" and PY_VERSION == 2:
-    cdef double INFINITY = float('inf')
-
-    cdef int isinf(double x) nogil:
-        return fabs(x) == INFINITY
-ELSE:
-    from libc.math cimport isinf as isinf
 
 
 @cython.boundscheck(False)
@@ -56,17 +43,17 @@ cdef double PROTON
 PROTON = _PROTON
 
 
-cdef inline double _round(double x):
+cdef inline double _round(double x) noexcept nogil:
     return floor(x + 0.5)
 
 
-cdef double neutral_mass(double mz,  int z, double charge_carrier=PROTON):
-    return (mz * abs(z)) - (z * charge_carrier)
+cdef double neutral_mass(double mz,  int z, double charge_carrier=PROTON) noexcept nogil:
+    return (mz * iabs(z)) - (z * charge_carrier)
 
 
 @cython.cdivision
-cdef double mass_charge_ratio(double neutral_mass, int z, double charge_carrier=PROTON):
-    return (neutral_mass + (z * charge_carrier)) / abs(z)
+cdef double mass_charge_ratio(double neutral_mass, int z, double charge_carrier=PROTON) noexcept nogil:
+    return (neutral_mass + (z * charge_carrier)) / iabs(z)
 
 
 cdef void slide(double mz, list peaklist):

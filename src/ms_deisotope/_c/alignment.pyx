@@ -51,17 +51,32 @@ cdef int _sort_score_descending(peak_match_t a, peak_match_t b) nogil:
 cdef class _AlignableSpectrum:
     cdef:
         public object scan
+        public object key
         public _CPeakSet cpeaks
+        public double precursor_mass
+        public int precursor_charge
 
     def __init__(self, scan):
         self.scan = scan
         if self.scan.deconvoluted_peak_set is None:
             raise ValueError("Must provide a deconvoluted spectrum!")
         self.cpeaks = _CPeakSet.from_peak_list(self.scan.deconvoluted_peak_set)
+        self._populate_metadata()
         if self.cpeaks.ptr == NULL:
             raise MemoryError()
         with nogil:
             self._transform_peak_set(self.cpeaks.ptr)
+
+    cdef int _populate_metadata(self):
+        pinfo = self.scan.precursor_information
+        self.precursor_mass = pinfo.extracted_neutral_mass
+        if self.precursor_mass == 0:
+            self.precursor_mass = pinfo.neutral_mass
+            self.precursor_charge = pinfo.charge
+        else:
+            self.precursor_charge = pinfo.extracted_charge
+        self.key = (self.scan.id, self.scan.source_file_name)
+        return 0
 
     def __getitem__(self, i):
         return self.scan.deconvoluted_peak_set[i]
@@ -74,6 +89,7 @@ cdef class _AlignableSpectrum:
         cdef:
             Py_ssize_t i, n
             double total
+        # Apply a normalization, not L2 norm, might be better
         n = peaks.size
         total = 0.0
         for i in prange(n):

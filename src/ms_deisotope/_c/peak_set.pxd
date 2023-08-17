@@ -148,7 +148,7 @@ cdef struct deconvoluted_peak_set_t:
     CPeaksFlags flags
 
 
-cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, deconvoluted_peak_set_t* destination) except 1
+cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSet peak_set, deconvoluted_peak_set_t* destination) except 1
 cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogil
 
 cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) nogil
@@ -163,7 +163,7 @@ cdef class _CPeakSet:
         deconvoluted_peak_set_t* ptr
 
     cdef deconvoluted_peak_t* getitem(self, size_t i) nogil
-
+    cdef size_t get_size(self) nogil
     cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=*) nogil
     cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=*) nogil
 

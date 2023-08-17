@@ -1,6 +1,6 @@
 # cython: profile=True
 cimport cython
-from cython.parallel cimport prange
+from cython.parallel cimport prange, parallel
 from libc.math cimport floor, sqrt
 from libc.stdlib cimport malloc, free
 from libc.stdio cimport printf
@@ -12,9 +12,10 @@ from cpython.list cimport PyList_Size, PyList_GET_ITEM, PyList_Sort
 from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_Size
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
-
 from ms_peak_picker._c.peak_set cimport PeakBase, FittedPeak, PeakSet
-from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, _CPeakSet, deconvoluted_peak_t
+
+from ms_deisotope._c.averagine cimport mass_charge_ratio
 
 cimport numpy as cnp
 import numpy as np
@@ -26,6 +27,7 @@ ctypedef fused peak_collection:
     PeakSet
     PeakIndex
     DeconvolutedPeakSet
+    _CPeakSet
     object
 
 
@@ -156,6 +158,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         PyObject** items_a
         PyObject** items_b
         PyObject* p_peak
+        deconvoluted_peak_t* p_cpeak
 
     n_a = 0
     n_b = 0
@@ -190,6 +193,16 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
         hi = max(peak.mz, hi)
+    elif peak_collection is _CPeakSet:
+        with nogil:
+            hi = 0
+            for i in range(peak_set_a.ptr.size):
+                p_cpeak = peak_set_a.getitem(i)
+                hi = max(hi, mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1))
+            for i in range(peak_set_b.ptr.size):
+                p_cpeak = peak_set_b.getitem(i)
+                hi = max(hi, mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1))
+
 
     # Calculate bin array size and allocate memory
     scaler = 10 ** precision
@@ -222,20 +235,34 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
     if peak_collection is object:
         items_a = _make_fast_array(_hold_a)
         items_b = _make_fast_array(_hold_b)
+    elif peak_collection is _CPeakSet:
+        items_a = NULL
+        items_b = NULL
     else:
         items_a = _make_fast_array(peak_set_a)
         items_b = _make_fast_array(peak_set_b)
     with nogil:
         # Fill bins
-        for i in range(n_peaks_a):
-            p_peak = items_a[i]
-            index = int((<PeakBase>p_peak).mz * scaler)
-            bin_a[index] += (<PeakBase>p_peak).intensity
+        if peak_collection is _CPeakSet:
+            for i in range(n_peaks_a):
+                p_cpeak = peak_set_a.getitem(i)
+                index = int(mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1) * scaler)
+                bin_a[index] += p_cpeak.intensity
+            for i in range(n_peaks_b):
+                p_cpeak = peak_set_b.getitem(i)
+                index = int(mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1) * scaler)
+                bin_a[index] += p_cpeak.intensity
 
-        for i in range(n_peaks_b):
-            p_peak = items_b[i]
-            index = int((<PeakBase>p_peak).mz * scaler)
-            bin_b[index] += (<PeakBase>p_peak).intensity
+        else:
+            for i in range(n_peaks_a):
+                p_peak = items_a[i]
+                index = int((<PeakBase>p_peak).mz * scaler)
+                bin_a[index] += (<PeakBase>p_peak).intensity
+
+            for i in range(n_peaks_b):
+                p_peak = items_b[i]
+                index = int((<PeakBase>p_peak).mz * scaler)
+                bin_b[index] += (<PeakBase>p_peak).intensity
 
         # Calculate dot product and normalizers in parallel
         n = k
@@ -261,6 +288,7 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
         PeakBase peak
         cnp.ndarray[double, ndim=1] bin_a, bin_b
         size_t i, n, index
+        deconvoluted_peak_t* p_cpeak
 
     if peak_collection is PeakIndex:
         hi = 0
@@ -283,6 +311,15 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
         hi = max(peak.mz, hi)
+    elif peak_collection is _CPeakSet:
+        with nogil:
+            hi = 0
+            for i in range(peak_set_a.ptr.size):
+                p_cpeak = peak_set_a.getitem(i)
+                hi = max(hi, mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1))
+            for i in range(peak_set_b.ptr.size):
+                p_cpeak = peak_set_b.getitem(i)
+                hi = max(hi, mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1))
     else:
         hi = 0
         peak = peak_set_a.getitem(peak_set_a.get_size() - 1)
@@ -299,28 +336,38 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
     else:
         n = peak_set_a.get_size()
     for i in range(n):
-        if peak_collection is PeakIndex:
-            peak = peak_set_a.peaks.getitem(i)
-        elif peak_collection is object:
-            peak = peak_set_a[i]
+        if peak_collection is _CPeakSet:
+            p_cpeak = peak_set_a.getitem(i)
+            index = int(mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1) * scaler)
+            bin_a[index] += p_cpeak.intensity
         else:
-            peak = peak_set_a.getitem(i)
-        index = int(peak.mz * scaler)
-        bin_a[index] += peak.intensity
+            if peak_collection is PeakIndex:
+                peak = peak_set_a.peaks.getitem(i)
+            elif peak_collection is object:
+                peak = peak_set_a[i]
+            else:
+                peak = peak_set_a.getitem(i)
+            index = int(peak.mz * scaler)
+            bin_a[index] += peak.intensity
 
     if peak_collection is object:
         n = len(peak_set_b)
     else:
         n = peak_set_b.get_size()
     for i in range(n):
-        if peak_collection is PeakIndex:
-            peak = peak_set_b.peaks.getitem(i)
-        elif peak_collection is object:
-            peak = peak_set_b[i]
+        if peak_collection is _CPeakSet:
+            p_cpeak = peak_set_b.getitem(i)
+            index = int(mass_charge_ratio(p_cpeak.neutral_mass, p_cpeak.charge if p_cpeak.charge != 0 else 1) * scaler)
+            bin_a[index] += p_cpeak.intensity
         else:
-            peak = peak_set_b.getitem(i)
-        index = int(peak.mz * scaler)
-        bin_b[index] += peak.intensity
+            if peak_collection is PeakIndex:
+                peak = peak_set_b.peaks.getitem(i)
+            elif peak_collection is object:
+                peak = peak_set_b[i]
+            else:
+                peak = peak_set_b.getitem(i)
+            index = int(peak.mz * scaler)
+            bin_b[index] += peak.intensity
     return (bin_a, bin_b)
 
 
@@ -614,6 +661,7 @@ cdef double convolve_peak_sets2_deconvoluted(DeconvolutedPeakSet peak_set_a, Dec
 cpdef double ppm_peak_set_similarity(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5):
     cdef:
         double ab, aa, bb
+    ab = aa = bb = 0
     if peak_collection is PeakSet:
         ab = convolve_peak_sets2_fitted(peak_set_a, peak_set_b, error_tolerance)
         aa = convolve_peak_sets2_fitted(peak_set_a, peak_set_a, error_tolerance)

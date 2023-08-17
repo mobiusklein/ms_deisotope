@@ -65,13 +65,16 @@ class DynamicallyLoadingResolver(object):
     def _default_opener(self, path):
         return MSFileLoader(path)
 
+    def _open_file(self, path: str):
+        return self.opener(path)
+
     def _resolve(self, path):
         if path in self.mapping:
             return self.mapping[path]
-        _path = os.path.join(self.root_path, path)
+        _path = os.path.normpath(os.path.join(self.root_path, path))
         if not os.path.exists(_path):
             raise KeyError(path)
-        opened = self.opener(_path)
+        opened = self._open_file(_path)
         self.mapping[path] = opened
         return opened
 
@@ -88,6 +91,6 @@ class DynamicallyLoadingResolver(object):
 
 class DynamicallyLoadingProxyResolver(DynamicallyLoadingResolver):
 
-    def _default_opener(self, path):
-        reader = super(DynamicallyLoadingProxyResolver, self)._default_opener(path)
+    def _open_file(self, path: str):
+        reader = super()._open_file(path)
         return ScanProxyContext(reader)

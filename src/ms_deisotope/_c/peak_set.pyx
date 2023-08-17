@@ -858,7 +858,7 @@ cdef DeconvolutedPeak _sweep_solution_neutral_mass(tuple array, double value, si
 
 
 @cython.cdivision(True)
-cdef double _ppm_error(double x, double y) nogil:
+cdef inline double _ppm_error(double x, double y) nogil:
     return (x - y) / y
 
 
@@ -1587,13 +1587,12 @@ cdef int find_search_interval(index_list* index, double value, size_t* start, si
     return 0
 
 
-cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, deconvoluted_peak_set_t* destination) except 1:
+cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSet peak_set, deconvoluted_peak_set_t* destination) except 1:
     cdef:
         size_t size, i
         deconvoluted_peak_t* peaks
         double* index
         DeconvolutedPeak peak
-
 
     size = peak_set.get_size()
     peaks = <deconvoluted_peak_t*>malloc(sizeof(deconvoluted_peak_t) * size)
@@ -1621,6 +1620,41 @@ cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, dec
     destination.size = size
     destination.flags = CPeaksFlags.owns_peaks_and_index
     return 0
+
+
+cdef int create_deconvoluted_peak_set_t_from_peakbase(object peak_set, deconvoluted_peak_set_t* destination) except 1:
+    cdef:
+        size_t size, i
+        deconvoluted_peak_t* peaks
+        double* index
+        PeakBase peak
+
+    size = len(peak_set)
+    peaks = <deconvoluted_peak_t*>malloc(sizeof(deconvoluted_peak_t) * size)
+    if peaks == NULL:
+        PyErr_SetString(MemoryError, "Failed to allocate peak array for C peak structure")
+        return 1
+
+    index = <double*>malloc(sizeof(double) * size)
+    if index == NULL:
+        free(peaks)
+        PyErr_SetString(MemoryError, "Failed to allocate mass index for C peak structure")
+        return 1
+    for i in range(size):
+        peak = peak_set[i]
+        peaks[i].neutral_mass = peak.mz
+        peaks[i].charge = 1
+        peaks[i].intensity = peak.intensity
+        peaks[i].index = i
+
+        index[i] = peak.mz
+
+    destination.peaks = peaks
+    destination.mass_index = index
+    destination.size = size
+    destination.flags = CPeaksFlags.owns_peaks_and_index
+    return 0
+
 
 
 cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogil:
@@ -1659,6 +1693,7 @@ cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_pe
     return result
 
 
+@cython.cdivision(True)
 cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=2e-5) nogil:
     cdef:
         size_t n, s, i
@@ -1697,7 +1732,7 @@ cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) nogil:
 cdef class _CPeakSet:
 
     @classmethod
-    def from_peak_list(cls, DeconvolutedPeakSetIndexed peaks):
+    def from_peak_list(cls, DeconvolutedPeakSet peaks):
         cdef:
             deconvoluted_peak_set_t* ptr
             _CPeakSet self
@@ -1722,6 +1757,9 @@ cdef class _CPeakSet:
         return self.ptr.peaks[i]
 
     def __len__(self):
+        return self.ptr.size
+
+    cdef size_t get_size(self) nogil:
         return self.ptr.size
 
     cdef deconvoluted_peak_t* getitem(self, size_t i) nogil:

@@ -1,13 +1,19 @@
+import logging
 from collections import defaultdict
 from operator import attrgetter
 from functools import total_ordering
 
-from typing import List, Dict, DefaultDict, Tuple, Optional, TYPE_CHECKING, Union, NamedTuple
+from typing import Any, List, Dict, DefaultDict, Tuple, Optional, TYPE_CHECKING, Union, NamedTuple
+from concurrent import futures
 
 from ms_deisotope.data_source.scan import Scan, ProcessedScan, PrecursorInformation
 
 # from .similarity_methods import SpectrumAlignment
 from ms_deisotope._c.alignment import SpectrumAlignment, _AlignableSpectrum
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class Neighbor(NamedTuple):
@@ -101,54 +107,121 @@ class SpectrumAlignmentGraph(object):
     threshold: float
     error_tolerance: float
     min_delta: float
+    max_delta: float
     min_peaks_matched: int
     edges: DefaultDict[str, Dict[str, Edge]]
     supporters: Dict[str, List[Neighbor]]
 
-    def __init__(self, scans, threshold=0.5, error_tolerance=2e-5, min_delta=0.01, min_peaks_matched=6, match_charge=True):
+    def __init__(self, scans, threshold=0.5, error_tolerance=2e-5, min_delta=0.01, max_delta=1e3, min_peaks_matched=6, match_charge=True,
+                 edges=None, supporters=None):
         self.scans = list(scans)
         self._scans = []
         self.threshold = threshold
         self.error_tolerance = error_tolerance
         self.min_delta = min_delta
+        self.max_delta = max_delta
         self.min_peaks_matched = min_peaks_matched
         self.match_charge = match_charge
 
-        self.edges = defaultdict(dict)
-        self.supporters = dict()
+        self.edges = defaultdict(dict, edges or {})
+        self.supporters = dict(supporters or {})
 
-        self.build_edges()
-        self.trim()
+        if not self.edges:
+            self.build_edges_concurrent()
+            self.trim()
 
-    def build_edges(self):
+    def _build_edges_for(self, i: int, edges: DefaultDict[Any, Dict[Any, Edge]]):
+        n_edges = 0
+        scan1 = self.scans[i]
+        _scan1 = self._scans[i]
+        pinfo1_mass = _scan1.precursor_mass
+        for j in range(i + 1, len(self.scans)):
+            scan2 = self.scans[j]
+            if scan1 is scan2:
+                continue
+            _scan2 = self._scans[j]
+
+            if self.match_charge and _scan1.precursor_charge != _scan2.precursor_charge:
+                continue
+
+            delta = _scan2.precursor_mass - pinfo1_mass
+            if abs(delta) < self.min_delta:
+                continue
+            elif delta > self.max_delta:
+                break
+
+            if scan1.id in edges and scan2.id in edges[scan1.id]:
+                continue
+
+            aln = SpectrumAlignment(
+                _scan1,
+                _scan2,
+                error_tolerance=self.error_tolerance,
+                shift=delta,
+            )
+            if aln.score < self.threshold:
+                continue
+            if len(aln) < self.min_peaks_matched:
+                continue
+            weight = aln.score
+            edges[scan1.id][scan2.id] = Edge(aln.score, aln.shift, weight)
+            edges[scan2.id][scan1.id] = Edge(aln.score, -aln.shift, weight)
+            n_edges += 1
+        return i, n_edges
+
+    def build_edges_concurrent(self):
         edges = defaultdict(dict)
         use_extracted = (self.scans and self.scans[0].precursor_information.extracted_neutral_mass != 0)
-        use_deconvoluted = (self.scans and self.scans[0].deconvoluted_peak_set is not None)
         sort_predicate = (lambda x: x.precursor_information.extracted_neutral_mass) if use_extracted \
                             else (lambda x: x.precursor_information.neutral_mass)
         self.scans.sort(key=sort_predicate)
         self._scans = list(map(_AlignableSpectrum, self.scans))
+        promises: List[futures.Future] = []
+        executor = futures.ThreadPoolExecutor(6)
+        for i in range(len(self.scans)):
+            promises.append(executor.submit(self._build_edges_for, i, edges))
+        n_edges = 0
+        for promise in promises:
+            i, edges_added = promise.result()
+            n_edges += edges_added
+            if i % 1000 == 0 and i:
+                logger.info("Processing scan %d, %d edges", i, n_edges)
+        self.edges = edges
+
+    def build_edges(self):
+        edges = defaultdict(dict)
+        use_extracted = (self.scans and self.scans[0].precursor_information.extracted_neutral_mass != 0)
+        sort_predicate = (lambda x: x.precursor_information.extracted_neutral_mass) if use_extracted \
+                            else (lambda x: x.precursor_information.neutral_mass)
+        self.scans.sort(key=sort_predicate)
+        self._scans = list(map(_AlignableSpectrum, self.scans))
+        n_edges = 0
         for i, scan1 in enumerate(self.scans):
-            pinfo1: PrecursorInformation = scan1.precursor_information
-            pinfo1_mass = pinfo1.extracted_neutral_mass if use_extracted else pinfo1.neutral_mass
-            # peaks1 = scan1.deconvoluted_peak_set if use_deconvoluted else scan1.peak_set.peaks
+            if i % 1000 == 0 and i:
+                logger.info("Processing scan %d, %d edges", i, n_edges)
+            _scan1 = self._scans[i]
+            pinfo1_mass = _scan1.precursor_mass
             for j in range(i + 1, len(self.scans)):
                 scan2 = self.scans[j]
                 if scan1 is scan2:
                     continue
+                _scan2 = self._scans[j]
 
-                pinfo2: PrecursorInformation = scan2.precursor_information
-                if self.match_charge and pinfo1.charge != pinfo2.charge:
+                if self.match_charge and _scan1.precursor_charge != _scan2.precursor_charge:
                     continue
 
-                delta = (pinfo2.extracted_neutral_mass if use_extracted else pinfo2.neutral_mass) - \
-                    pinfo1_mass
+                delta = _scan2.precursor_mass - pinfo1_mass
                 if abs(delta) < self.min_delta:
                     continue
-                # peaks2 = scan2.deconvoluted_peak_set if use_deconvoluted else scan2.peak_set.peaks
+                elif delta > self.max_delta:
+                    break
+
+                if scan1.id in edges and scan2.id in edges[scan1.id]:
+                    continue
+
                 aln = SpectrumAlignment(
-                    self._scans[i],
-                    self._scans[j],
+                    _scan1,
+                    _scan2,
                     error_tolerance=self.error_tolerance,
                     shift=delta,
                 )
@@ -159,6 +232,7 @@ class SpectrumAlignmentGraph(object):
                 weight = aln.score
                 edges[scan1.id][scan2.id] = Edge(aln.score, aln.shift, weight)
                 edges[scan2.id][scan1.id] = Edge(aln.score, -aln.shift, weight)
+                n_edges += 1
         self.edges = edges
 
     def iteredges(self):
@@ -168,9 +242,14 @@ class SpectrumAlignmentGraph(object):
 
     def trim(self):
         supporters = {}
-        for scan1_id, neighbors in self.edges.items():
-            buckets = {}
-            for scan2_id, edge in neighbors.items():
+        last_scan1 = None
+        buckets = None
+        for scan1_id, scan2_id, edge in self.iteredges():
+            if scan1_id != last_scan1:
+                if buckets is not None:
+                    supporters[last_scan1] = buckets
+                buckets = {}
+                last_scan1 = scan1_id
                 if edge.score < self.threshold:
                     continue
                 key = int(edge.shift * 100.0)
@@ -179,25 +258,24 @@ class SpectrumAlignmentGraph(object):
                 else:
                     buckets[key] = Neighbor(
                         edge.score, edge.shift, scan2_id, edge.weight)
-            supporters[scan1_id] = list(buckets.values())
+        if buckets is not None:
+            supporters[last_scan1] = buckets
         self.supporters = supporters
 
     def collect_shifts(self) -> List[Shift]:
         seen = set()
 
         shifts: List[Shift] = []
-
-        for a, dst in self.edges.items():
-            for b, ed in dst.items():
-                key = frozenset((a, b))
-                if key in seen:
-                    continue
-                seen.add(key)
-                (score, shift, weight) = ed
-                if score < self.threshold:
-                    continue
-                shift = abs(shift)
-                shifts.append(Shift(shift, weight, score))
+        for a, b, ed in self.iteredges():
+            key = frozenset((a, b))
+            if key in seen:
+                continue
+            seen.add(key)
+            (score, shift, weight) = ed
+            if score < self.threshold:
+                continue
+            shift = abs(shift)
+            shifts.append(Shift(shift, weight, score))
 
         shifts.sort(key=lambda x: x[1], reverse=True)
         return shifts
