@@ -7,10 +7,8 @@ terms for them.
 import os
 import re
 import hashlib
-from typing import List, Union
+from typing import Dict, List, Optional, Tuple, Union, OrderedDict
 import warnings
-
-from collections import OrderedDict
 
 try:
     from collections.abc import MutableMapping, Mapping
@@ -399,7 +397,11 @@ class NativeIDParser(IDParserBase):
     XSD string included, but no guarantee is available.
     """
 
-    def __init__(self, parser, tokens, name):
+    parser: re.Pattern
+    tokens: OrderedDict[str, Tuple[str, re.Pattern]]
+    name: str
+
+    def __init__(self, parser: re.Pattern, tokens: Mapping, name: str):
         self.parser = parser
         self.tokens = OrderedDict(tokens)
         self.name = name
@@ -431,7 +433,7 @@ class NativeIDParser(IDParserBase):
             return cls(parser, tokens, term.name)
         return None
 
-    def parse(self, string):
+    def parse(self, string: str) -> OrderedDict[str, Union[str, int]]:
         """
         Parse a string according to this parser's pattern,
         returning the type-cast fields as a :class:`dict`.
@@ -469,7 +471,7 @@ class NativeIDParser(IDParserBase):
             fields[k] = v
         return fields
 
-    def format(self, fields):
+    def format(self, fields: Mapping) -> str:
         """
         Format a set of fields as a nativeID string.
 
@@ -500,10 +502,12 @@ class MultipleIDFormats(Mapping, IDParserBase):
         A mapping of format name to :class:`IDFormat` instances
     """
 
-    def __init__(self, id_formats):
+    id_formats: OrderedDict[str, IDFormat]
+
+    def __init__(self, id_formats: OrderedDict[str, IDFormat]):
         self.id_formats = id_formats
 
-    def parse(self, text):
+    def parse(self, text: str) -> OrderedDict[str, Union[str, int]]:
         fields = OrderedDict()
         for name, parser in self.id_formats.items():
             fields = parser.parse(text)
@@ -514,7 +518,7 @@ class MultipleIDFormats(Mapping, IDParserBase):
                 break
         return fields
 
-    def format(self, fields):
+    def format(self, fields: Mapping) -> str:
         format_name = fields.get('id_format')
         id_format = self.id_formats[format_name]
         return id_format.format(fields)
@@ -1114,9 +1118,9 @@ spectrum_representation = TermSet([
 
 content_keys = content_keys + spectrum_representation
 
-id_formats_by_name = {k.name: k for k in id_formats}
-file_formats_by_name = {k.name: k for k in file_formats}
-content_keys_by_name = {k.name: k for k in content_keys}
+id_formats_by_name: Dict[str, IDFormat] = {k.name: k for k in id_formats}
+file_formats_by_name: Dict[str, FileFormat] = {k.name: k for k in file_formats}
+content_keys_by_name: Dict[str, FileContent] = {k.name: k for k in content_keys}
 
 
 MS_MS1_Spectrum = content_keys.get('MS1 spectrum')
@@ -1400,7 +1404,7 @@ class FileInformation(MutableMapping):
         return self._id_format
 
 
-format_parameter_map = {
+format_parameter_map: Dict[str, Tuple[IDFormat, FileFormat]] = {
     "thermo raw": (id_formats_by_name.get("Thermo nativeID format"),
                    file_formats_by_name.get("Thermo RAW format")),
     "agilent d": (id_formats_by_name.get("Agilent MassHunter nativeID format"),
@@ -1489,22 +1493,22 @@ class SourceFile(object):
         self.file_format = file_format or self.infer_file_format_from_parameters()
 
     @property
-    def id_format(self):
+    def id_format(self) -> Optional[IDFormat]:
         return self._id_format
 
     @id_format.setter
-    def id_format(self, value):
+    def id_format(self, value: Optional[IDFormat]):
         if value is None:
             self._id_format = None
         else:
             self._id_format = id_format(str(value))
 
     @property
-    def file_format(self):
+    def file_format(self) -> Optional[FileFormat]:
         return self._file_format
 
     @file_format.setter
-    def file_format(self, value):
+    def file_format(self, value: Optional[FileFormat]):
         if value is None:
             self._file_format = None
         else:
@@ -1515,7 +1519,7 @@ class SourceFile(object):
         self.parameters.pop("id", None)
         self.parameters.pop("name", None)
 
-    def infer_id_format_from_paramters(self):
+    def infer_id_format_from_paramters(self) -> Optional[IDFormat]:
         try:
             fmt = list(set(self.parameters) & set(id_formats))[0]
             self.parameters.pop(fmt)
@@ -1523,7 +1527,7 @@ class SourceFile(object):
         except IndexError:
             return None
 
-    def infer_file_format_from_parameters(self):
+    def infer_file_format_from_parameters(self) -> Optional[FileFormat]:
         try:
             fmt = list(set(self.parameters) & set(file_formats))[0]
             self.parameters.pop(fmt)
@@ -1539,11 +1543,11 @@ class SourceFile(object):
         return os.path.exists(self.path)
 
     @staticmethod
-    def guess_format(path):
+    def guess_format(path) -> Tuple[Optional[IDFormat], Optional[FileFormat]]:
         if not os.path.exists(path):
             return None, None
 
-        id_fmt = "no nativeID format"
+        id_fmt = id_formats_by_name.get("no nativeID format")
         if os.path.isdir(path):
             if os.path.exists(os.path.join(path, 'AcqData')):
                 return format_parameter_map['agilent d']
@@ -1563,8 +1567,8 @@ class SourceFile(object):
                 parts = os.path.splitext(parts[0])
                 ext = parts[1]
             if ext.lower() == '.mzml':
-                fmt = file_formats['MS:1000584']
-                id_fmt = "no nativeID format"
+                fmt = file_formats_by_name.get(file_formats['MS:1000584'])
+                id_fmt = id_formats_by_name.get("no nativeID format")
                 hit = False
                 if is_compressed:
                     from .._compression import get_opener
@@ -1576,23 +1580,23 @@ class SourceFile(object):
                     for sf_tag in iterparse_until(fh, 'sourceFile', 'run'):
                         for param in sf_tag.getchildren():
                             if "nativeID" in param.attrib['name']:
-                                id_fmt = param.attrib['name']
+                                id_fmt = id_formats_by_name.get(param.attrib['name'])
                                 hit = True
                                 break
                         if hit:
                             break
                 return id_fmt, fmt
             elif ext.lower() == '.mzxml':
-                fmt = "ISB mzXML format"
-                id_fmt = "scan number only nativeID format"
+                fmt = file_formats_by_name.get("ISB mzXML format")
+                id_fmt = id_formats_by_name.get("scan number only nativeID format")
                 return id_fmt, fmt
             elif ext.lower() == '.mgf':
                 fmt = file_formats['MS:1001062']
-                id_fmt = "no nativeID format"
+                id_fmt = id_formats_by_name.get("no nativeID format")
                 return id_fmt, fmt
             elif ext.lower() == '.mzmlb':
                 fmt = file_formats['MS:1002838']
-                id_fmt = "no nativeID format"
+                id_fmt = id_formats_by_name.get("no nativeID format")
                 from ms_deisotope.data_source.mzmlb import determine_if_available, MzMLbLoader
                 # TODO: Try to open the file and get the nativeID format information from
                 # the XML buffer, either just opening the file fully or by openinhg it at
@@ -1609,7 +1613,7 @@ class SourceFile(object):
             decoded = lead_bytes.decode("utf-16")[1:9]
             if decoded == "Finnigan":
                 return format_parameter_map['thermo raw']
-        return id_format, None
+        return id_fmt, None
 
     def __repr__(self):
         template = "SourceFile(%r, %r, %r, %s, %s%s)"
