@@ -113,7 +113,11 @@ class Scan(ScanBase):
         A set of key-value pairs describing the scan not part of the standard interface
     """
 
-    def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None, annotations=None):
+    def __init__(self, data, source: "ScanDataSource",
+                 peak_set: Optional[Union[PeakIndex, PeakSet]]=None,
+                 deconvoluted_peak_set: Optional[DeconvolutedPeakSet]=None,
+                 product_scans=None,
+                 annotations: Optional[Dict[str, Any]]=None):
         if product_scans is None:
             product_scans = []
         if annotations is None:
@@ -1249,12 +1253,16 @@ class ProcessedScan(ScanBase):
     peak_set: Optional[PeakSet]
     deconvoluted_peak_set: Optional[DeconvolutedPeakSet]
 
-    def __init__(self, id, title, precursor_information,
-                 ms_level, scan_time, index, peak_set,
-                 deconvoluted_peak_set, polarity=None, activation=None,
-                 acquisition_information=None, isolation_window=None,
-                 instrument_configuration=None, product_scans=None,
-                 annotations=None, source=None):
+    def __init__(self, id: str, title: str, precursor_information: Optional[PrecursorInformation],
+                 ms_level: int, scan_time: float, index: int, peak_set: Optional[Union[PeakIndex, PeakSet]],
+                 deconvoluted_peak_set: Optional[DeconvolutedPeakSet], polarity: Optional[int]=None,
+                 activation: Optional[ActivationInformation]=None,
+                 acquisition_information: Optional[ScanAcquisitionInformation]=None,
+                 isolation_window: Optional[IsolationWindow]=None,
+                 instrument_configuration: Optional[InstrumentInformation]=None,
+                 product_scans=None,
+                 annotations: Dict[str, Any]=None,
+                 source: Optional["ScanDataSource"]=None):
         if product_scans is None:
             product_scans = []
         if annotations is None:

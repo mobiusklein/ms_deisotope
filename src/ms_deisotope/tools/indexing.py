@@ -95,14 +95,15 @@ def describe(path, diagnostics=False):
         msn_scans = len(index.msn_ids)
         click.echo("MS1 Scans: %d" % (ms1_scans, ))
         click.echo("MSn Scans: %d" % (msn_scans, ))
-        n_defaulted: int = 0
+        n_defaulted: Counter[Union[str, int]] = Counter()
         n_orphan: int = 0
 
         charges: Counter[Union[str, int]] = Counter()
         first_msn: float = float('inf')
         last_msn: float = 0
         for scan_info in index.msn_ids.values():
-            n_defaulted += scan_info.get('defaulted', False)
+            n_defaulted[scan_info['charge']
+                        ] += scan_info.get('defaulted', False)
             n_orphan += scan_info.get('orphan', False)
             charges[scan_info['charge']] += 1
             rt = scan_info['scan_time']
@@ -120,8 +121,16 @@ def describe(path, diagnostics=False):
             click.echo("Precursors with Charge State %d: %d" % (charge, count))
         if missing_charge:
             click.echo("Precursors missing Charge State: %d" % missing_charge)
-        if n_defaulted > 0:
-            click.echo("Defaulted MSn Scans: %d" % (n_defaulted,))
+        if sum(n_defaulted.values()) > 0:
+            click.echo("Defaulted MSn Scans: %d" % (sum(n_defaulted.values()),))
+            missing_charge = n_defaulted.pop('ChargeNotProvided', 0)
+            for charge, count in sorted(n_defaulted.items()):
+                if not isinstance(charge, int):
+                    continue
+                click.echo("    Defaulted Precursors with Charge State %d: %d (%0.2f%%)" % (charge, count, count / charges[charge] * 100))
+            if missing_charge:
+                click.echo("    Defaulted Precursors missing Charge State: %d" % missing_charge)
+
         if n_orphan > 0:
             click.echo("Orphan MSn Scans: %d" % (n_orphan,))
     if diagnostics:
