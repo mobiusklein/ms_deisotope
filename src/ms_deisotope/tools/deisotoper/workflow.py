@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import IO, Callable, Dict, Any, Optional, Type
+from typing import IO, Callable, ClassVar, Dict, Any, Optional, Type
 
 import ms_deisotope
 from ms_deisotope.data_source.scan.loader import ScanDataSource
@@ -105,6 +105,7 @@ class SampleConsumer(TaskBase):
 
     stream_cls: Optional[Callable[[str], IO]]
 
+    scan_generator_cls: ClassVar[Type[ScanGenerator]] = ScanGenerator
 
     def __init__(self, ms_file: str,
                  ms1_peak_picking_args: Optional[dict] = None,
@@ -156,7 +157,7 @@ class SampleConsumer(TaskBase):
             self.msn_processing_args["deconvolution"] = msn_deconvolution_args
 
         n_helpers = max(self.n_processes - 1, 0)
-        self.scan_generator = ScanGenerator(
+        self.scan_generator = self.scan_generator_cls(
             ms_file,
             number_of_helpers=n_helpers,
             ms1_peak_picking_args=ms1_peak_picking_args,

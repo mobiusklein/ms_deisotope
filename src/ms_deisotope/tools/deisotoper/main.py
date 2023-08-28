@@ -192,14 +192,16 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               transform=None, msn_transform=None, processes=4, extract_only_tandem_envelopes=False,
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
-              default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
+              default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False,
+              workflow_cls=None):
     """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
     init_logging()
     if transform is None:
         transform = []
     if msn_transform is None:
         msn_transform = []
-
+    if workflow_cls is None:
+        workflow_cls = workflow.SampleConsumer
     if (ignore_msn and extract_only_tandem_envelopes):
         click.secho(
             "Cannot use both --ignore-msn and --extract-only-tandem-envelopes",
@@ -306,8 +308,8 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
             "scorer": msn_isotopic_scorer,
             "averagine": msn_averagine,
             "max_missed_peaks": msn_missed_peaks,
-            "truncate_after": workflow.SampleConsumer.MSN_ISOTOPIC_PATTERN_WIDTH,
-            "ignore_below": workflow.SampleConsumer.MSN_IGNORE_BELOW,
+            "truncate_after": workflow_cls.MSN_ISOTOPIC_PATTERN_WIDTH,
+            "ignore_below": workflow_cls.MSN_IGNORE_BELOW,
             "use_quick_charge": True,
             "deconvoluter_type": msn_deconvoluter_type,
         }
@@ -315,7 +317,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         ms1_deconvolution_args = None
         msn_deconvolution_args = None
 
-    consumer = workflow.SampleConsumer(
+    consumer = workflow_cls(
         ms_file,
         ms1_peak_picking_args=ms1_peak_picking_args,
         ms1_deconvolution_args=ms1_deconvolution_args,

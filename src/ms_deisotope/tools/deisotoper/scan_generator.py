@@ -295,7 +295,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
             self.ms_file, self._input_queue, start_scan=start_scan, end_scan=end_scan,
             max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
             ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1,
-            output_queue=self._output_queue)
+            output_queue=self._output_queue, log_handler=self.log_controller.sender())
 
     def _make_scan_packer(self):
         """
