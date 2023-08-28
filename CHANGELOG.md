@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
 
-## Unreleased
+## [v0.0.51] - 2023-08-28
 
+### Fixed
+1. Multiprocessing logging uses the logger system better
+2. More corrected type annotations
 
 ## [v0.0.50] - 2023-07-20
 
@@ -573,8 +576,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.50...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.51...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51
 [v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50
 [v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49
 [v0.0.48]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48
