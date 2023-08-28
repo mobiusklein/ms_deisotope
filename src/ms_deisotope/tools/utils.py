@@ -13,7 +13,7 @@ import re
 import sys
 import warnings
 
-from typing import Dict, Iterator, Generic, TYPE_CHECKING, Union, TypeVar
+from typing import Dict, Iterable, Iterator, Generic, TYPE_CHECKING, Union, TypeVar
 
 import click
 from click._termui_impl import ProgressBar
@@ -194,7 +194,7 @@ class Spinner(object):
 spinner = Spinner
 
 
-class ProgressLogger(Iterator[T]):
+class ProgressLogger(Iterable[T]):
     """
     A simple text logger that wraps an iterable and logs update messages as chunks are requested.
 
