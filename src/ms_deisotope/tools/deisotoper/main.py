@@ -103,10 +103,6 @@ def check_if_profile(loader):
     elif first_bunch.products:
         is_profile = (first_bunch.products[0].is_profile)
 
-    if is_profile:
-        click.secho("Spectra are profile")
-    else:
-        click.secho("Spectra are centroided", fg='yellow')
     return is_profile
 
 
@@ -193,9 +189,10 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False,
-              workflow_cls=None):
+              workflow_cls=None, configure_logging=True):
     """Convert raw mass spectra data into deisotoped neutral mass peak lists."""
-    init_logging()
+    if configure_logging:
+        init_logging()
     if transform is None:
         transform = []
     if msn_transform is None:
@@ -231,9 +228,12 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         click.secho("Can't write to output file path", fg='red')
         raise click.Abort()
 
-    click.secho("Initializing %s" % name, fg='green')
-    click.echo("from %s (%0.2f) to %s (%0.2f)" % (
-        start_scan_id, start_scan_time, end_scan_id, end_scan_time))
+    if is_profile:
+        click.secho("Spectra are profile")
+    else:
+        click.secho("Spectra are centroided", fg='yellow')
+
+    click.echo(f"from {start_scan_id!r} ({start_scan_time:0.2f} min.) to {end_scan_id!r} ({end_scan_time:0.2f} min.)")
     if deconvolute:
         click.echo("charge range: %s" % (charge_range,))
 

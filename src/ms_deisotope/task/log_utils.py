@@ -80,70 +80,92 @@ class CallInterval(object):
         self.stopped.set()
 
 
-class MessageSpooler(object):
-    """
-    An IPC-based logging helper
+class IPCLoggingManager:
+    queue: multiprocessing.Queue
+    listener: logging.handlers.QueueListener
 
-    Attributes
-    ----------
-    halting : bool
-        Whether the object is attempting to
-        stop, so that the internal thread can
-        tell when it should stop and tell other
-        objects using it it is trying to stop
-    handler : Callable
-        A Callable object which can be used to do
-        the actual logging
-    message_queue : multiprocessing.Queue
-        The Inter-Process Communication queue
-    thread : threading.Thread
-        The internal listener thread that will consume
-        message_queue work items
-    """
+    def __init__(self, queue=None, *handlers):
+        if queue is None:
+            queue = multiprocessing.Queue()
+        if not handlers:
+            logger = logging.getLogger("ms_deisotope")
+            handlers = logger.handlers
 
-    def __init__(self, handler):
-        self.handler = handler
-        self.message_queue = multiprocessing.Queue()
-        self.halting = False
-        self.thread = threading.Thread(target=self.run)
-        self.thread.daemon = True
-        self.thread.start()
+        self.queue = queue
+        self.listener = logging.handlers.QueueListener(
+            queue, *handlers, respect_handler_level=True)
+        self.listener.start()
 
-    def run(self):
-        while not self.halting:
-            try:
-                message = self.message_queue.get(True, 2)
-                self.handler(*message)
-            except Empty:
-                continue
+    def sender(self, logger_name="ms_deisotope"):
+        return LoggingHandlerToken(self.queue, logger_name)
+
+    def start(self):
+        self.listener.start()
 
     def stop(self):
-        self.halting = True
-        self.thread.join()
-
-    def sender(self):
-        return MessageSender(self.message_queue)
+        self.listener.stop()
 
 
-class MessageSender(object):
-    """
-    A simple callable for pushing objects into an IPC
-    queue.
+class LoggingHandlerToken:
+    queue: multiprocessing.Queue
+    name: str
+    configured: bool
 
-    Attributes
-    ----------
-    queue : multiprocessing.Queue
-        The Inter-Process Communication queue
-    """
-
-    def __init__(self, queue):
+    def __init__(self, queue: multiprocessing.Queue, name: str):
         self.queue = queue
+        self.name = name
+        self.configured = False
 
-    def __call__(self, *message):
-        self.send(*message)
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.name!r}, {self.configured})"
 
-    def send(self, *message):
-        self.queue.put(message)
+    def get_logger(self) -> logging.Logger:
+        logger = logging.getLogger(self.name)
+        return logger
+
+    def clear_handlers(self, logger: logging.Logger):
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+        if logger.parent is not None and logger.parent is not logger:
+            self.clear_handlers(logger.parent)
+
+    def log(self, *args, **kwargs):
+        kwargs.setdefault('stacklevel', 2)
+        self.get_logger().info(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        kwargs.setdefault('stacklevel', 3)
+        self.log(*args, **kwargs)
+
+    def add_handler(self):
+        if self.configured:
+            return
+
+        logger = self.get_logger()
+        self.clear_handlers(logger)
+        handler = logging.handlers.QueueHandler(self.queue)
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+
+        LogUtilsMixin.log_with_logger(logger)
+        from ms_deisotope.task import TaskBase
+        TaskBase.log_with_logger(logger)
+        self.configured = True
+
+    def __getstate__(self):
+        return {
+            "queue": self.queue,
+            "name": self.name
+        }
+
+    def __setstate__(self, state):
+        self.queue = state['queue']
+        self.name = state['name']
+        self.configured = False
+        if multiprocessing.current_process().name == "MainProcess":
+            return
+        self.add_handler()
 
 
 class LogUtilsMixin(object):
@@ -192,12 +214,8 @@ class LogUtilsMixin(object):
         if exception is not None:
             self.error_print_fn(traceback.format_exc(exception))
 
-    def ipc_logger(self, handler=None):
-        if handler is None:
-            def default_handler(*message):
-                self.log(*message)
-            handler = default_handler
-        return MessageSpooler(handler)
+    def ipc_logger(self):
+        return IPCLoggingManager()
 
 
 class ProgressUpdater(LogUtilsMixin):
