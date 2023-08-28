@@ -194,8 +194,8 @@ class LogUtilsMixin(object):
 
     def ipc_logger(self, handler=None):
         if handler is None:
-            def default_handler(message):
-                self.log(message)
+            def default_handler(*message):
+                self.log(*message)
             handler = default_handler
         return MessageSpooler(handler)
 
@@ -358,6 +358,7 @@ def init_logging(filename=None, queue=None):
         queue_handler = logging.handlers.QueueHandler(queue)
         queue_handler.setFormatter(formatter)
         logger.addHandler(queue_handler)
+        queue_handler.setLevel(logging.INFO)
     else:
         # Otherwise, configure handlers for `ms_deisotope`
         stderr_handler = logging.StreamHandler(sys.stderr)
@@ -365,9 +366,11 @@ def init_logging(filename=None, queue=None):
             stderr_handler.setFormatter(colorized_formatter)
         else:
             stderr_handler.setFormatter(formatter)
+        stderr_handler.setLevel(logging.INFO)
         logger.addHandler(stderr_handler)
         if filename:
             file_handler = logging.FileHandler(filename=filename, mode='w', encoding='utf8')
             file_handler.setFormatter(formatter)
+            file_handler.setLevel(logging.INFO)
             logger.addHandler(file_handler)
     LogUtilsMixin.log_with_logger(logger)
