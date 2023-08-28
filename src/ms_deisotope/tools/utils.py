@@ -16,6 +16,7 @@ import warnings
 from typing import Dict, Iterator, Generic, TYPE_CHECKING, Union, TypeVar
 
 import click
+from click._termui_impl import ProgressBar
 
 from brainpy import periodic_table
 
@@ -193,13 +194,15 @@ class Spinner(object):
 spinner = Spinner
 
 
-class ProgressLogger(object):
+class ProgressLogger(Iterator[T]):
     """
     A simple text logger that wraps an iterable and logs update messages as chunks are requested.
 
     This class tries to emulate :func:`click.progressbar` for use when the attached STDERR stream is not
     a terminal.
     """
+
+    iterable: Iterator[T]
 
     def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None,
                  file=None, writer=None, **kwargs):
@@ -237,6 +240,9 @@ class ProgressLogger(object):
             self._log()
             self.last_update += self.interval * (int(n_steps // self.interval) + 1)
 
+    def render_progress(self):
+        self._log()
+
     def _log(self):
         item = self.current_item
         if self.item_show_func is not None:
@@ -256,6 +262,7 @@ class ProgressLogger(object):
             self.writer(message)
 
     def __iter__(self):
+        item: T
         for item in self.iterable:
             self.update(1, current_item=item)
             yield item
@@ -267,7 +274,7 @@ class ProgressLogger(object):
         pass
 
 
-def progress(iterable: Iterator[T]=None, *args, **kwargs) -> Iterator[T]:
+def progress(iterable: Iterator[T]=None, *args, **kwargs) -> Union[ProgressBar[T], ProgressLogger[T]]:
     """
     A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
     TTY and :class:`ProgressLogger` otherwise.
