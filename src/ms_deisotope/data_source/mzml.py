@@ -115,21 +115,6 @@ class _MzMLParser(mzml.MzML):
         else:
             super(_MzMLParser, self)._read_byte_offsets()
 
-
-def _find_arrays(data_dict, decode=False):
-    arrays = dict()
-    for key, value in data_dict.items():
-        if " array" in key:
-            if decode:
-                if value.data:
-                    arrays[key] = value.decode()
-                else:
-                    arrays[key] = np.array([], dtype=value.dtype)
-            else:
-                arrays[key] = value
-    return arrays
-
-
 try:
     from ms_deisotope._c.units import _handle_param_fill_missing_value
     _MzMLParser._handle_param = _handle_param_fill_missing_value
@@ -146,6 +131,19 @@ class MzMLDataInterface(ScanDataSource):
 
     def _stray_cvs(self, scan):
         return scan.get("name", [])
+
+    def _find_arrays(self, data_dict, decode=False):
+        arrays = dict()
+        for key, value in data_dict.items():
+            if " array" in key:
+                if decode:
+                    if value.data:
+                        arrays[key] = value.decode()
+                    else:
+                        arrays[key] = np.array([], dtype=value.dtype)
+                else:
+                    arrays[key] = value
+        return arrays
 
     def _scan_arrays(self, scan):
         """
@@ -169,7 +167,7 @@ class MzMLDataInterface(ScanDataSource):
         except AttributeError:
             decode = False
         try:
-            arrays = _find_arrays(scan, decode=decode)
+            arrays = self._find_arrays(scan, decode=decode)
         except zlib.error as zerr:
             warnings.warn(
                 f"An error occurred while decompressing the spectrum data arrays for scan {self._scan_id(scan)}: {zerr}"

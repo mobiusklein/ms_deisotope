@@ -19,6 +19,8 @@ References
 import logging
 logging.getLogger("hdf5plugin").addHandler(logging.NullHandler())
 
+import numpy as np
+
 try:
     from pyteomics import mzmlb
     _BaseParser = mzmlb.MzMLb
@@ -58,6 +60,19 @@ class MzMLbLoader(_MzMLLoader):
     """
 
     _parser_cls = _MzMLbParser
+
+    def _find_arrays(data_dict, decode=False):
+        arrays = dict()
+        for key, value in data_dict.items():
+            if " array" in key:
+                if decode:
+                    if value.length:
+                        arrays[key] = value.decode()
+                    else:
+                        arrays[key] = np.array([], dtype=value.dtype)
+                else:
+                    arrays[key] = value
+        return arrays
 
     @property
     def has_fast_random_access(self):
