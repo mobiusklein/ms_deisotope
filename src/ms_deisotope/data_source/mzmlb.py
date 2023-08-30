@@ -61,7 +61,7 @@ class MzMLbLoader(_MzMLLoader):
 
     _parser_cls = _MzMLbParser
 
-    def _find_arrays(data_dict, decode=False):
+    def _find_arrays(self, data_dict, decode=False):
         arrays = dict()
         for key, value in data_dict.items():
             if " array" in key:
