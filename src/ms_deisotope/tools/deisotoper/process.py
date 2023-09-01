@@ -1,11 +1,12 @@
 import os
+import signal
 import logging
 import sys
 import multiprocessing
 import traceback
 import pickle
 
-from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 from collections import deque
 from multiprocessing import Process
 from queue import Empty as QueueEmpty
@@ -28,6 +29,8 @@ try:
 except ImportError:
     from gzip import decompress, compress
 
+if TYPE_CHECKING:
+    import multiprocessing.synchronize
 
 class CompressedPickleMessage(object):
     def __init__(self, obj=None):
@@ -85,6 +88,8 @@ class ScanTransmissionMixin(object):
 
 
 class _ProcessHelper:
+    _error_occurred: "multiprocessing.synchronize.Event"
+
     def try_set_process_name(self, name=None):
         """
         This helper method may be used to try to change a process's name
@@ -108,6 +113,9 @@ class _ProcessHelper:
             setproctitle.setproctitle(name)
         except (ImportError, AttributeError):
             pass
+
+    def error_occurred(self) -> bool:
+        return self._error_occurred.is_set()
 
 
 class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
@@ -150,6 +158,7 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
 
         self.no_more_event = no_more_event
         self.output_queue = output_queue
+        self._error_occurred = multiprocessing.Event()
 
     def _make_scan_batch(self) -> Tuple[
             List[Tuple[str, List[str]]],
@@ -216,6 +225,7 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
         return self.loader
 
     def run(self):
+        signal.signal(signal.SIGINT, signal.Handlers.SIG_IGN)
         self.try_set_process_name("ms-deisotope-sched")
         self._open_ms_file()
         self._initialize_iterator()
@@ -451,6 +461,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
 
         self.no_more_event = no_more_event
         self._work_complete = multiprocessing.Event()
+        self._error_occurred = multiprocessing.Event()
         self.log_handler = log_handler
         self.too_many_peaks_threshold = too_many_peaks_threshold
         self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
@@ -574,6 +585,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
         return ScanBunchLoader(loader)
 
     def run(self):
+        signal.signal(signal.SIGINT, signal.Handlers.SIG_IGN)
         self.try_set_process_name("ms-deisotope-deconv")
         self._silence_loggers()
         loader = self._open_ms_file()
@@ -603,10 +615,13 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
                 scan, product_scans = queued_loader.get()
             except (KeyboardInterrupt, SystemExit) as e:
                 self.log_message("Interrupt received.")
+                self._error_occurred.set()
                 break
             except Exception as e:
                 self.log_message("Something went wrong when loading bunch (%s): %r.\nRecovery is not possible." % (
                     (scan_id, product_scan_ids), e))
+                self._error_occurred.set()
+                break
 
             self.handle_scan_bunch(
                 scan, product_scans,

@@ -6,6 +6,7 @@ The primary function in this module is :func:`index`, which will perform
 this dispatch.
 """
 import multiprocessing
+import signal
 import logging
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union, Optional
 
@@ -285,6 +286,10 @@ class _TaskPayload(object):
         return template.format(self=self)
 
 
+def _init_worker(*args, **kwargs):
+    signal.signal(signal.SIGINT, signal.Handlers.SIG_IGN)
+
+
 def run_task_in_chunks(reader: ScanGenerator,
                        n_processes: Optional[int]=None,
                        n_chunks: Optional[int]=None,
@@ -340,7 +345,7 @@ def run_task_in_chunks(reader: ScanGenerator,
     if n_chunks is None:
         n_chunks = n_processes
     n_items = end_scan - start_scan
-    pool = multiprocessing.Pool(n_processes)
+    pool = multiprocessing.Pool(n_processes, initializer=_init_worker)
     scan_ranges = partition_work(
         n_items, n_chunks, start_scan, reader=reader)
     feeder = (

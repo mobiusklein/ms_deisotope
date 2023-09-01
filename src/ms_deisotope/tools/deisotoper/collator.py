@@ -14,7 +14,7 @@ from ms_deisotope.data_source.scan.mobility_frame import FrameBase
 from ms_deisotope.task import TaskBase, CallInterval
 
 from .process import (
-    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess, CompressedPickleMessage)
+    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess, CompressedPickleMessage, ScanIDYieldingProcess)
 
 
 T = TypeVar("T", bound=Union[ScanBase, FrameBase])
@@ -79,9 +79,10 @@ class ScanCollator(TaskBase, Generic[T]):
     primary_worker: DeconvolutingScanTransformingProcess
     helper_producers: List[DeconvolutingScanTransformingProcess]
     started_helpers: bool
+    feeder_process: ScanIDYieldingProcess
 
     def __init__(self, queue, done_event, helper_producers=None, primary_worker=None,
-                 include_fitted=False, input_queue=None):
+                 include_fitted=False, input_queue=None, feeder_process=None):
         if helper_producers is None:
             helper_producers = []
         self.queue = queue
@@ -96,6 +97,17 @@ class ScanCollator(TaskBase, Generic[T]):
         self.primary_worker = primary_worker
         self.include_fitted = include_fitted
         self.input_queue = input_queue
+        self.feeder_process = feeder_process
+
+    def error_occurred(self) -> bool:
+        """Check if an error occurred in any of the child processes"""
+        if self.feeder_process is not None and self.feeder_process.error_occurred():
+            return True
+        if self.primary_worker.error_occurred():
+            return True
+        for worker in self.helper_producers:
+            if worker.error_occurred():
+                return True
 
     def all_workers_done(self) -> bool:
         """
@@ -282,6 +294,9 @@ class ScanCollator(TaskBase, Generic[T]):
         status_monitor = CallInterval(30, self.print_state)
         status_monitor.start()
         while has_more:
+            if self.error_occurred():
+                self.log("An error occurred, terminating!")
+                has_more = False
             if self.consume():
                 self.count_jobs_done += 1
                 try:
