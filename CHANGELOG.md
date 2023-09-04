@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.52] - 2023-09-04
+
+### Changed
+1. Pinned `pyteomics` to 4.6.0 pending `pandas` dependency change
+
 
 ## [v0.0.51] - 2023-08-28
 
@@ -576,8 +581,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.51...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.52...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.52]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.52
 [v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51
 [v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50
 [v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49
