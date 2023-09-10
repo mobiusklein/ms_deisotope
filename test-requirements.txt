@@ -1,4 +1,4 @@
-pyteomics == 4.6.0
+pyteomics >= 4.6.2
 lxml
 psims[all] >= 0.1.44
 six
