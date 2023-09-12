@@ -764,10 +764,9 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     _file_description: FileInformation
 
 
-
-    def __init__(self, source_file, use_index=True, decode_binary=True, index_file=None, **kwargs):
+    def __init__(self, source_file, use_index=True, decode_binary=True, index_file=None, read_schema=True, **kwargs):
         self.source_file = source_file
-        self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
+        self._source = self._parser_cls(source_file, read_schema=read_schema, iterative=True,
                                         huge_tree=True, decode_binary=decode_binary,
                                         use_index=use_index, index_file=index_file)
         self.initialize_scan_cache()
