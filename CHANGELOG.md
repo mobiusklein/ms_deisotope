@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.53] - 2023-10-01
+
+### Changed
+1. Return to requiring a minimum `pyteomics` version, starting at 4.6.2 now to avoid
+   the `pandas` dependency from 4.6.1
+2. Allow overriding the `read_schema` parameter for `MzMLLoader` objects, to be used
+   when handling mzML files which have invalid XSD URIs. This defaults to using a pre-
+   compiled schema in `pyteomics`.
+
+
 ## [v0.0.52] - 2023-09-04
 
 ### Changed
@@ -581,8 +591,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.52...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.53...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.53]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.53
 [v0.0.52]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.52
 [v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51
 [v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50
