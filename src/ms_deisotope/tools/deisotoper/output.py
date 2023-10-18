@@ -294,7 +294,7 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
 class MzMLbScanStorageHandler(MzMLScanStorageHandler):
     fallback_path = "processed.mzMLb"
 
-    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool):
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls: Optional[IO]=None):
         return MzMLbSerializer(
             self.path, n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
@@ -313,7 +313,7 @@ class ThreadedMzMLbScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLbScan
     def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True,
                  stream_cls: Optional[Callable[[str], IO]]=None):
         super(ThreadedMzMLbScanStorageHandler, self).__init__(
-            path, sample_name, n_spectra, deconvoluted=deconvoluted, stream_cls=stream_cls)
+            path, sample_name, n_spectra, deconvoluted=deconvoluted)
 
 
 class MGFScanStorageHandler(ScanStorageHandlerBase):
