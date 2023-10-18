@@ -37,12 +37,22 @@ from ._compression import DefinitelyFastRandomAccess
 
 
 class _MzMLbParser(_BaseParser):
+    mzml_parser: "mzmlb.ExternalDataMzML"
+
+    @property
+    def decode_binary(self) -> bool:
+        """Whether or not to eagerly decode binary data arrays"""
+        return self.mzml_parser.decode_binary
+
+    @decode_binary.setter
+    def decode_binary(self, value):
+        self._decode_binary = value
+        self.mzml_parser.decode_binary = value
 
     def _handle_param(self, element, **kwargs):
-        try:
-            element.attrib["value"]
-        except KeyError:
-            element.attrib["value"] = ""
+        attrib = element.attrib
+        if "value" not in attrib:
+            attrib["value"] = ""
         return super(_MzMLbParser, self)._handle_param(element, **kwargs)
 
 
