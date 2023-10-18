@@ -44,7 +44,8 @@ def binary_search_with_flag(array, mz, error_tolerance=1e-5):
 
 
 def binary_search(array, mz, error_tolerance=1e-5):
-    """Binary search an ordered array of objects with :attr:`mz`
+    """
+    Binary search an ordered array of objects with :attr:`mz`
     using a PPM error tolerance of `error_tolerance`
 
     Parameters
@@ -191,7 +192,8 @@ def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
 
 
 def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
-    """Binary search an ordered array of objects with :attr:`neutral_mass`
+    """
+    Binary search an ordered array of objects with :attr:`neutral_mass`
     using a PPM error tolerance of `error_toler
 
     Parameters
