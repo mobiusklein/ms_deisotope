@@ -102,12 +102,16 @@ def test_gzipped(f: Union[BinaryIO, os.PathLike]) -> bool:
     -------
     bool
     """
+    needs_close = False
     if isinstance(f, (os.PathLike, basestring)):
         f = io.open(f, 'rb')
+        needs_close = True
     current = f.tell()
     f.seek(0)
     magic = f.read(2)
     f.seek(current)
+    if needs_close:
+        f.close()
     return magic == GZIP_MAGIC
 
 
