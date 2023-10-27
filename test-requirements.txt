@@ -1,6 +1,6 @@
 pyteomics >= 4.6.2
 lxml
-psims[all] >= 0.1.44
+psims[all] >= 1.2.8
 six
 numpy
 scipy

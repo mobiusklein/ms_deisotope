@@ -68,13 +68,30 @@ class MzMLbSerializer(_MzMLSerializer):
 
     default_compression = DEFAULT_COMPRESSOR
 
+    def __init__(self, handle, n_spectra=None,
+                 compression=None,
+                 deconvoluted=True,
+                 sample_name=None,
+                 build_extra_index=True,
+                 data_encoding=None,
+                 include_software_entry=True,
+                 close=None,
+                 sample_info=None,
+                 array_transforms=None):
+        self.array_transforms = array_transforms
+        if self.array_transforms is None:
+            self.array_transforms = 'none'
+        super().__init__(handle, n_spectra, compression, deconvoluted, sample_name,
+                         build_extra_index, data_encoding, include_software_entry, close, sample_info)
+
+
     def _make_writer(self, handle):
         compression = self.compression
         compression_opts = None
         if self.compression == COMPRESSION_ZLIB:
             compression = 'gzip'
             compression_opts = 4
-        self.compression = 'none'
+        self.compression = self.array_transforms
         return _MzMLbWriter(
             handle,
             close=self._should_close,
@@ -85,7 +102,6 @@ class MzMLbSerializer(_MzMLSerializer):
     @classmethod
     def get_scan_packer_type(cls):
         return super().get_scan_packer_type()
-
 
 
 class IonMobilityAware3DMzMLbSerializer(_IonMobility3DSerializerBase, MzMLbSerializer):

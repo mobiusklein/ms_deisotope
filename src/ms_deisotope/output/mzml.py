@@ -414,7 +414,7 @@ class MzMLSerializer(ScanSerializerBase, PeakSerializingMixin):
 
     handle: Union[io.IOBase, os.PathLike, str]
     n_spectra: int
-    compression: Optional[str]
+    compression: Union[Optional[str], Dict[str, Optional[str]]]
     data_encoding: Union[np.dtype, Dict[str, np.dtype]]
     writer: "writer.MzMLWriter"
     deconvoluted: bool
@@ -441,10 +441,16 @@ class MzMLSerializer(ScanSerializerBase, PeakSerializingMixin):
     _should_close: bool
 
 
-    def __init__(self, handle, n_spectra=int(2e5), compression=None,
-                 deconvoluted=True, sample_name=None, build_extra_index=True,
-                 data_encoding=None, include_software_entry=True,
-                 close=None, sample_info=None):
+    def __init__(self, handle,
+                 n_spectra=None,
+                 compression=None,
+                 deconvoluted=True,
+                 sample_name=None,
+                 build_extra_index=True,
+                 data_encoding=None,
+                 include_software_entry=True,
+                 close=None,
+                 sample_info=None):
         if data_encoding is None:
             data_encoding = self.default_data_encoding
         if writer is None:
@@ -452,6 +458,9 @@ class MzMLSerializer(ScanSerializerBase, PeakSerializingMixin):
                 "Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
             compression = self.default_compression
+        if n_spectra is None:
+            warnings.warn("Number of spectra not provided, generating large placeholder, but this should be provided explicitly")
+            n_spectra = int(2e5)
         super(MzMLSerializer, self).__init__()
         self.handle = handle
         self.n_spectra = n_spectra

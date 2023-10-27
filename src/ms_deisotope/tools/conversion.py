@@ -166,14 +166,19 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     )
     writer.copy_metadata_from(reader)
     if update_metadata:
-        method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
+        processing_methods = reader.data_processing()
+        method = writer.build_processing_method(
+            order=len(processing_methods),
+            picked_peaks=pick_peaks,
+            smoothing=False,
+            baseline_reduction=False
+        )[0]
         if pick_peaks:
             method.add('MS:1000035')
         if correct_precursor_mz:
             method.add('MS:1000780')
         if reprofile:
             method.add('MS:1000784')
-        method.add('MS:1000544')
         writer.add_data_processing(method)
     if default_activation is not None:
         if isinstance(default_activation, basestring):
