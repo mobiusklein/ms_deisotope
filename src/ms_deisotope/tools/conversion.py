@@ -173,8 +173,6 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
             smoothing=False,
             baseline_reduction=False
         )[0]
-        if pick_peaks:
-            method.add('MS:1000035')
         if correct_precursor_mz:
             method.add('MS:1000780')
         if reprofile:
