@@ -32,7 +32,8 @@ except ImportError:
 if TYPE_CHECKING:
     import multiprocessing.synchronize
 
-class CompressedPickleMessage(object):
+
+class _CompressedPickleMessage(object):
     def __init__(self, obj=None):
         self.obj = obj
 
@@ -57,7 +58,7 @@ SCAN_STATUS_GOOD = b"good"
 SCAN_STATUS_SKIP = b"skip"
 
 
-class ScanTransmissionMixin(object):
+class _ScanTransmissionMixin(object):
     output_queue: multiprocessing.JoinableQueue
     scan_packer: Optional[_PeakPacker] = None
 
@@ -84,7 +85,7 @@ class ScanTransmissionMixin(object):
         if self.scan_packer is not None:
             scan = self.scan_packer(scan)
         self.output_queue.put(
-            (CompressedPickleMessage(scan), scan.index, scan.ms_level))
+            (_CompressedPickleMessage(scan), scan.index, scan.ms_level))
 
 
 class _ProcessHelper:
@@ -118,7 +119,7 @@ class _ProcessHelper:
         return self._error_occurred.is_set()
 
 
-class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
+class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
     ms_file_path: os.PathLike
     scan_id_queue: multiprocessing.JoinableQueue
     loader: Union[ScanIterator, RandomAccessScanSource]
@@ -263,7 +264,7 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
             self.scan_id_queue.put(DONE)
 
 
-class ScanTransformMixin(object):
+class _ScanTransformMixin(object):
     _batch_store: Deque[Tuple[str, List[str], bool]]
 
     input_queue: multiprocessing.JoinableQueue
@@ -348,7 +349,7 @@ class ScanBunchLoader(object):
         return (precursor, products)
 
 
-class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTransmissionMixin, _ProcessHelper):
+class DeconvolutingScanTransformingProcess(Process, _ScanTransformMixin, _ScanTransmissionMixin, _ProcessHelper):
     """
     DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an

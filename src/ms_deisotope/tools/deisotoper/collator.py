@@ -14,7 +14,7 @@ from ms_deisotope.data_source.scan.mobility_frame import FrameBase
 from ms_deisotope.task import TaskBase, CallInterval
 
 from .process import (
-    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess, CompressedPickleMessage, ScanIDYieldingProcess)
+    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess, _CompressedPickleMessage, ScanIDYieldingProcess)
 
 
 T = TypeVar("T", bound=Union[ScanBase, FrameBase])
@@ -181,7 +181,7 @@ class ScanCollator(TaskBase, Generic[T]):
             # DONE message may be sent many times.
             while item == DONE:
                 item, index = self._read_from_queue(timeout)
-            if isinstance(item, CompressedPickleMessage):
+            if isinstance(item, _CompressedPickleMessage):
                 item = item.obj
             self.store_item(item, index)
             return True

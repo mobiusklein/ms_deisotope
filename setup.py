@@ -276,7 +276,7 @@ install_requires = [
     "brain-isotopic-distribution >= 1.5.8",
     "pyteomics >= 4.6.2",
     "lxml",
-    "psims >= 1.2.9",
+    "psims >= 1.3.0",
     "python-idzip >=0.3.2",
     "pyzstd",
 ]

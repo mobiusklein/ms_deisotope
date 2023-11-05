@@ -308,10 +308,10 @@ try:
         "Whether or not to add the conversion"
         " program's metadata to the mzML file."))
     @click.option("-z", "--compression", type=click.Choice(
-        ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib']), default=DEFAULT_COMPRESSOR,
-        help="The compressor to use")
+        ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib', 'zlib:9', 'gzip:9']),
+        default=DEFAULT_COMPRESSOR, help="The compressor to use")
     @click.option('-X', '--option', 'options', type=(str, type_cast), multiple=True,
-              help="Pass an arbitrary key-value pair through to configure the writer")
+                  help="Pass an arbitrary key-value pair through to configure the writer")
     def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
               correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR, options=None):
         """
