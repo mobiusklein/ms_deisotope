@@ -8,7 +8,7 @@ from cpython cimport PyList_Append, PyList_Size, PyList_GetItem
 from cpython cimport PyTuple_Size, PyTuple_GetItem
 from cpython cimport PySet_Add
 from cpython cimport PyDict_GetItem, PyDict_SetItem
-from cpython cimport PyInt_AsLong
+from cpython cimport PyLong_AsLong
 
 import numpy as np
 cimport numpy as np
@@ -400,7 +400,7 @@ cdef class SpectrumGraph(object):
             conv = node.start.get_index()
             index_list = <list>PyDict_GetItem(by_node, conv)
             for q in range(PyList_Size(index_list)):
-                j = PyInt_AsLong(<object>PyList_GetItem(index_list, q))
+                j = PyLong_AsLong(<object>PyList_GetItem(index_list, q))
                 if i == j:
                     continue
                 other_node_set = <set>PyList_GetItem(node_sets, j)

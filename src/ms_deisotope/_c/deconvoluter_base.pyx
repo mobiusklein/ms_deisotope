@@ -21,7 +21,7 @@ from ms_deisotope._c.peak_dependency_network.peak_network cimport PeakDependence
 from cpython cimport Py_INCREF, PyErr_SetString
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM, PyList_GetSlice
 from cpython.tuple cimport PyTuple_GET_ITEM
-from cpython.int cimport PyInt_AsLong
+from cpython.long cimport PyLong_AsLong
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.object cimport PyObject
 from cpython.set cimport PySet_Add
@@ -479,7 +479,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
         for obj in peak_charge_set:
             peak_charge = <tuple>obj
             peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)
-            charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
+            charge = PyLong_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
 
             if peak.mz < 1:
                 continue
@@ -541,7 +541,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         for i in range(PyList_GET_SIZE(peak_charge_list)):
             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
             peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)
-            charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
+            charge = PyLong_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
 
             if peak.mz < 1:
                 continue
@@ -638,8 +638,8 @@ cdef class ChargeIterator(object):
             ChargeIterator inst
             int a, b
 
-        a = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
-        b = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
+        a = PyLong_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
+        b = PyLong_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
         return ChargeIterator._create(a, b)
 
     @staticmethod
@@ -647,8 +647,8 @@ cdef class ChargeIterator(object):
         cdef:
             ChargeIterator inst
             int a, b
-        a = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
-        b = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
+        a = PyLong_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
+        b = PyLong_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
         inst = ChargeIterator.__new__(ChargeIterator)
         inst.set_bounds(a, b)
         inst.sequence_from_quickcharge(peaks, peak)

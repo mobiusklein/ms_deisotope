@@ -8,7 +8,7 @@ from cpython cimport Py_INCREF
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM
 from cpython.sequence cimport PySequence_Fast, PySequence_Fast_ITEMS
-from cpython.int cimport PyInt_AsLong
+from cpython.long cimport PyLong_AsLong
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem, PyDict_DelItem, PyDict_Next, PyDict_Values
 from cpython.object cimport PyObject
 from cpython.set cimport PySet_Add
