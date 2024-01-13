@@ -272,7 +272,7 @@ install_requires = [
     "scipy",
     "six",
     "dill",
-    "ms_peak_picker >= 0.1.41",
+    "ms_peak_picker >= 0.1.45",
     "brain-isotopic-distribution >= 1.5.8",
     "pyteomics >= 4.6.2",
     "lxml",

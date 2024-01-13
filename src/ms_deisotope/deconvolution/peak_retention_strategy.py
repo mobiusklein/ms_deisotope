@@ -157,7 +157,7 @@ class PeakRetentionStrategyBase(object):
 
 class TopNRetentionStrategy(PeakRetentionStrategyBase):
     """
-    This strategy retains up to at most :attr:`n_peaks` peaks from the
+    Retain up to at most :attr:`n_peaks` peaks from the
     leftover signal, and requires that any peaks it retains are atleast
     :attr:`base_peak_coefficient` * the base peak of the original peak list.
 
