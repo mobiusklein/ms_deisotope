@@ -194,8 +194,7 @@ class PrecursorPurityEstimator(object):
 
     def __call__(self, scan: 'ScanBase', precursor_peak: DeconvolutedPeak, isolation_window: IsolationWindow):
         """
-        A convenience wrapper that calls both :meth:`precursor_purity` and
-        :meth:`coisolation`.
+        Call both :meth:`precursor_purity` and :meth:`coisolation`.
 
         Parameters
         ----------

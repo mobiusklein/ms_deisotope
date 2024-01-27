@@ -495,7 +495,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def pick_precursor_scan_peaks(self, precursor_scan: Scan) -> Union[PeakIndex, PeakSet]:
         """
-        Picks peaks for the given ``precursor_scan`` using the
+        Pick peaks for the given ``precursor_scan`` using the
         appropriate strategy.
 
         If :attr:`ms1_averaging` > 0, then the signal averaging strategy
@@ -553,7 +553,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def process_scan_group(self, precursor_scan: Scan, product_scans: List[Scan]) -> Tuple[Scan, List[PriorityTarget], List[Scan]]:
         """
-        Performs the initial extraction of information relating
+        Perform the initial extraction of information relating
         `precursor_scan` to `product_scans` and picks peaks for ``precursor_scan``.
         Called by :meth:`process`. May be used separately if doing the process step
         by step.
@@ -860,7 +860,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def next(self) -> ScanBunch:
         """
-        Fetches the next bunch of scans from :attr:`reader` and
+        Fetch the next bunch of scans from :attr:`reader` and
         invokes :meth:`process` on them, picking peaks and deconvoluting them.
 
         Returns
@@ -873,7 +873,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def __next__(self) -> ScanBunch:
         """
-        Fetches the next bunch of scans from :attr:`reader` and
+        Fetch the next bunch of scans from :attr:`reader` and
         invokes :meth:`process` on them, picking peaks and deconvoluting them.
 
         Returns
@@ -901,7 +901,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def start_from_scan(self, *args, **kwargs) -> 'ScanProcessor':
         """
-        A wrapper around :meth:`~.RandomAccessScanSource.start_from_scan` provided by
+        Forward invocation to :meth:`~.RandomAccessScanSource.start_from_scan` provided by
         :attr:`reader`, if available.
 
         Returns

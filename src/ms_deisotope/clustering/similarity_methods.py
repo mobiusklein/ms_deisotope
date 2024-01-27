@@ -31,7 +31,7 @@ def top_n_filter(peak_set, n=40):
 
 def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
     """
-    Computes the normalized dot product, also called cosine similarity between
+    Compute the normalized dot product, also called cosine similarity between
     two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).
 
     Parameters
@@ -128,7 +128,7 @@ try:
     from ms_deisotope._c import similarity_methods as csimilarity_methods
 
     def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
-        """A thin dispatching wrapper for peak_set_similarity methods"""
+        """Thin dispatching wrapper for peak_set_similarity methods"""
         if peak_set_a is None or peak_set_b is None:
             raise TypeError("Peak sets cannot be None!")
         if precision > 2:
