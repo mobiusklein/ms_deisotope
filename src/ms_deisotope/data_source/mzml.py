@@ -112,8 +112,9 @@ class _MzMLParser(mzml.MzML):
             except (AttributeError, OSError, IOError):
                 pass
             self._offset_index = index
+            return index
         else:
-            super(_MzMLParser, self)._read_byte_offsets()
+            return super(_MzMLParser, self)._read_byte_offsets()
 
 try:
     from ms_deisotope._c.units import _handle_param_fill_missing_value
