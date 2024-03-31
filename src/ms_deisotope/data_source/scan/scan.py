@@ -532,7 +532,8 @@ class Scan(ScanBase):
             precursor_information = self.precursor_information
         except KeyError:
             precursor_information = None
-        return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
+        return "%s(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
+            self.__class__.__name__,
             self.id, (self.index if self.index is not None else -1), (
                 self.scan_time if self.scan_time is not None else -1), self.ms_level,
             ", " + repr(precursor_information) if precursor_information else '')
@@ -565,8 +566,8 @@ class Scan(ScanBase):
 
     def has_peak(self, *args, **kwargs) -> FittedPeak:
         """
-        A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
-        :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
+        Query the m/z peak set with :meth:`ms_peak_picker.PeakSet.has_peak`
+        to query the :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
 
         Parameters
         ----------
@@ -601,8 +602,8 @@ class Scan(ScanBase):
 
     def pick_peaks(self, *args, **kwargs):
         """
-        A wrapper around :func:`ms_peak_picker.pick_peaks` which will populate the
-        :attr:`peak_set` attribute of this scan.
+        Pick peaks from the spectrum with :func:`ms_peak_picker.pick_peaks` which
+        will populate the :attr:`peak_set` attribute of this scan.
 
         Parameters
         ----------
@@ -667,7 +668,7 @@ class Scan(ScanBase):
 
     def deconvolute(self, *args, **kwargs):
         """
-        A wrapper around :func:`ms_deisotope.deconvolution.deconvolute_peaks`.
+        Deconvolve the peak list with :func:`ms_deisotope.deconvolution.deconvolute_peaks`.
 
         The scan must have had its peaks picked before it can be deconvoluted.
 
@@ -853,7 +854,7 @@ class Scan(ScanBase):
 
     def transform(self, filters=None):
         """
-        Applies a series of :class:`ms_peak_picker.scan_filter.FilterBase`,
+        Apply a series of :class:`ms_peak_picker.scan_filter.FilterBase`,
         or strings that are recognized by :func:`ms_peak_picker.scan_filter.transform`
 
         Arguments
@@ -1303,6 +1304,7 @@ class ProcessedScan(ScanBase):
 
     @property
     def scan_id(self) -> str:
+        """An alias for :attr:`id`"""
         return self.id
 
     @property
@@ -1369,8 +1371,7 @@ class ProcessedScan(ScanBase):
         else:
             pinfo_string = ""
 
-        return "ProcessedScan(id=%s, ms_level=%d, %d peaks%s)" % (
-            self.id, self.ms_level, len(peaks), pinfo_string)
+        return f"{self.__class__.__name__}(id={self.id}, ms_level={self.ms_level}, {len(peaks)} peaks{pinfo_string})"
 
     def bind(self, source: 'ScanDataSource'):
         super(ProcessedScan, self).bind(source)

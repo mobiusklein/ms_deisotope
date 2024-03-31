@@ -89,7 +89,7 @@ are installed:
     >>> ms_deisotope.DeconvolutedPeak
     <type 'ms_deisotope._c.peak_set.DeconvolutedPeak'>
 
-Building C extensions from source requires a version of Cython >= 0.27.0
+Building C extensions from source requires a version of Cython >= 3.0.3
 
 Compiling C extensions requires that ``numpy``, ``brain-isotopic-distribution``, and ``ms_peak_picker``
 be compiled and installed prior to building ``ms_deisotope``:

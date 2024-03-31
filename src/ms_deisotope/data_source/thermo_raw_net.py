@@ -606,6 +606,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
         if self._source_impl is None:
             self._source_impl = _open_raw_file(self.source_file)
             self._source_impl.SelectInstrument(Business.Device.MS, 1)
+            self._source_impl.IncludeReferenceAndExceptionData = True
         return self._source_impl
 
     @_source.setter
