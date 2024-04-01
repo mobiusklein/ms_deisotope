@@ -915,7 +915,7 @@ cdef int _binary_search(double* array, double target, double error_tolerance, si
     return 2
 
 
-cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) nogil:
+cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) noexcept nogil:
     cdef:
         size_t lo, hi, mid, i, j
         size_t best_index
@@ -1306,7 +1306,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             return ()
         return <tuple>PyTuple_GetSlice(self.peaks, start, end)
 
-    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil:
+    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) noexcept nogil:
         cdef:
             int status
             size_t n
@@ -1622,7 +1622,7 @@ cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, dec
     return 0
 
 
-cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogil:
+cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) noexcept nogil:
     if destination.flags & CPeaksFlags.owns_peaks:
         free(destination.peaks)
     if destination.flags & CPeaksFlags.owns_index:
@@ -1630,7 +1630,7 @@ cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogi
     return 0
 
 
-cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=2e-5) nogil:
+cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=2e-5) noexcept nogil:
     cdef:
         size_t n, s, i
         size_t start, end
@@ -1658,7 +1658,7 @@ cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_pe
     return result
 
 
-cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=2e-5) nogil:
+cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=2e-5) noexcept nogil:
     cdef:
         size_t n, s, i
         deconvoluted_peak_t* peak
@@ -1673,7 +1673,7 @@ cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t
     return NULL
 
 
-cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* other) nogil:
+cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* other) noexcept nogil:
     if fabs(self.neutral_mass - other.neutral_mass) > 1e-6:
         return False
     if self.charge != other.charge:
@@ -1683,7 +1683,7 @@ cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* ot
     return True
 
 
-cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) nogil:
+cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) noexcept nogil:
     cdef:
         size_t value
 
@@ -1728,7 +1728,7 @@ cdef class _CPeakSet:
             return NULL
         return &self.ptr.peaks[i]
 
-    cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=2e-5) nogil:
+    cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=2e-5) noexcept nogil:
         cdef:
             deconvoluted_peak_set_t result
 
@@ -1752,7 +1752,7 @@ cdef class _CPeakSet:
         return out
 
     @cython.cdivision(True)
-    cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=2e-5) nogil:
+    cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=2e-5) noexcept nogil:
         cdef:
             size_t n, s, i
             deconvoluted_peak_t* peak

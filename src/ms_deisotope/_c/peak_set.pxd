@@ -98,7 +98,7 @@ cdef class DeconvolutedPeakSet(object):
     cdef tuple getslice(self, size_t start, size_t end)
 
 
-cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) nogil
+cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) noexcept nogil
 
 
 cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
@@ -110,7 +110,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         size_t _size
 
     cdef void _build_index_arrays(self)
-    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil
+    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) noexcept nogil
 
 
 cdef size_t INTERVAL_INDEX_SIZE
@@ -149,13 +149,13 @@ cdef struct deconvoluted_peak_set_t:
 
 
 cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, deconvoluted_peak_set_t* destination) except 1
-cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogil
+cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) noexcept nogil
 
-cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) nogil
-cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) nogil
+cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) noexcept nogil
+cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) noexcept nogil
 
-cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* other) nogil
-cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) nogil
+cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* other) noexcept nogil
+cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) noexcept nogil
 
 
 cdef class _CPeakSet:
@@ -164,8 +164,8 @@ cdef class _CPeakSet:
 
     cdef deconvoluted_peak_t* getitem(self, size_t i) nogil
 
-    cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=*) nogil
-    cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=*) nogil
+    cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=*) noexcept nogil
+    cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=*) noexcept nogil
 
     cpdef object has_peak(self, double neutral_mass, double error_tolerance=*)
     cpdef tuple all_peaks_for(self, double neutral_mass, double error_tolerance=*)
