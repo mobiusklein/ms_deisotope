@@ -182,7 +182,7 @@ class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
             except StopIteration:
                 break
             except Exception as e:
-                self.log_handler("An error occurred in _make_scan_batch", e)
+                self.log_handler("An error occurred in _make_scan_batch: %r" % e)
                 break
             if not self.ignore_tandem_scans:
                 batch.append((scan_id, product_scan_ids, True))
@@ -254,7 +254,7 @@ class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
             except StopIteration:
                 break
             except Exception as e:
-                self.log_handler("An error occurred while fetching scans", e)
+                self.log_handler("An error occurred while fetching scans: %r" % e)
                 break
 
         if self.no_more_event is not None:
