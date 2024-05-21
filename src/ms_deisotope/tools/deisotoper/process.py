@@ -182,7 +182,7 @@ class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
             except StopIteration:
                 break
             except Exception as e:
-                self.log_handler("An error occurred in _make_scan_batch: %r" % e)
+                self.log_handler(f"An error occurred in _make_scan_batch: {e}")
                 break
             if not self.ignore_tandem_scans:
                 batch.append((scan_id, product_scan_ids, True))
@@ -198,12 +198,12 @@ class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
                     self.start_scan, require_ms1=self.loader.has_ms1_scans(), grouped=True)
             except IndexError as e:
                 self.log_handler(
-                    "An error occurred while locating start scan", e)
+                    f"An error occurred while locating start scan {e}", e)
                 self.loader.reset()
                 self.loader.make_iterator(grouped=True)
             except AttributeError as e:
                 self.log_handler(
-                    "The reader does not support random access, start time will be ignored", e)
+                    f"The reader does not support random access, start time will be ignored {e}")
                 self.loader.reset()
                 self.loader.make_iterator(grouped=True)
         else:
@@ -254,12 +254,12 @@ class ScanIDYieldingProcess(Process, _ScanTransmissionMixin, _ProcessHelper):
             except StopIteration:
                 break
             except Exception as e:
-                self.log_handler("An error occurred while fetching scans: %r" % e)
+                self.log_handler(f"An error occurred while fetching scans: {e}")
                 break
 
         if self.no_more_event is not None:
             self.no_more_event.set()
-            self.log_handler("All Scan IDs have been dealt. %d scan bunches." % (count,))
+            self.log_handler(f"All Scan IDs have been dealt. {count} scan bunches.")
         else:
             self.scan_id_queue.put(DONE)
 
@@ -272,9 +272,7 @@ class _ScanTransformMixin(object):
     def log_error(self, error: Exception, scan_id: str, scan: Scan, product_scan_ids: List[str]):
         tb = traceback.format_exc()
         self.log_handler(
-            "An %r occurred for %s (index %r) in Process %r\n%s" % (
-                error, scan_id, scan.index, multiprocessing.current_process(),
-                tb))
+            f"An {error} occurred for {scan_id} (index {scan.index}) in Process {multiprocessing.current_process()}\n{tb}")
 
     def _init_batch_store(self):
         self._batch_store = deque()
@@ -290,8 +288,7 @@ class _ScanTransformMixin(object):
             return result
 
     def log_message(self, message):
-        self.log_handler(message + ", %r" %
-                         (multiprocessing.current_process().name))
+        self.log_handler(message + f", {multiprocessing.current_process().name}")
 
     def all_work_done(self) -> bool:
         return self._work_complete.is_set()

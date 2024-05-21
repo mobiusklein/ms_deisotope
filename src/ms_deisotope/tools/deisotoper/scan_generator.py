@@ -299,7 +299,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
 
     def _make_scan_packer(self):
         """
-        This method initializes a helper object that will be shared with workersto pre-serialize
+        Initialize a helper object that will be shared with workersto pre-serialize
         scans before they are sent over IPC to save space, and avoid needing to reconstitute whole
         objects on the other side. If the serializing type changes, then the scan packer may also
         need to change.
