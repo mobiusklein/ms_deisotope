@@ -300,11 +300,12 @@ class ScanCollator(TaskBase, Generic[T]):
             if self.consume():
                 self.count_jobs_done += 1
                 try:
-                    if self.queue.qsize() > 500:
+                    if self.queue.qsize() > 500 and self.last_index is not None:
                         self.drain_queue()
                 except NotImplementedError:
                     # Some platforms do not support qsize
-                    self.drain_queue()
+                    if self.last_index is not None:
+                        self.drain_queue()
             if self.last_index is None:
                 keys = sorted(self.waiting)
                 if keys:

@@ -135,7 +135,12 @@ class ThreadedScanStorageHandlerMixin(object):
                     has_work = False
                     continue
                 self._save_bunch(*next_bunch)
-                if self.queue.qsize() > 0:
+                do_drain_queue = True
+                try:
+                    do_drain_queue = self.queue.qsize() > 0
+                except NotImplementedError:
+                    pass
+                if do_drain_queue:
                     current_work = drain_queue()
                     for next_bunch in current_work:
                         i += 1
@@ -144,6 +149,7 @@ class ThreadedScanStorageHandlerMixin(object):
                         else:
                             self._save_bunch(*next_bunch)
                             i += 1
+
             except QueueEmptyException:
                 continue
             except KeyboardInterrupt:
