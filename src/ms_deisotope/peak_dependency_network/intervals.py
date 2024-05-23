@@ -9,13 +9,15 @@ class SpanningMixin(object):
     that same dimension.
     """
 
+    __slots__ = []
+
     def __init__(self, start, end):
         self.start = start
         self.end = end
 
     def __contains__(self, i):
         """
-        Tests for point inclusion, `start <= i <= end`
+        Test for point inclusion, `start <= i <= end`
 
         Parameters
         ----------
@@ -30,7 +32,7 @@ class SpanningMixin(object):
 
     def contains(self, i):
         """
-        Tests for point inclusion, `start <= i <= end`
+        Test for point inclusion, `start <= i <= end`
 
         Parameters
         ----------
@@ -45,7 +47,7 @@ class SpanningMixin(object):
 
     def overlaps(self, interval):
         """
-        Tests whether another spanning entity with
+        Test whether another spanning entity with
         a defined start and end point overlaps with
         this spanning entity
 
@@ -77,7 +79,7 @@ class SpanningMixin(object):
 
     def is_contained_in_interval(self, interval):
         """
-        Tests whether this spanning entity is
+        Test whether this spanning entity is
         completely contained inside the other entity
 
         Parameters
@@ -93,7 +95,7 @@ class SpanningMixin(object):
 
     def contains_interval(self, interval):
         """
-        Tests whether the other spanning entity is
+        Test whether the other spanning entity is
         completely contained inside this entity
 
         Parameters
@@ -106,6 +108,17 @@ class SpanningMixin(object):
         bool
         """
         return self.start <= interval.start and self.end >= interval.end
+
+
+class SimpleInterval(SpanningMixin):
+    __slots__ = ['start', 'end']
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.start}, {self.end})".format(self=self)
 
 
 class Interval(SpanningMixin):
@@ -212,7 +225,7 @@ class IntervalTreeNode(object):
 
     def contains_point(self, x):
         """
-        Returns the list of contained intervals for all
+        Return the list of contained intervals for all
         nodes which contain the point `x`.
 
         Parameters
@@ -247,7 +260,7 @@ class IntervalTreeNode(object):
 
     def overlaps(self, start, end):
         """
-        Returns the list of all contained intervals which
+        Return the list of all contained intervals which
         overlap with the interval described by `start` and `end`
 
         Parameters
@@ -412,7 +425,7 @@ class IntervalTreeNode(object):
 
 def iterative_build_interval_tree(cls, intervals):
     """
-    Builds an IntervalTreeNode hierarchy from `intervals`. This
+    Build an IntervalTreeNode hierarchy from `intervals`. This
     iterative method is preferable to avoid recursion limits.
 
     Parameters
