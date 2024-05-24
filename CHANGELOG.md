@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.54] - 2024-05-23
+
+### Added
+1. Added `SimpleInterval` to the pure Python implementation. This should allow the base library to work
+   when the C extensions are not installed.
+
+### Fixed
+1. Guarded `qsize` invocations on platforms that don't support it.
+2. Error message logging in `ms-deisotope` were invoking using incorrect syntax.
+
+
 ## [v0.0.53] - 2023-10-01
 
 ### Changed
@@ -591,8 +602,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.53...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.54...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.54]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.54
 [v0.0.53]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.53
 [v0.0.52]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.52
 [v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51
