@@ -20,6 +20,7 @@ The public interface of this module should be identical to
 
 import sys
 import os
+import threading
 
 from collections import OrderedDict
 from typing import List
@@ -77,14 +78,17 @@ IntPtr = None
 Int64 = None
 
 
-def _open_raw_file(path):
+def _open_raw_file(path, threaded: bool=False):
     if not _test_dll_loaded():
         register_dll()
         if not _test_dll_loaded():
             raise ValueError(
                 "Could not load .NET runtime or library. Verify `pythonnet` "
                 "is installed correctly and the RawFileReader library is registered")
-    raw_file = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
+    if threaded:
+        raw_file = _RawFileReader.RawFileReaderAdapter.ThreadedFileFactory(path)
+    else:
+        raw_file = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
     return raw_file
 
 
@@ -573,6 +577,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
                     "is installed correctly and the RawFileReader library is registered")
         self.source_file = source_file
         self._source_impl = None
+        self._tls = threading.local()
         # self._source = _RawFileReader.RawFileReaderAdapter.FileFactory(source_file)
         # self._source.SelectInstrument(Business.Device.MS, 1)
         self._producer = None
@@ -602,16 +607,30 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
         return sw_list
 
     @property
-    def _source(self):
+    def _raw_source(self):
         if self._source_impl is None:
-            self._source_impl = _open_raw_file(self.source_file)
-            self._source_impl.SelectInstrument(Business.Device.MS, 1)
-            self._source_impl.IncludeReferenceAndExceptionData = True
+            self._source_impl = _open_raw_file(self.source_file, threaded=True)
+            # self._source_impl.SelectInstrument(Business.Device.MS, 1)
+            # self._source_impl.IncludeReferenceAndExceptionData = True
         return self._source_impl
 
-    @_source.setter
-    def _source(self, value):
+    @_raw_source.setter
+    def _raw_source(self, value):
         self._source_impl = value
+
+    def _make_thread_accessor(self):
+        accessor = self._raw_source.CreateThreadAccessor()
+        accessor.SelectInstrument(Business.Device.MS, 1)
+        accessor.IncludeReferenceAndExceptionData = True
+        return accessor
+
+    @property
+    def _source(self):
+        try:
+            return self._tls.accessor
+        except AttributeError:
+            self._tls.accessor = self._make_thread_accessor()
+            return self._tls.accessor
 
     def _has_ms1_scans(self):
         if self._scan_type_index:
@@ -674,14 +693,14 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
         return "ThermoRawLoader(%r)" % (self.source_file)
 
     def _close_handle(self):
-        if self._source is not None:
+        if self._raw_source is not None:
             try:
-                self._source.Close()
+                self._raw_source.Dispose()
             except TypeError:
                 # Some versions of pythonnet finalize before all dependent
                 # objects are destroyed making .NET method calls fail
                 pass
-            self._source = None
+            self._raw_source = None
 
     def close(self):
         """Close the underlying file reader."""
