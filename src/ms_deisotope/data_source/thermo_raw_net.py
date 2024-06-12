@@ -693,14 +693,17 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
         return "ThermoRawLoader(%r)" % (self.source_file)
 
     def _close_handle(self):
-        if self._raw_source is not None:
-            try:
-                self._raw_source.Dispose()
-            except TypeError:
-                # Some versions of pythonnet finalize before all dependent
-                # objects are destroyed making .NET method calls fail
-                pass
-            self._raw_source = None
+        # Some versions of pythonnet finalize before all dependent
+        # objects are destroyed making .NET method calls fail
+        try:
+            if self._raw_source is not None:
+                try:
+                    self._raw_source.Dispose()
+                except TypeError:
+                    pass
+        except TypeError:
+            pass
+        self._raw_source = None
 
     def close(self):
         """Close the underlying file reader."""
