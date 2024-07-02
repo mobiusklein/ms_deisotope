@@ -701,7 +701,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource[ThermoRawScanPt
                     self._raw_source.Dispose()
                 except TypeError:
                     pass
-        except TypeError:
+        except (TypeError, AttributeError):
             pass
         self._raw_source = None
 

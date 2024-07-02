@@ -539,12 +539,17 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return len(self.index)
 
     def close(self):
-        """Close the underlying file reader.
-        """
-        if self._source is not None:
-            self._source.Close()
-            self._source = None
-        self._dispose()
+        """Close the underlying file reader."""
+        try:
+            if self._source is not None:
+                self._source.Close()
+                self._source = None
+        except AttributeError:
+            pass
+        try:
+            self._dispose()
+        except AttributeError:
+            pass
 
     def __del__(self):
         self.close()

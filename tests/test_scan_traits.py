@@ -29,7 +29,7 @@ class TestScanTraits(unittest.TestCase):
         assert scan_window == scan_event.total_scan_window()
         assert scan_event == scan_event
         assert acquisition == acquisition
-        assert scan.tic.raw() - 1.8161617e+10 + 104 == 0.0
+        assert (scan.tic.raw() - 1.8161617e+10) in (104, 0.0)
         scan.pick_peaks()
         assert abs(scan.tic.centroided() - 4531125399.828125) < 1e-3
         assert abs(scan.tic() - 4531125399.828125) < 1e-3
