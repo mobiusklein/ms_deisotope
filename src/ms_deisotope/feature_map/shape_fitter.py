@@ -195,7 +195,7 @@ class SkewedGaussianModel(PeakShapeModelBase):
 
     @staticmethod
     def guess(xs, ys):
-        weights = np.clip(ys, 0, np.infty)
+        weights = np.clip(ys, 0, np.inf)
         center = np.average(xs, weights=weights / weights.sum())
         if np.isnan(center):
             center = xs.mean()
@@ -280,7 +280,7 @@ class BiGaussianModel(PeakShapeModelBase):
 
     @staticmethod
     def guess(xs, ys):
-        weights = np.clip(ys, 0, np.infty)
+        weights = np.clip(ys, 0, np.inf)
         center = np.average(xs, weights=weights / weights.sum())
         if np.isnan(center):
             center = xs.mean()
@@ -327,7 +327,7 @@ class GaussianModel(PeakShapeModelBase):
 
     @staticmethod
     def guess(xs, ys):
-        weights = np.clip(ys, 0, np.infty)
+        weights = np.clip(ys, 0, np.inf)
         center = np.average(xs, weights=weights / weights.sum())
         if np.isnan(center):
             center = xs.mean()
@@ -364,7 +364,7 @@ class SimpleGaussianModel(GaussianModel):
 
     @staticmethod
     def guess(xs, ys):
-        weights = np.clip(ys, 0, np.infty)
+        weights = np.clip(ys, 0, np.inf)
         center = np.average(xs, weights=weights / weights.sum())
         if np.isnan(center):
             center = xs.mean()
