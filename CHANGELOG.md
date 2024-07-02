@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
+## [v0.0.55] - 2024-07-01
+
+### Changed
+1. Support NumPy 2.0
 
 ## [v0.0.54] - 2024-05-23
 
@@ -602,14 +606,15 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.54...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.55...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.54]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.54
-[v0.0.53]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.53
-[v0.0.52]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.52
-[v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51
-[v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50
-[v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49
+[v0.0.55]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.54...v0.0.55
+[v0.0.54]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.53...v0.0.54
+[v0.0.53]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.52...v0.0.53
+[v0.0.52]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.51...v0.0.52
+[v0.0.51]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.50...v0.0.51
+[v0.0.50]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.49...v0.0.50
+[v0.0.49]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48...v0.0.49
 [v0.0.48]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.48
 [v0.0.47]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.47
 [v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.46
