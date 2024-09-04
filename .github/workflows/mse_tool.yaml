@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: "build-tool"
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           path: artifacts/
       - name: List Artifacts and Package
