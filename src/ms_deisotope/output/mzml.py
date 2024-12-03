@@ -48,7 +48,7 @@ from ms_deisotope.data_source.metadata.instrument_components import InstrumentIn
 from ms_deisotope.data_source.metadata.activation import ActivationInformation
 from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanEventInformation
 from ms_deisotope.data_source.metadata.file_information import FileContent, FileInformation, SourceFile
-from ms_deisotope.data_source.scan.base import PrecursorInformation, ScanBase, ScanBunch
+from ms_deisotope.data_source.scan.base import PrecursorInformation, ScanBase, ScanBunch, RawDataArrays
 from ms_deisotope.data_source.scan.scan import _PreserializingProcessedScan
 from ms_deisotope.data_source.scan.loader import ScanFileMetadataBase
 try:
@@ -178,7 +178,9 @@ class SpectrumDescription(Sequence):
         -------
         :class:`SpectrumDescription`
         """
+        import sys
         descriptors = cls()
+        print(peak_list, file=sys.stderr)
         try:
             base_peak = max(peak_list, key=lambda x: x.intensity)
         except ValueError:
@@ -297,9 +299,14 @@ class PeakSerializingMixin:
                 charge_array = None
 
             if centroided:
-                descriptors = SpectrumDescription.from_peak_set(peak_data)
-                mz_array = [p.mz for p in peak_data]
-                intensity_array = [p.intensity for p in peak_data]
+                if isinstance(peak_data, RawDataArrays):
+                    descriptors = SpectrumDescription.from_arrays(peak_data)
+                    mz_array = peak_data.mz
+                    intensity_array = peak_data.intensity
+                else:
+                    descriptors = SpectrumDescription.from_peak_set(peak_data)
+                    mz_array = [p.mz for p in peak_data]
+                    intensity_array = [p.intensity for p in peak_data]
             else:
                 descriptors = SpectrumDescription.from_arrays(peak_data)
                 mz_array = peak_data.mz
