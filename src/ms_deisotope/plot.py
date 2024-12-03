@@ -741,6 +741,10 @@ def draw_peak_path(
     seq_line_options.setdefault("linewidth", 2)
     seq_line_options.setdefault("color", "red")
 
+    path_peaks = peak_path.peaks
+    min_mz = min([p.mz for p in path_peaks] or [0])
+    max_mz = max([p.mz for p in path_peaks] or [1])
+
     # Compute the maximum height of peaks in the region to be annotated
     # so that there is no overlap with existing peaks
     upper = (
@@ -748,7 +752,7 @@ def draw_peak_path(
             [
                 p.intensity
                 for p in scan.deconvoluted_peak_set.between(
-                    peak_path[0].start.peak.mz, peak_path[-1].end.peak.mz, use_mz=True
+                    min_mz, max_mz, use_mz=True
                 )
             ]
         )
