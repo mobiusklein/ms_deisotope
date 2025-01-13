@@ -64,7 +64,7 @@ def deconvolute_peaks(peaklist: PeakListTypes,
         Parameters to use to initialize the deconvoluter instance produced by
         ``deconvoluter_type``
     charge_range : tuple of integers, optional
-        The range of charge states to consider. The range is inclusive.
+        The range of charge states to consider. The range is inclusive. Sensitive to sign of the charge/polairty.
     error_tolerance : float, optional
         PPM error tolerance to use to match experimental to theoretical peaks
     priority_list : list, optional
@@ -143,6 +143,11 @@ def deconvolute_peaks(peaklist: PeakListTypes,
 
     if verbose_priorities or verbose:
         decon.verbose = True
+
+    #Update the charge range with the proper sign, considering the polarity when the poalrity attaribute is defined!
+    if hasattr(peaklist, 'polarity'):
+        if peaklist.polarity < 0 and max(charge_range) > 0:
+            charge_range = tuple(c * peaklist.polarity for c in charge_range)
 
     priority_list_results = []
     for p in priority_list:
