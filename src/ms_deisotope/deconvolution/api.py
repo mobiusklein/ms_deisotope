@@ -136,18 +136,17 @@ def deconvolute_peaks(peaklist: PeakListTypes,
     decon_config.setdefault("scale_method", SCALE_METHOD)
     decon_config.setdefault("use_quick_charge", use_quick_charge)
 
-    peaklist = prepare_peaklist(peaklist)
-
-    decon = deconvoluter_type(peaklist=peaklist, **decon_config)
-
-
-    if verbose_priorities or verbose:
-        decon.verbose = True
-
     #Update the charge range with the proper sign, considering the polarity when the poalrity attaribute is defined!
     if hasattr(peaklist, 'polarity'):
         if peaklist.polarity < 0 and max(charge_range) > 0:
             charge_range = tuple(c * peaklist.polarity for c in charge_range)
+
+    peaklist = prepare_peaklist(peaklist)
+
+    decon = deconvoluter_type(peaklist=peaklist, **decon_config)
+
+    if verbose_priorities or verbose:
+        decon.verbose = True
 
     priority_list_results = []
     for p in priority_list:
