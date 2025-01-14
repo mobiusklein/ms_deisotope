@@ -43,22 +43,13 @@ jobs:
         CIBW_BUILD_VERBOSITY: 5
         CIBW_ARCHS: "auto"
     - name: Upload Distributions
-      if: matrix.os == 'ubuntu-20.04'
       uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-${{ matrix.os }}
         path: |
           dist/*.whl
           dist/*.tar.gz
           dist/*.zip
-        retention-days: 7
-    - name: Upload Distributions
-      uses: actions/upload-artifact@v4
-      if: matrix.os != 'ubuntu-20.04'
-      with:
-        name: dist
-        path: |
-          dist/*.whl
         retention-days: 7
 
   publish-wheels:
@@ -75,8 +66,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/download-artifact@v4.1.7
         with:
-          name: dist
           path: dist/
+          pattern: dist-*
+          merge-multiple: true
       - name: Install dependencies
         run: |
           python -m pip install -U pip setuptools wheel twine
