@@ -57,6 +57,14 @@ from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
 
+from ms_deisotope._c.units import _handle_param_fill_missing_value
+
+try:
+    from ms_deisotope._c.units import patch_pyteomics
+
+    patch_pyteomics()
+except ImportError:
+    pass
 
 def _open_if_not_file(obj, mode='rt', encoding='utf8'):
     if obj is None:
@@ -74,10 +82,7 @@ class _MzMLParser(mzml.MzML):
         self._index_file_obj = _open_if_not_file(kwargs.pop("index_file", None))
         super(_MzMLParser, self).__init__(*args, **kwargs)
 
-    def _handle_param(self, element, **kwargs):
-        if "value" not in element.attrib:
-            element.attrib['value'] = ''
-        return super(_MzMLParser, self)._handle_param(element, **kwargs)
+    _handle_param = _handle_param_fill_missing_value
 
     def _determine_array_dtype(self, info):
         dtype = None

@@ -1,8 +1,3 @@
-try:
-    from ms_deisotope._c.units import patch_pyteomics
-    patch_pyteomics()
-except ImportError:
-    pass
 
 from .scan import (
     ScanProxyContext,

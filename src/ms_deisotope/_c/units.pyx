@@ -364,5 +364,5 @@ def patch_pyteomics():
     xml.unitfloat = unitfloat
     xml.unitstr = unitstr
     xml.cvstr = cvstr
-    xml.XML._handle_param = _handle_param
+    # xml.XML._handle_param = _handle_param
     xml._local_name = _local_name
