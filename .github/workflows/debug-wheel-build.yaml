@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9']
-        os: [ubuntu-20.04, windows-2019, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -51,7 +51,7 @@ jobs:
 
   publish-wheels:
     needs: [build-wheels]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.9']
