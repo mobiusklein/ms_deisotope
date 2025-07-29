@@ -8,7 +8,7 @@ ms_peak_picker >= 0.1.41
 brain-isotopic-distribution >= 1.5.8
 dill
 python-idzip >=0.3.2
-click
+click >= 8.2
 h5py
 hdf5plugin
 pyzstd
