@@ -98,7 +98,7 @@ class AveragineParamType(click.types.StringParamType):
     def convert(self, value, param, ctx):
         return validate_averagine(value)
 
-    def get_metavar(self, param):
+    def get_metavar(self, param, ctx=None):
         return '[%s]' % '|'.join(sorted(averagines.keys()))
 
     def get_missing_message(self, param):
