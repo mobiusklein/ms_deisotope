@@ -13,7 +13,7 @@ from .common import datafile
 
 
 def run_ms_deisotope():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
     reference = datafile("20150710_3um_AGP_001_29_30.preprocessed.mzML")
     result = runner.invoke(deisotoper.deisotope, [

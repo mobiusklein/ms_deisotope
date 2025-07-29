@@ -14,7 +14,7 @@ from .common import datafile
 
 
 def test_describe():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
 
     path = datafile("small.mzML")
     result = runner.invoke(indexing.describe, [path])
@@ -27,7 +27,7 @@ def test_describe():
 
 
 def test_mgf():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     if os.path.exists("-idx.json"):
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
@@ -55,13 +55,13 @@ def test_mgf():
 
 
 def test_mzml():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     if os.path.exists("-idx.json"):
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
     result = runner.invoke(conversion.mzml, ['-p', '-c', path, '-'])
     assert result.exit_code == 0
-    buff = io.BytesIO(result.output.encode("utf-8"))
+    buff = io.BytesIO(result.stdout_bytes)
     reader = MzMLLoader(buff)
     n = len(reader)
     assert n == 48
@@ -101,7 +101,7 @@ def diff_deconvoluted_peak_set(peaks_a, peaks_b):
 
 @pytest.mark.slow
 def test_ms_deisotope():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
     reference = datafile("20150710_3um_AGP_001_29_30.preprocessed.mzML.gz")
     outpath = tempfile.mktemp()
@@ -138,7 +138,7 @@ def test_ms_deisotope():
 
 
 def test_idzip():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
     stdin_data = io.BytesIO(open(path, 'rb').read())
     result = runner.invoke(
