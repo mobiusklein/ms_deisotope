@@ -294,7 +294,7 @@ extra_requires = {
         "matplotlib",
     ],
     "cli": [
-        'click'
+        'click >= 8.2'
     ],
     'mzmlb': [
         'h5py',
